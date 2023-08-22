@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { Container, Table, Button, Modal, Form, Alert } from "react-bootstrap";
+import bcrypt from "bcryptjs-react";
 
 function UserCrud() {
   // Estado para almacenar los usuarios
@@ -87,9 +88,11 @@ function UserCrud() {
   const createUser = async () => {
     try {
       if (username && password && role && idCashPoint && idVirtualCashPoint) {
+        const hashedPassword = await bcrypt.hash(password, 10);
+
         await axios.post("/api/users", {
           username,
-          password,
+          password: hashedPassword,
           role,
           idCashPoint,
           idVirtualCashPoint,
@@ -130,13 +133,15 @@ function UserCrud() {
   const updateUser = async () => {
     try {
       if (editingUser) {
+        const hashedPassword = await bcrypt.hash(password, 10);
+
         const updatedUser = {
           ...editingUser,
           username,
           role,
           idCashPoint,
           idVirtualCashPoint,
-          password,
+          password: hashedPassword,
         };
         await axios.put(`/api/users/${editingUser.iduser}`, updatedUser);
         setEditingUser(null);
@@ -302,7 +307,7 @@ function UserCrud() {
               <Form.Label>Contraseña</Form.Label>
               <Form.Control
                 type="password"
-                value={password}
+                placeholder="Ingrese una nueva contraseña"
                 onChange={(e) => setPassword(e.target.value)}
               />
             </Form.Group>
