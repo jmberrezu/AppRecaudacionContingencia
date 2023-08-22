@@ -24,7 +24,6 @@ function UserCrud() {
   // Cargar datos iniciales
   useEffect(() => {
     fetchUsers();
-    fetchVirtualCashPoints();
   }, []);
 
   // Limpiar formulario y alerta cuando se cierra el modal
@@ -39,6 +38,18 @@ function UserCrud() {
     }
   }, [showModal]);
 
+  // Limiar el formulario y alerta cuando se cierra el modal de edicion
+  useEffect(() => {
+    if (!showEditModal) {
+      setUsername("");
+      setPassword("");
+      setRole("");
+      setIdCashPoint("");
+      setIdVirtualCashPoint("");
+      setAlertInfo(null);
+    }
+  }, [showEditModal]);
+
   // Función para obtener la lista de usuarios
   const fetchUsers = async () => {
     try {
@@ -51,11 +62,24 @@ function UserCrud() {
 
   // Función para obtener la lista de cajas virtuales
   const fetchVirtualCashPoints = async () => {
+    let response = null;
     try {
-      const response = await axios.get("/api/virtualcashpoints");
+      response = await axios.get("/api/virtualcashpoints");
       setVirtualCashPoints(response.data);
     } catch (error) {
       console.error(error);
+    }
+
+    // No se puede agregar usuarios si no existen cajas virtuales creadas
+    if (response.data.length === 0) {
+      setAlertInfo({
+        variant: "danger",
+        message:
+          "No se puede agregar usuarios porque no existen cajas virtuales creadas.",
+      });
+      return;
+    } else {
+      setAlertInfo(null);
     }
   };
 
@@ -138,6 +162,7 @@ function UserCrud() {
     try {
       await axios.delete(`/api/users/${id}`);
       fetchUsers();
+      setShowEditModal(false);
     } catch (error) {
       console.error(error);
     }
@@ -146,7 +171,13 @@ function UserCrud() {
   return (
     <Container>
       <h1>CRUD de Usuarios</h1>
-      <Button variant="primary" onClick={() => setShowModal(true)}>
+      <Button
+        variant="primary"
+        onClick={() => {
+          setShowModal(true);
+          fetchVirtualCashPoints();
+        }}
+      >
         Agregar Usuario
       </Button>
       <Table striped bordered hover className="mt-3">
@@ -318,10 +349,11 @@ function UserCrud() {
           </Button>
           <Button
             variant="danger"
-            onClick={() => deleteUser(editingUser.idUser)}
+            onClick={() => deleteUser(editingUser.iduser)}
           >
             Eliminar
           </Button>
+
           <Button variant="primary" onClick={updateUser}>
             Guardar
           </Button>

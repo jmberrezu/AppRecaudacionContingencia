@@ -30,6 +30,15 @@ function VirtualCashPointCrud() {
     }
   }, [showModal]);
 
+  // Limiar el formulario y alerta cuando se cierra el modal de edicion
+  useEffect(() => {
+    if (!showEditModal) {
+      setName("");
+      setIdCashPoint("");
+      setAlertInfo(null);
+    }
+  }, [showEditModal]);
+
   // Función para obtener la lista de cajeros virtuales
   const fetchVirtualCashPoints = async () => {
     try {
@@ -106,8 +115,22 @@ function VirtualCashPointCrud() {
   // Función para eliminar un cajero virtual
   const deleteVirtualCashPoint = async (id) => {
     try {
-      await axios.delete(`/api/virtualCashPoints/${id}`);
-      fetchVirtualCashPoints();
+      console.log("q pts");
+      const response = await axios.delete(`/api/virtualCashPoints/${id}`);
+
+      if (response.data.message === "Cajero virtual eliminado exitosamente") {
+        setAlertInfo({
+          variant: "success",
+          message: "Cajero virtual eliminado exitosamente.",
+        });
+        fetchVirtualCashPoints();
+        setShowEditModal(false);
+      } else {
+        setAlertInfo({
+          variant: "danger",
+          message: response.data.message,
+        });
+      }
     } catch (error) {
       console.error(error);
     }

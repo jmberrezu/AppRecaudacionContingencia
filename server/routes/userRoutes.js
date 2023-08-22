@@ -17,6 +17,10 @@ router.post("/", async (req, res) => {
   const { username, password, role, idCashPoint, idVirtualCashPoint } =
     req.body;
   try {
+    // Reiniciar la secuencia para la columna idVirtualCashPoint al valor más alto utilizado previamente
+    await db.one(
+      'SELECT setval(\'public."User_iduser_seq"\', COALESCE((SELECT MAX(idUser) + 1 FROM "User"), 1), false);'
+    );
     const newUser = await db.one(
       `INSERT INTO "User" (username, password, role, idCashPoint, idVirtualCashPoint)
          VALUES ($1, $2, $3, $4, $5) RETURNING *`,
