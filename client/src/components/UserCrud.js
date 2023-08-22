@@ -112,12 +112,13 @@ function UserCrud() {
           role,
           idCashPoint,
           idVirtualCashPoint,
+          password,
         };
-        console.log(editingUser.iduser, updatedUser);
         await axios.put(`/api/users/${editingUser.iduser}`, updatedUser);
         setEditingUser(null);
         setShowEditModal(false);
         setUsername("");
+        setPassword("");
         setRole("");
         setIdCashPoint("");
         setIdVirtualCashPoint("");
@@ -171,12 +172,6 @@ function UserCrud() {
                 <Button variant="success" onClick={() => editUser(user)}>
                   Editar
                 </Button>{" "}
-                <Button
-                  variant="danger"
-                  onClick={() => deleteUser(user.iduser)}
-                >
-                  Eliminar
-                </Button>
               </td>
             </tr>
           ))}
@@ -236,8 +231,8 @@ function UserCrud() {
                 <option value="">-- Seleccione una opción --</option>
                 {virtualCashPoints.map((virtualCashPoint) => (
                   <option
-                    key={virtualCashPoint.idVirtualCashPoint}
-                    value={virtualCashPoint.idVirtualCashPoint}
+                    key={virtualCashPoint.idvirtualcashpoint}
+                    value={virtualCashPoint.idvirtualcashpoint}
                   >
                     {virtualCashPoint.idvirtualcashpoint}
                   </option>
@@ -307,8 +302,8 @@ function UserCrud() {
               >
                 {virtualCashPoints.map((virtualCashPoint) => (
                   <option
-                    key={virtualCashPoint.idVirtualCashPoint}
-                    value={virtualCashPoint.idVirtualCashPoint}
+                    key={virtualCashPoint.idvirtualcashpoint}
+                    value={virtualCashPoint.idvirtualcashpoint}
                   >
                     {virtualCashPoint.idvirtualcashpoint}
                   </option>

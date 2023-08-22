@@ -1,8 +1,15 @@
 import React from "react";
 import UserCrud from "./components/UserCrud";
+import VirtualCashPointCrud from "./components/VirtualCashPointCrud";
+import { Container } from "react-bootstrap";
 
 function App() {
-  return <UserCrud />;
+  return (
+    <Container>
+      <UserCrud />
+      <VirtualCashPointCrud />
+    </Container>
+  );
 }
 
 export default App;
