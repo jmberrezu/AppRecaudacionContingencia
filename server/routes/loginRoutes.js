@@ -22,7 +22,12 @@ router.post("/", async (req, res) => {
     }
 
     const token = jwt.sign(
-      { id: user.iduser, username: user.username, role: user.role },
+      {
+        id: user.iduser,
+        username: user.username,
+        role: user.role,
+        idvirtualcashpoint: user.idvirtualcashpoint,
+      },
       "secret-key",
       { expiresIn: "3h" }
     );

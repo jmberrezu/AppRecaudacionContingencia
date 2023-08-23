@@ -2,7 +2,7 @@ import React from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import SupervisorView from "./components/SupervisorView";
 import Login from "./components/Login";
-import Recaudation from "./components/Recaudation";
+import Recaudation from "./components/RecaudationPage/Recaudation";
 
 function App() {
   return (

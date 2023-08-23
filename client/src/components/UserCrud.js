@@ -121,7 +121,6 @@ function UserCrud() {
   const editUser = (user) => {
     setEditingUser(user);
     setUsername(user.username);
-    setPassword(user.password);
     setRole(user.role);
     setIdCashPoint(user.idcashpoint);
     setIdVirtualCashPoint(user.idvirtualcashpoint);
@@ -132,16 +131,24 @@ function UserCrud() {
   const updateUser = async () => {
     try {
       if (editingUser) {
-        const hashedPassword = await bcrypt.hash(password, 10);
-
-        const updatedUser = {
+        let updatedUser = {
           ...editingUser,
           username,
           role,
           idCashPoint,
           idVirtualCashPoint,
-          password: hashedPassword,
         };
+
+        console.log(password);
+
+        if (password !== "") {
+          const hashedPassword = await bcrypt.hash(password, 10);
+          updatedUser = {
+            ...updatedUser,
+            password: hashedPassword,
+          };
+        }
+
         await axios.put(`/api/users/${editingUser.iduser}`, updatedUser);
         setEditingUser(null);
         setShowEditModal(false);
