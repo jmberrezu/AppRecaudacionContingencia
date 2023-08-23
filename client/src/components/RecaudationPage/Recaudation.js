@@ -52,6 +52,7 @@ function Recaudation() {
       />
       <Container fluid className="my-3">
         <h1>Página de Recaudación</h1>
+        <hr />
         {activeComponent === "payment" && <Payment />}
         {activeComponent === "cashClose" && <CashClose />}
         {activeComponent === "reversePayment" && <ReversePayment />}
