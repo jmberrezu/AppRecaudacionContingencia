@@ -89,7 +89,6 @@ function UserCrud() {
     try {
       if (username && password && role && idCashPoint && idVirtualCashPoint) {
         const hashedPassword = await bcrypt.hash(password, 10);
-
         await axios.post("/api/users", {
           username,
           password: hashedPassword,
@@ -205,7 +204,13 @@ function UserCrud() {
               <td>{user.idcashpoint}</td>
               <td>{user.idvirtualcashpoint}</td>
               <td>
-                <Button variant="success" onClick={() => editUser(user)}>
+                <Button
+                  variant="success"
+                  onClick={() => {
+                    editUser(user);
+                    fetchVirtualCashPoints();
+                  }}
+                >
                   Editar
                 </Button>{" "}
               </td>

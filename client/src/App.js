@@ -1,14 +1,18 @@
 import React from "react";
-import UserCrud from "./components/UserCrud";
-import VirtualCashPointCrud from "./components/VirtualCashPointCrud";
-import { Container } from "react-bootstrap";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import SupervisorView from "./components/SupervisorView";
+import Login from "./components/Login";
+import Recaudation from "./components/Recaudation";
 
 function App() {
   return (
-    <Container>
-      <UserCrud />
-      <VirtualCashPointCrud />
-    </Container>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<Login />} />
+        <Route path="/supervisor" element={<SupervisorView />} />
+        <Route path="/recaudation" element={<Recaudation />} />
+      </Routes>
+    </BrowserRouter>
   );
 }
 
