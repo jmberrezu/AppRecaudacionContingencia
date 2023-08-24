@@ -1,15 +1,13 @@
 import React, { useState } from "react";
 import { Alert, Container, Form, Button, InputGroup } from "react-bootstrap";
 import { Cash, Search } from "react-bootstrap-icons";
-import { useLocation } from "react-router-dom";
 import Modal from "react-bootstrap/Modal";
 
-function Payment({ user }) {
+function Payment(props) {
+  const { user, token } = props;
+
   const [showModal, setShowModal] = useState(false); // Estado para controlar la visualización del modal
   const [paymentData, setPaymentData] = useState(null); // Estado para almacenar los datos del pago
-
-  const location = useLocation();
-  const token = location.state?.token; // Utilizar el operador de encadenamiento opcional '?'
 
   const [cuentaContrato, setCuentaContrato] = useState("");
   const [cliente, setCliente] = useState("");

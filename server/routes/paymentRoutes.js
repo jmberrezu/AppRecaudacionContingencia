@@ -1,47 +1,29 @@
 const express = require("express");
 const router = express.Router();
-const db = require("../db"); // Asumiendo que db.js exporta la instancia de la base de datos
+const db = require("../db");
+const verifyToken = require("./verifyToken");
 
-const verifyToken = require("./verifyToken"); // Importa el middleware
-
-// Implementa una función para generar un ID único
+// Función para generar un ID único de transacción de pago
 function generatePaymentTransactionID(
-  fecha,
-  idUser,
-  idVirtualCashPoint,
-  idCashPoint,
-  lastSeq
+  officeCode,
+  currentDate,
+  formattedUserId,
+  formattedVirtualCashPointId,
+  formattedSecuencial
 ) {
-  // Obtener los 5 caracteres de la oficina del idcashpoint
-  const officeCode = idCashPoint.split("-")[1] + idCashPoint.split("-")[2];
-
-  // Obtener la fecha actual en formato AAAAMMDD
-
-  const currentDate = fecha.toISOString().slice(0, 10).replace(/-/g, "");
-
-  // Tomar los últimos 3 dígitos de idUser y rellenar con ceros a la izquierda
-  const formattedUserId = idUser.toString().slice(-3).padStart(3, "0");
-  // Tomar los últimos 3 dígitos de idVirtualCashPoint y rellenar con ceros a la izquierda
-  const formattedVirtualCashPointId = idVirtualCashPoint
-    .toString()
-    .slice(-3)
-    .padStart(3, "0");
-
-  // Completar el secuencial con ceros a la izquierda hasta 6 caracteres
-  const formattedSecuencial = lastSeq.toString().padStart(6, "0");
-  // Componer el ID del pago
-  const paymentTransactionID = `PID-${officeCode}-${currentDate}-${formattedUserId}${formattedVirtualCashPointId}${formattedSecuencial}`;
-
-  return paymentTransactionID;
+  return `PID-${officeCode}-${currentDate}-${formattedUserId}${formattedVirtualCashPointId}${formattedSecuencial}`;
 }
 
-// Ruta protegida que solo puede ser accedida por usuarios autenticados
+// Ruta protegida: Buscar cliente por cuenta o contrato
 router.get("/buscar-cliente/:cuentaContrato", verifyToken, async (req, res) => {
   const { cuentaContrato } = req.params;
 
   try {
-    const query =
-      "SELECT * FROM Client WHERE PayerContractAccountID = $1 OR CUEN = $1;";
+    const query = `
+      SELECT * FROM Client
+      WHERE PayerContractAccountID = $1 OR CUEN = $1;
+    `;
+
     const client = await db.any(query, [cuentaContrato]);
 
     if (client.length === 1) {
@@ -55,16 +37,16 @@ router.get("/buscar-cliente/:cuentaContrato", verifyToken, async (req, res) => {
   }
 });
 
+// Ruta protegida: Realizar pago
 router.post("/realizar-pago", verifyToken, async (req, res) => {
   const { cantidadTotal, cuentaContrato, user } = req.body;
-
   const fecha = new Date();
 
   try {
     const getSeqQuery = `
-    SELECT LastSeq
-    FROM LastPaymentSeq
-    WHERE UserId = $1 AND VirtualCashPointId = $2;
+      SELECT LastSeq
+      FROM LastPaymentSeq
+      WHERE UserId = $1 AND VirtualCashPointId = $2;
     `;
 
     const lastSeqResult = await db.oneOrNone(getSeqQuery, [
@@ -72,23 +54,23 @@ router.post("/realizar-pago", verifyToken, async (req, res) => {
       user.idvirtualcashpoint,
     ]);
 
-    let lastSeq = 1; // Valor predeterminado si no hay registro en la tabla
-    if (lastSeqResult) {
-      lastSeq = lastSeqResult.lastseq;
-    }
+    const lastSeq = lastSeqResult ? lastSeqResult.lastseq : 1;
 
     const paymentTransactionID = generatePaymentTransactionID(
-      fecha,
-      user.id,
-      user.idvirtualcashpoint,
-      user.idcashpoint,
-      lastSeq
+      user.idcashpoint.split("-")[1] + user.idcashpoint.split("-")[2],
+      fecha.toISOString().slice(0, 10).replace(/-/g, ""),
+      user.id.toString().slice(-3).padStart(3, "0"),
+      user.idvirtualcashpoint.toString().slice(-3).padStart(3, "0"),
+      lastSeq.toString().padStart(6, "0")
     );
 
     const insertQuery = `
-          INSERT INTO Payment (PaymentTransactionID, valueDate, paymentAmountCurrencyCode, PayerContractAccountID, idUser, idVirtualCashPoint, idCashPoint)
-          VALUES ($1, CURRENT_DATE, $2, $3, $4, $5, $6)
-        `;
+      INSERT INTO Payment (
+        PaymentTransactionID, valueDate, paymentAmountCurrencyCode,
+        PayerContractAccountID, idUser, idVirtualCashPoint, idCashPoint
+      )
+      VALUES ($1, CURRENT_DATE, $2, $3, $4, $5, $6);
+    `;
 
     await db.none(insertQuery, [
       paymentTransactionID,
@@ -99,13 +81,12 @@ router.post("/realizar-pago", verifyToken, async (req, res) => {
       user.idcashpoint,
     ]);
 
-    // Actualizar el secuencial en la tabla LastPaymentSeq
     const updateSeqQuery = `
-INSERT INTO LastPaymentSeq (UserId, VirtualCashPointId, LastSeq)
-VALUES ($1, $2, $3)
-ON CONFLICT (UserId, VirtualCashPointId)
-DO UPDATE SET LastSeq = $3;
-`;
+      INSERT INTO LastPaymentSeq (UserId, VirtualCashPointId, LastSeq)
+      VALUES ($1, $2, $3)
+      ON CONFLICT (UserId, VirtualCashPointId)
+      DO UPDATE SET LastSeq = $3;
+    `;
 
     await db.none(updateSeqQuery, [
       user.id,
@@ -113,9 +94,17 @@ DO UPDATE SET LastSeq = $3;
       lastSeq + 1,
     ]);
 
+    const updateDebtQuery = `
+      UPDATE Client
+      SET Debt = Debt - $1
+      WHERE PayerContractAccountID = $2 OR CUEN = $2;
+    `;
+
+    await db.none(updateDebtQuery, [cantidadTotal, cuentaContrato]);
+
     res.status(200).json({
       message: "Pago realizado con éxito.",
-      date: fecha.toISOString().slice(0, 10), // Fecha actual en formato AAAA-MM-DD
+      date: fecha.toISOString().slice(0, 10),
       amount: cantidadTotal,
     });
   } catch (error) {
@@ -123,6 +112,22 @@ DO UPDATE SET LastSeq = $3;
     res
       .status(500)
       .json({ error: "Error en el servidor al procesar el pago." });
+  }
+});
+
+// Ruta protegida: Obtener lista de pagos
+router.get("/pagos", verifyToken, async (req, res) => {
+  try {
+    const query = `
+      SELECT * FROM Payment;
+    `;
+
+    const payments = await db.any(query);
+
+    res.status(200).json(payments);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Error en el servidor" });
   }
 });
 
