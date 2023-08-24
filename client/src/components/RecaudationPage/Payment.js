@@ -1,8 +1,16 @@
 import React, { useState } from "react";
 import { Alert, Container, Form, Button, InputGroup } from "react-bootstrap";
 import { Cash, Search } from "react-bootstrap-icons";
+import { useLocation } from "react-router-dom";
+import Modal from "react-bootstrap/Modal";
 
-function Payment() {
+function Payment({ user }) {
+  const [showModal, setShowModal] = useState(false); // Estado para controlar la visualización del modal
+  const [paymentData, setPaymentData] = useState(null); // Estado para almacenar los datos del pago
+
+  const location = useLocation();
+  const token = location.state?.token; // Utilizar el operador de encadenamiento opcional '?'
+
   const [cuentaContrato, setCuentaContrato] = useState("");
   const [cliente, setCliente] = useState("");
   const [deuda, setDeuda] = useState("");
@@ -17,7 +25,12 @@ function Payment() {
 
     try {
       const response = await fetch(
-        `api/paymentRoutes/buscar-cliente/${cuentaContrato}`
+        `api/paymentRoutes/buscar-cliente/${cuentaContrato}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`, // Agregar el token a la cabecera
+          },
+        }
       );
       if (response.ok) {
         const clienteEncontrado = await response.json();
@@ -47,7 +60,7 @@ function Payment() {
     }
   };
 
-  const realizarPago = () => {
+  const realizarPago = async () => {
     //Comprobar que todos los campos esten llenos
     if (dolares === "" || centavos === "") {
       setAlertInfo({
@@ -58,14 +71,41 @@ function Payment() {
     }
 
     const cantidadTotal = parseFloat(dolares + "." + centavos);
+
+    try {
+      const response = await fetch("api/paymentRoutes/realizar-pago", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          cantidadTotal,
+          cuentaContrato,
+          user,
+        }),
+      });
+
+      if (response.ok) {
+        const responseData = await response.json();
+        setPaymentData(responseData); // Almacenar los datos del pago
+        setShowModal(true); // Abrir el modal
+      } else {
+        setAlertInfo({
+          variant: "danger",
+          message: "Error al realizar el pago.",
+        });
+      }
+    } catch (error) {
+      console.error(error);
+      setAlertInfo({
+        variant: "danger",
+        message: "Ocurrió un error al realizar el pago.",
+      });
+    }
+
     //Si todo esta bien se reestablecen los campos
-    setCliente(null);
     setAlertInfo(null);
-    setDolares("");
-    setCentavos("");
-    setCuentaContrato("");
-    setDeuda("");
-    setDireccion("");
   };
 
   const handleCuentaContratoChange = (e) => {
@@ -85,6 +125,44 @@ function Payment() {
     // Asegurarse de que solo se ingresen números y máximo 2 dígitos
     const inputValue = e.target.value.replace(/[^\d]/g, "").slice(0, 2);
     setCentavos(inputValue);
+  };
+
+  const handlePrint = () => {
+    const printContent = `
+    Cuenta Contrato: ${cuentaContrato}
+    Nombre del Cliente: ${cliente.name}
+    Dirección: ${direccion}
+    Cantidad Pagada: ${paymentData.amount} $
+  `;
+
+    const printWindow = window.open("", "_blank");
+    printWindow.document.open();
+    printWindow.document.write(`
+    <pre>${printContent}</pre>
+    <style>
+      @media print {
+        body {
+          margin: 0;
+          padding: 0;
+        }
+        
+        pre {
+          margin-left: 24%;
+          font-size: 12px;
+          white-space: pre-wrap;
+        }
+      }
+    </style>
+    <script>
+      window.onload = function() {
+        window.print();
+        window.onafterprint = function() {
+          window.close();
+        };
+      };
+    </script>
+  `);
+    printWindow.document.close();
   };
 
   return (
@@ -164,6 +242,61 @@ function Payment() {
           </>
         )}
       </Form>
+      <Modal show={showModal} onHide={() => setShowModal(false)}>
+        <Modal.Header closeButton>
+          <Modal.Title>Pago Realizado con Éxito</Modal.Title>
+        </Modal.Header>
+        {cliente && (
+          <>
+            <Modal.Body>
+              {/* Mostrar los datos del pago */}
+              {paymentData && (
+                <>
+                  <p>
+                    <strong>Fecha: </strong>
+                    {paymentData.date}
+                  </p>
+                  <p>
+                    <strong>Cuenta Contrato: </strong>
+                    {cuentaContrato}
+                  </p>
+                  <p>
+                    <strong>Nombre del Cliente: </strong>
+                    {cliente.name}
+                  </p>
+                  <p>
+                    <strong>Dirección: </strong>
+                    {direccion}
+                  </p>
+                  <p>
+                    <strong>Cantidad Pagada: </strong>
+                    {paymentData.amount} $
+                  </p>
+                </>
+              )}
+            </Modal.Body>
+          </>
+        )}
+        <Modal.Footer>
+          <Button variant="outline-success" onClick={handlePrint}>
+            Imprimir Comprobante
+          </Button>
+          <Button
+            variant="primary"
+            onClick={() => {
+              setShowModal(false);
+              setCliente(null);
+              setDireccion("");
+              setDolares("");
+              setCentavos("");
+              setCuentaContrato("");
+              setDeuda("");
+            }}
+          >
+            Aceptar
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </Container>
   );
 }

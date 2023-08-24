@@ -27,7 +27,7 @@ function Login() {
         message: "Login correcto.",
       });
 
-      navigate("/recaudation"); // Redirigir a la página de UserCrud
+      navigate("/recaudation", { state: { token } }); // Redirigir a la página de UserCrud
     } catch (error) {
       setAlertInfo({
         variant: "danger",

@@ -3,6 +3,7 @@ const router = express.Router();
 const db = require("../db");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
+const verifyToken = require("./verifyToken");
 
 router.post("/", async (req, res) => {
   const { username, password } = req.body;
@@ -27,6 +28,7 @@ router.post("/", async (req, res) => {
         username: user.username,
         role: user.role,
         idvirtualcashpoint: user.idvirtualcashpoint,
+        idcashpoint: user.idcashpoint,
       },
       "secret-key",
       { expiresIn: "3h" }
@@ -37,14 +39,10 @@ router.post("/", async (req, res) => {
 });
 
 // Ruta protegida que solo puede ser accedida por usuarios autenticados
-router.get("/protected", (req, res) => {
-  const token = req.headers.authorization.split(" ")[1];
-  try {
-    const decoded = jwt.verify(token, "secret-key");
-    res.json({ message: "Ruta protegida accesible", user: decoded });
-  } catch (error) {
-    res.status(401).json({ message: "Token inválido" });
-  }
+router.get("/protected", verifyToken, (req, res) => {
+  // El middleware verifyToken verifica el token antes de llegar aquí
+  const decoded = req.user; // Esta información se guarda en el objeto de solicitud por el middleware
+  res.json({ message: "Ruta protegida accesible", user: decoded });
 });
 
 module.exports = router;

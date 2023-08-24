@@ -17,24 +17,24 @@ function Recaudation() {
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) {
-      // Si no hay token, redirige al inicio de sesión
+      // If no token, redirect to login
       navigate("/");
     } else {
-      // Si hay token, verifica su validez
+      // If token exists, verify its validity
       axios
         .get("/api/login/protected", {
           headers: { Authorization: `Bearer ${token}` },
         })
         .then((response) => {
           setToken(token);
-          setUser(response.data.user); // Guardar los datos del usuario
+          setUser(response.data.user); // Save user data
         })
         .catch((error) => {
           console.error(error);
           navigate("/");
         });
     }
-  }, [navigate]);
+  }, [navigate, setToken]); // Include setToken as a dependency
 
   const handleLogout = () => {
     // Limpiar el token y redirigir al inicio de sesión
@@ -53,7 +53,7 @@ function Recaudation() {
       <Container fluid className="my-3">
         <h1>Página de Recaudación</h1>
         <hr />
-        {activeComponent === "payment" && <Payment />}
+        {activeComponent === "payment" && <Payment user={user} />}
         {activeComponent === "cashClose" && <CashClose />}
         {activeComponent === "reversePayment" && <ReversePayment />}
         {activeComponent === "reverseCashClose" && <ReverseCashClose />}
