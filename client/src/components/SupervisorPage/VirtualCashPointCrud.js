@@ -141,31 +141,33 @@ function VirtualCashPointCrud(idcashpoint) {
       <Button variant="primary" onClick={() => setShowModal(true)}>
         Agregar Cajero Virtual
       </Button>
-      <Table striped bordered hover className="mt-3">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Nombre</th>
-            <th>Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          {virtualCashPoints.map((virtualCashPoint) => (
-            <tr key={virtualCashPoint.idvirtualcashpoint}>
-              <td>{virtualCashPoint.idvirtualcashpoint}</td>
-              <td>{virtualCashPoint.name}</td>
-              <td>
-                <Button
-                  variant="success"
-                  onClick={() => editVirtualCashPoint(virtualCashPoint)}
-                >
-                  Editar
-                </Button>{" "}
-              </td>
+      <div style={{ height: "70vh", overflowY: "auto" }}>
+        <Table striped bordered hover className="mt-3">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Nombre</th>
+              <th>Acciones</th>
             </tr>
-          ))}
-        </tbody>
-      </Table>
+          </thead>
+          <tbody>
+            {virtualCashPoints.map((virtualCashPoint) => (
+              <tr key={virtualCashPoint.idvirtualcashpoint}>
+                <td>{virtualCashPoint.idvirtualcashpoint}</td>
+                <td>{virtualCashPoint.name}</td>
+                <td>
+                  <Button
+                    variant="success"
+                    onClick={() => editVirtualCashPoint(virtualCashPoint)}
+                  >
+                    Editar
+                  </Button>{" "}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </Table>
+      </div>
       <Modal show={showModal} onHide={() => setShowModal(false)}>
         <Modal.Header closeButton>
           <Modal.Title>Agregar Cajero Virtual</Modal.Title>

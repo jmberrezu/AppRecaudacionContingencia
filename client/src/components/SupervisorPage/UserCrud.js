@@ -188,38 +188,40 @@ function UserCrud(idcashpoint) {
       >
         Agregar Usuario
       </Button>
-      <Table striped bordered hover className="mt-3">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Usuario</th>
-            <th>Rol</th>
-            <th>Caja Virtual</th>
-            <th>Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          {users.map((user) => (
-            <tr key={user.iduser}>
-              <td>{user.iduser}</td>
-              <td>{user.username}</td>
-              <td>{user.role}</td>
-              <td>{user.idvirtualcashpoint}</td>
-              <td>
-                <Button
-                  variant="success"
-                  onClick={() => {
-                    editUser(user);
-                    fetchVirtualCashPoints();
-                  }}
-                >
-                  Editar
-                </Button>{" "}
-              </td>
+      <div style={{ height: "70vh", overflowY: "auto" }}>
+        <Table striped bordered hover className="mt-3">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Usuario</th>
+              <th>Rol</th>
+              <th>Caja Virtual</th>
+              <th>Acciones</th>
             </tr>
-          ))}
-        </tbody>
-      </Table>
+          </thead>
+          <tbody>
+            {users.map((user) => (
+              <tr key={user.iduser}>
+                <td>{user.iduser}</td>
+                <td>{user.username}</td>
+                <td>{user.role}</td>
+                <td>{user.idvirtualcashpoint}</td>
+                <td>
+                  <Button
+                    variant="success"
+                    onClick={() => {
+                      editUser(user);
+                      fetchVirtualCashPoints();
+                    }}
+                  >
+                    Editar
+                  </Button>{" "}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </Table>
+      </div>
       <Modal show={showModal} onHide={() => setShowModal(false)}>
         <Modal.Header closeButton>
           <Modal.Title>Agregar Usuario</Modal.Title>

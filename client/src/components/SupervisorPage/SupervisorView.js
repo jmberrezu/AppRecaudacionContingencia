@@ -4,13 +4,15 @@ import UserCrud from "./UserCrud";
 import VirtualCashPointCrud from "./VirtualCashPointCrud";
 import { Container, Nav, Navbar, Button } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
-import { PersonCircle, BoxSeam } from "react-bootstrap-icons";
+import SendPrincipalService from "./SendPrincipalService";
+import Sidebar from "./Sidebar";
 
 function SupervisorView() {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [token, setToken] = useState("");
   const [userLoaded, setUserLoaded] = useState(false); // Nuevo estado
+  const [activeComponent, setActiveComponent] = useState("crudusuarios"); // Inicialmente muestra el componente Payment
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -47,44 +49,27 @@ function SupervisorView() {
   }
 
   return (
-    <div>
-      {user && ( // Renderizar solo si el usuario está disponible
-        <Navbar className="bg-body-tertiary stick" expand="lg" sticky="top">
-          <Container>
-            <Navbar.Toggle aria-controls="basic-navbar-nav" />
-            <Nav>
-              <Navbar.Brand>App Recaudación</Navbar.Brand>
-            </Nav>
-            <Navbar.Collapse id="basic-navbar-nav">
-              <Nav className="me-auto"></Nav>
-              <Nav>
-                <Nav.Item className="pe-4 pt-2">
-                  <PersonCircle size={16} className="align-middle mb-1 me-2" />
-                  Supervisor: <strong>{user.username}</strong>
-                </Nav.Item>
-                <Nav.Item className="pe-4 pt-2">
-                  <BoxSeam size={16} className="align-middle mb-1 me-2" />
-                  Caja: <strong>{user.idcashpoint}</strong>
-                </Nav.Item>
-                {user && (
-                  <Nav.Item className="">
-                    <Button variant="outline-primary" onClick={handleLogout}>
-                      Cerrar Sesión
-                    </Button>
-                  </Nav.Item>
-                )}
-              </Nav>
-            </Navbar.Collapse>
-          </Container>
-        </Navbar>
-      )}
-      {user && (
-        <Container>
+    <div className="d-flex">
+      <Sidebar
+        user={user}
+        handleLogout={handleLogout}
+        setActiveComponent={setActiveComponent}
+        activeComponent={activeComponent}
+      />
+
+      <Container fluid className="my-3">
+        <h1>Página de Supervisor</h1>
+        <hr />
+        {activeComponent === "crudusuarios" && (
           <UserCrud idcashpoint={user && user.idcashpoint} />
-          <hr className="my-4" />
+        )}
+        {activeComponent === "crudcajasvirtuales" && (
           <VirtualCashPointCrud idcashpoint={user && user.idcashpoint} />
-        </Container>
-      )}
+        )}
+        {activeComponent === "envio" && (
+          <SendPrincipalService idcashpoint={user && user.idcashpoint} />
+        )}
+      </Container>
     </div>
   );
 }
