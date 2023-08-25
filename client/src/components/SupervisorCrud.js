@@ -10,8 +10,11 @@ import {
   Alert,
   Form,
   Row,
+  Nav,
+  Navbar,
 } from "react-bootstrap";
 import bcrypt from "bcryptjs-react";
+import { PersonCircle, BoxSeam } from "react-bootstrap-icons";
 
 function SupervisorCrud() {
   const navigate = useNavigate();
@@ -233,163 +236,168 @@ function SupervisorCrud() {
   const handleLogout = () => {
     // Limpiar el token y redirigir al inicio de sesión
     localStorage.removeItem("token");
-    navigate("/");
+    navigate("/admin");
   };
 
   return (
-    <Container className="mt-5 ">
-      <Container className="my-3 ">
-        <Row className="justify-content-between">
-          <Col xs={9} className="g-0">
-            <h1>CRUD de Supervisores</h1>
-          </Col>
-          <Col xs={3} className="text-end">
-            <Button
-              className="mt-2"
-              variant="outline-primary"
-              onClick={handleLogout}
-            >
-              Cerrar Sesión
-            </Button>
-          </Col>
-        </Row>
-      </Container>
+    <div>
+      <Navbar className="bg-body-tertiary stick" expand="sm" sticky="top">
+        <Container>
+          <Navbar.Toggle aria-controls="basic-navbar-nav" />
+          <Nav>
+            <Navbar.Brand>App Recaudación</Navbar.Brand>
+          </Nav>
+          <Navbar.Collapse id="basic-navbar-nav">
+            <Nav className="me-auto"></Nav>
+            <Nav>
+              <Nav.Item className="">
+                <Button variant="outline-warning" onClick={handleLogout}>
+                  Cerrar Sesión
+                </Button>
+              </Nav.Item>
+            </Nav>
+          </Navbar.Collapse>
+        </Container>
+      </Navbar>
+      <Container className="mt-4 ">
+        <h1>CRUD de Supervisores</h1>
 
-      <Button
-        variant="primary"
-        onClick={() => {
-          setShowModal(true);
-        }}
-      >
-        Agregar Supervisor
-      </Button>
-      <Table striped bordered hover className="mt-3">
-        <thead>
-          <tr>
-            <th>ID de Caja</th>
-            <th>Usuario</th>
-            <th>Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          {supervisors.map((supervisor) => (
-            <tr key={supervisor.idcashpoint}>
-              <td>{supervisor.idcashpoint}</td>
-              <td>{supervisor.user}</td>
-              <td>
-                <Button
-                  variant="success"
-                  onClick={() => {
-                    editSupervisor(supervisor);
-                  }}
-                >
-                  Editar
-                </Button>{" "}
-              </td>
+        <Button
+          variant="warning"
+          onClick={() => {
+            setShowModal(true);
+          }}
+        >
+          Agregar Supervisor
+        </Button>
+        <Table striped bordered hover className="mt-3">
+          <thead>
+            <tr>
+              <th>ID de Caja</th>
+              <th>Usuario</th>
+              <th>Acciones</th>
             </tr>
-          ))}
-        </tbody>
-      </Table>
-      <Modal show={showModal} onHide={() => setShowModal(false)}>
-        <Modal.Header closeButton>
-          <Modal.Title>Agregar Supervisor</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          {/* Mostrar alerta si es necesario */}
-          {alertInfo && (
-            <Alert variant={alertInfo.variant}>{alertInfo.message}</Alert>
-          )}
-          {/* Formulario para agregar supervisor */}
-          <Form>
-            <Form.Group>
-              <Form.Label>ID de Caja</Form.Label>
-              <Form.Control
-                type="text"
-                value={idCashPoint}
-                onChange={(e) => setIdCashPoint(e.target.value)}
-              />
-            </Form.Group>
-            <Form.Group>
-              <Form.Label>Usuario</Form.Label>
-              <Form.Control
-                type="text"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-              />
-            </Form.Group>
-            <Form.Group>
-              <Form.Label>Contraseña</Form.Label>
-              <Form.Control
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
-            </Form.Group>
-          </Form>
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowModal(false)}>
-            Cerrar
-          </Button>
-          <Button variant="primary" onClick={createSupervisor}>
-            Agregar
-          </Button>
-        </Modal.Footer>
-      </Modal>
-      <Modal show={showEditModal} onHide={() => setShowEditModal(false)}>
-        <Modal.Header closeButton>
-          <Modal.Title>Editar Supervisor</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          {/* Mostrar alerta si es necesario */}
-          {alertInfo && (
-            <Alert variant={alertInfo.variant}>{alertInfo.message}</Alert>
-          )}
-          {/* Formulario para editar supervisor */}
-          <Form>
-            <Form.Group>
-              <Form.Label>ID de Caja</Form.Label>
-              <Form.Control
-                type="text"
-                value={idCashPoint}
-                disabled={true}
-                onChange={(e) => setIdCashPoint(e.target.value)}
-              />
-            </Form.Group>
-            <Form.Group>
-              <Form.Label>Usuario</Form.Label>
-              <Form.Control
-                type="text"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-              />
-            </Form.Group>
-            <Form.Group>
-              <Form.Label>Contraseña</Form.Label>
-              <Form.Control
-                type="password"
-                placeholder="Ingrese una nueva contraseña"
-                onChange={(e) => setPassword(e.target.value)}
-              />
-            </Form.Group>
-          </Form>
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowEditModal(false)}>
-            Cancelar
-          </Button>
-          <Button
-            variant="danger"
-            onClick={() => deleteSupervisor(idCashPoint)}
-          >
-            Eliminar
-          </Button>
-          <Button variant="primary" onClick={updateSupervisor}>
-            Guardar
-          </Button>
-        </Modal.Footer>
-      </Modal>
-    </Container>
+          </thead>
+          <tbody>
+            {supervisors.map((supervisor) => (
+              <tr key={supervisor.idcashpoint}>
+                <td>{supervisor.idcashpoint}</td>
+                <td>{supervisor.user}</td>
+                <td>
+                  <Button
+                    variant="success"
+                    onClick={() => {
+                      editSupervisor(supervisor);
+                    }}
+                  >
+                    Editar
+                  </Button>{" "}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </Table>
+        <Modal show={showModal} onHide={() => setShowModal(false)}>
+          <Modal.Header closeButton>
+            <Modal.Title>Agregar Supervisor</Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+            {/* Mostrar alerta si es necesario */}
+            {alertInfo && (
+              <Alert variant={alertInfo.variant}>{alertInfo.message}</Alert>
+            )}
+            {/* Formulario para agregar supervisor */}
+            <Form>
+              <Form.Group>
+                <Form.Label>ID de Caja</Form.Label>
+                <Form.Control
+                  type="text"
+                  value={idCashPoint}
+                  onChange={(e) => setIdCashPoint(e.target.value)}
+                />
+              </Form.Group>
+              <Form.Group>
+                <Form.Label>Usuario</Form.Label>
+                <Form.Control
+                  type="text"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                />
+              </Form.Group>
+              <Form.Group>
+                <Form.Label>Contraseña</Form.Label>
+                <Form.Control
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
+              </Form.Group>
+            </Form>
+          </Modal.Body>
+          <Modal.Footer>
+            <Button variant="secondary" onClick={() => setShowModal(false)}>
+              Cerrar
+            </Button>
+            <Button variant="primary" onClick={createSupervisor}>
+              Agregar
+            </Button>
+          </Modal.Footer>
+        </Modal>
+        <Modal show={showEditModal} onHide={() => setShowEditModal(false)}>
+          <Modal.Header closeButton>
+            <Modal.Title>Editar Supervisor</Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+            {/* Mostrar alerta si es necesario */}
+            {alertInfo && (
+              <Alert variant={alertInfo.variant}>{alertInfo.message}</Alert>
+            )}
+            {/* Formulario para editar supervisor */}
+            <Form>
+              <Form.Group>
+                <Form.Label>ID de Caja</Form.Label>
+                <Form.Control
+                  type="text"
+                  value={idCashPoint}
+                  disabled={true}
+                  onChange={(e) => setIdCashPoint(e.target.value)}
+                />
+              </Form.Group>
+              <Form.Group>
+                <Form.Label>Usuario</Form.Label>
+                <Form.Control
+                  type="text"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                />
+              </Form.Group>
+              <Form.Group>
+                <Form.Label>Contraseña</Form.Label>
+                <Form.Control
+                  type="password"
+                  placeholder="Ingrese una nueva contraseña"
+                  onChange={(e) => setPassword(e.target.value)}
+                />
+              </Form.Group>
+            </Form>
+          </Modal.Body>
+          <Modal.Footer>
+            <Button variant="secondary" onClick={() => setShowEditModal(false)}>
+              Cancelar
+            </Button>
+            <Button
+              variant="danger"
+              onClick={() => deleteSupervisor(idCashPoint)}
+            >
+              Eliminar
+            </Button>
+            <Button variant="primary" onClick={updateSupervisor}>
+              Guardar
+            </Button>
+          </Modal.Footer>
+        </Modal>
+      </Container>
+    </div>
   );
 }
 

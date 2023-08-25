@@ -2,13 +2,15 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import UserCrud from "./UserCrud";
 import VirtualCashPointCrud from "./VirtualCashPointCrud";
-import { Container, Row, Col, Button } from "react-bootstrap";
+import { Container, Nav, Navbar, Button } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
+import { PersonCircle, BoxSeam } from "react-bootstrap-icons";
 
 function SupervisorView() {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [token, setToken] = useState("");
+  const [userLoaded, setUserLoaded] = useState(false); // Nuevo estado
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -24,10 +26,11 @@ function SupervisorView() {
         .then((response) => {
           setToken(token);
           setUser(response.data.user); // Save user data
+          setUserLoaded(true); // Indicar que el usuario se ha cargado
         })
         .catch((error) => {
           console.error(error);
-          navigate("/");
+          navigate("/supervisor");
         });
     }
   }, [navigate, setToken]); // Include setToken as a dependency
@@ -35,34 +38,54 @@ function SupervisorView() {
   const handleLogout = () => {
     // Limpiar el token y redirigir al inicio de sesión
     localStorage.removeItem("token");
-    navigate("/");
+    navigate("/supervisor");
   };
 
+  if (!userLoaded) {
+    // Mostrar algún indicador de carga mientras se obtienen los datos del usuario
+    return <div>Cargando...</div>;
+  }
+
   return (
-    <Container>
-      <Container className="my-3 ">
-        <Row className="justify-content-between">
-          <Col xs={8} className="g-0">
-            <h3 className="text-center my-3">
-              {user &&
-                `Bienvenido, ${user.username}, a la caja ${user.idcashpoint}`}
-            </h3>
-          </Col>
-          <Col xs={4} className="text-end">
-            <Button
-              className="mt-2"
-              variant="outline-primary"
-              onClick={handleLogout}
-            >
-              Cerrar Sesión
-            </Button>
-          </Col>
-        </Row>
-      </Container>
-      <hr />
-      <UserCrud idcashpoint={user && user.idcashpoint} />
-      <VirtualCashPointCrud idcashpoint={user && user.idcashpoint} />
-    </Container>
+    <div>
+      {user && ( // Renderizar solo si el usuario está disponible
+        <Navbar className="bg-body-tertiary stick" expand="lg" sticky="top">
+          <Container>
+            <Navbar.Toggle aria-controls="basic-navbar-nav" />
+            <Nav>
+              <Navbar.Brand>App Recaudación</Navbar.Brand>
+            </Nav>
+            <Navbar.Collapse id="basic-navbar-nav">
+              <Nav className="me-auto"></Nav>
+              <Nav>
+                <Nav.Item className="pe-4 pt-2">
+                  <PersonCircle size={16} className="align-middle mb-1 me-2" />
+                  Supervisor: <strong>{user.username}</strong>
+                </Nav.Item>
+                <Nav.Item className="pe-4 pt-2">
+                  <BoxSeam size={16} className="align-middle mb-1 me-2" />
+                  Caja: <strong>{user.idcashpoint}</strong>
+                </Nav.Item>
+                {user && (
+                  <Nav.Item className="">
+                    <Button variant="outline-primary" onClick={handleLogout}>
+                      Cerrar Sesión
+                    </Button>
+                  </Nav.Item>
+                )}
+              </Nav>
+            </Navbar.Collapse>
+          </Container>
+        </Navbar>
+      )}
+      {user && (
+        <Container>
+          <UserCrud idcashpoint={user && user.idcashpoint} />
+          <hr className="my-4" />
+          <VirtualCashPointCrud idcashpoint={user && user.idcashpoint} />
+        </Container>
+      )}
+    </div>
   );
 }
 
