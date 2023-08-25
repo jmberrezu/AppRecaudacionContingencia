@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Container,
   Table,
@@ -13,21 +13,30 @@ import { CaretUpFill, CaretDownFill } from "react-bootstrap-icons";
 function ReversePayment({ token }) {
   const [payments, setPayments] = useState([]);
   const [sortedPayments, setSortedPayments] = useState([]);
-  const [sortBy, setSortBy] = useState("Fecha"); // Ordenar por defecto por fecha
-  const [sortDirection, setSortDirection] = useState("asc"); // Dirección de ordenamiento
+  const [sortBy, setSortBy] = useState("Fecha");
+  const [sortDirection, setSortDirection] = useState("asc");
 
-  useEffect(() => {
-    // Llamada a la función para obtener la lista de pagos al cargar el componente
-    fetchPayments();
-  }, []);
+  // Función para obtener la lista de pagos
+  const fetchPayments = useCallback(async () => {
+    try {
+      const response = await fetch("api/paymentRoutes/pagos", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
-  useEffect(() => {
-    // Cuando la lista de pagos cambie, ordenar la copia y actualizar sortedPayments
-    sortPayments();
-  }, [payments, sortBy, sortDirection]);
+      if (response.ok) {
+        const paymentsData = await response.json();
+        setPayments(paymentsData);
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  }, [token]);
 
-  const sortPayments = () => {
-    let sortedPaymentsCopy = [...payments]; // Mantener una copia de la lista original
+  // Función para ordenar los pagos
+  const sortPayments = useCallback(() => {
+    let sortedPaymentsCopy = [...payments];
     switch (sortBy) {
       case "Fecha":
         sortedPaymentsCopy.sort(
@@ -49,30 +58,21 @@ function ReversePayment({ token }) {
       default:
         break;
     }
-    setSortedPayments(sortedPaymentsCopy); // Actualizar la copia ordenada
-  };
+    setSortedPayments(sortedPaymentsCopy);
+  }, [payments, sortBy, sortDirection]);
+
+  useEffect(() => {
+    fetchPayments();
+  }, [fetchPayments]);
+
+  useEffect(() => {
+    sortPayments();
+  }, [sortPayments]);
 
   const toggleSortDirection = () => {
     setSortDirection((prevDirection) =>
       prevDirection === "asc" ? "desc" : "asc"
     );
-  };
-
-  const fetchPayments = async () => {
-    try {
-      const response = await fetch("api/paymentRoutes/pagos", {
-        headers: {
-          Authorization: `Bearer ${token}`, // Agregar el token a la cabecera
-        },
-      });
-
-      if (response.ok) {
-        const paymentsData = await response.json();
-        setPayments(paymentsData);
-      }
-    } catch (error) {
-      console.error(error);
-    }
   };
 
   const anularPago = async (id) => {

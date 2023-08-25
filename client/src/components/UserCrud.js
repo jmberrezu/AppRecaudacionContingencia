@@ -139,8 +139,6 @@ function UserCrud() {
           idVirtualCashPoint,
         };
 
-        console.log(password);
-
         if (password !== "") {
           const hashedPassword = await bcrypt.hash(password, 10);
           updatedUser = {
