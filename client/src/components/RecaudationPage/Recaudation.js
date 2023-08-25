@@ -56,7 +56,7 @@ function Recaudation() {
         {activeComponent === "payment" && <Payment user={user} token={token} />}
         {activeComponent === "cashClose" && <CashClose />}
         {activeComponent === "reversePayment" && (
-          <ReversePayment token={token} />
+          <ReversePayment token={token} idcashpoint={user.idcashpoint} />
         )}
         {activeComponent === "reverseCashClose" && <ReverseCashClose />}
       </Container>

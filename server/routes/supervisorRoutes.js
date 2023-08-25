@@ -23,8 +23,6 @@ router.post("/", async (req, res) => {
       return res.status(401).json({ message: "Contraseña Incorrecta" });
     }
 
-    console.log(user);
-
     const token = jwt.sign(
       {
         username: user.user,

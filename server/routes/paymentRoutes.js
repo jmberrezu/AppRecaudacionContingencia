@@ -116,13 +116,14 @@ router.post("/realizar-pago", verifyToken, async (req, res) => {
 });
 
 // Ruta protegida: Obtener lista de pagos
-router.get("/pagos", verifyToken, async (req, res) => {
+router.get("/pagos/:idcashPoint", verifyToken, async (req, res) => {
+  const idcashPoint = req.params.idcashPoint;
   try {
     const query = `
-      SELECT * FROM Payment;
+      SELECT * FROM Payment WHERE idCashPoint=$1;
     `;
 
-    const payments = await db.any(query);
+    const payments = await db.any(query, [idcashPoint]);
 
     res.status(200).json(payments);
   } catch (error) {

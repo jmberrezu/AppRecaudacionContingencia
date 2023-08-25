@@ -41,7 +41,6 @@ router.put("/:id", async (req, res) => {
   const id = req.params.id;
   const { username, password, role, idCashPoint, idVirtualCashPoint } =
     req.body;
-  console.log(idCashPoint);
   try {
     const updatedUser = await db.one(
       `UPDATE "User" SET username=$1, password=$2, role=$3, idCashPoint=$4, idVirtualCashPoint=$5

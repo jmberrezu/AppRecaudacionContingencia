@@ -10,7 +10,8 @@ import {
 } from "react-bootstrap";
 import { CaretUpFill, CaretDownFill } from "react-bootstrap-icons";
 
-function ReversePayment({ token }) {
+function ReversePayment(props) {
+  const { token, idcashpoint } = props;
   const [payments, setPayments] = useState([]);
   const [sortedPayments, setSortedPayments] = useState([]);
   const [sortBy, setSortBy] = useState("Fecha");
@@ -19,7 +20,7 @@ function ReversePayment({ token }) {
   // Función para obtener la lista de pagos
   const fetchPayments = useCallback(async () => {
     try {
-      const response = await fetch("api/paymentRoutes/pagos", {
+      const response = await fetch(`/api/paymentRoutes/pagos/${idcashpoint}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -32,7 +33,7 @@ function ReversePayment({ token }) {
     } catch (error) {
       console.error(error);
     }
-  }, [token]);
+  }, [idcashpoint, token]);
 
   // Función para ordenar los pagos
   const sortPayments = useCallback(() => {
