@@ -5,7 +5,7 @@ const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 const verifyToken = require("./verifyToken");
 
-router.post("/", verifyToken, async (req, res) => {
+router.post("/", async (req, res) => {
   const { username, password } = req.body;
 
   // Busca usuario en la base de datos
@@ -26,8 +26,6 @@ router.post("/", verifyToken, async (req, res) => {
       {
         id: user.iduser,
         username: user.username,
-        role: user.role,
-        idvirtualcashpoint: user.idvirtualcashpoint,
         idcashpoint: user.idcashpoint,
       },
       "secret-key",

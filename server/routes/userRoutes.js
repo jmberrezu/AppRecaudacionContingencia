@@ -2,10 +2,14 @@ const express = require("express");
 const router = express.Router();
 const db = require("../db");
 
-// Obtener todos los usuarios
-router.get("/", async (req, res) => {
+// Obtener todos los usuarios de una caja en especifico
+router.get("/:idcashPoint", async (req, res) => {
+  const idcashPoint = req.params.idcashPoint;
   try {
-    const users = await db.any('SELECT * FROM "User"');
+    const users = await db.any(
+      'SELECT * FROM "User" WHERE idCashPoint=$1',
+      idcashPoint
+    );
     res.json(users);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -37,6 +41,7 @@ router.put("/:id", async (req, res) => {
   const id = req.params.id;
   const { username, password, role, idCashPoint, idVirtualCashPoint } =
     req.body;
+  console.log(idCashPoint);
   try {
     const updatedUser = await db.one(
       `UPDATE "User" SET username=$1, password=$2, role=$3, idCashPoint=$4, idVirtualCashPoint=$5

@@ -3,9 +3,13 @@ const router = express.Router();
 const db = require("../db");
 
 // Obtener todos los cajeros virtuales
-router.get("/", async (req, res) => {
+router.get("/:idcashPoint", async (req, res) => {
+  const idcashPoint = req.params.idcashPoint;
   try {
-    const virtualCashPoints = await db.any("SELECT * FROM VirtualCashPoint");
+    const virtualCashPoints = await db.any(
+      "SELECT * FROM VirtualCashPoint WHERE idCashPoint=$1",
+      idcashPoint
+    );
     res.json(virtualCashPoints);
   } catch (error) {
     res.status(500).json({ error: error.message });

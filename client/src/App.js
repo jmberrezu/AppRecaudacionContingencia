@@ -5,16 +5,18 @@ import Login from "./components/Login";
 import Recaudation from "./components/RecaudationPage/Recaudation";
 import AdminLogin from "./components/AdminLogin";
 import SupevisorCrud from "./components/SupervisorCrud";
+import SupervisorLogin from "./components/SupervisorLogin";
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Login />} />
-        <Route path="/supervisor" element={<SupervisorView />} />
+        <Route path="/supervisorview" element={<SupervisorView />} />
         <Route path="/recaudation" element={<Recaudation />} />
         <Route path="/supervisorcrud" element={<SupevisorCrud />} />
         <Route path="/admin" element={<AdminLogin />} />
+        <Route path="/supervisor" element={<SupervisorLogin />} />
       </Routes>
     </BrowserRouter>
   );

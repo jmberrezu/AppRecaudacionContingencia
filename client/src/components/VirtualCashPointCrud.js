@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { Container, Table, Button, Modal, Form, Alert } from "react-bootstrap";
 
-function VirtualCashPointCrud() {
+function VirtualCashPointCrud(idcashpoint) {
   // Estado para almacenar los cajeros virtuales
   const [virtualCashPoints, setVirtualCashPoints] = useState([]);
   // Estados para controlar los modales
@@ -10,7 +10,6 @@ function VirtualCashPointCrud() {
   const [showEditModal, setShowEditModal] = useState(false);
   // Estados para controlar los campos del formulario
   const [name, setName] = useState("");
-  const [idCashPoint, setIdCashPoint] = useState("");
   // Estado para controlar los mensajes de alerta
   const [alertInfo, setAlertInfo] = useState(null);
   // Estado para controlar el cajero virtual que se está editando
@@ -18,14 +17,16 @@ function VirtualCashPointCrud() {
 
   // Cargo los cajeros virtuales al cargar el componente
   useEffect(() => {
-    fetchVirtualCashPoints();
-  }, []);
+    if (idcashpoint) {
+      // Verifica si idcashpoint existe antes de llamar a fetchVirtualCashPoints
+      fetchVirtualCashPoints();
+    }
+  }, [idcashpoint]);
 
   // Limiar el formulario y alerta cuando se cierra el modal
   useEffect(() => {
     if (!showModal) {
       setName("");
-      setIdCashPoint("");
       setAlertInfo(null);
     }
   }, [showModal]);
@@ -34,7 +35,6 @@ function VirtualCashPointCrud() {
   useEffect(() => {
     if (!showEditModal) {
       setName("");
-      setIdCashPoint("");
       setAlertInfo(null);
     }
   }, [showEditModal]);
@@ -42,7 +42,9 @@ function VirtualCashPointCrud() {
   // Función para obtener la lista de cajeros virtuales
   const fetchVirtualCashPoints = async () => {
     try {
-      const response = await axios.get("/api/virtualCashPoints");
+      const response = await axios.get(
+        `/api/virtualCashPoints/${idcashpoint.idcashpoint}`
+      );
       setVirtualCashPoints(response.data);
     } catch (error) {
       console.error(error);
@@ -52,13 +54,12 @@ function VirtualCashPointCrud() {
   // Función para crear un nuevo cajero virtual
   const createVirtualCashPoint = async () => {
     try {
-      if (name && idCashPoint) {
+      if (name) {
         await axios.post("/api/virtualCashPoints", {
           name,
-          idCashPoint,
+          idCashPoint: idcashpoint.idcashpoint,
         });
         setName("");
-        setIdCashPoint("");
         setAlertInfo({
           variant: "success",
           message: "Cajero virtual agregado exitosamente.",
@@ -79,7 +80,6 @@ function VirtualCashPointCrud() {
   const editVirtualCashPoint = (virtualCashPoint) => {
     setEditingVirtualCashPoint(virtualCashPoint);
     setName(virtualCashPoint.name);
-    setIdCashPoint(virtualCashPoint.idcashpoint);
     setShowEditModal(true);
   };
 
@@ -90,7 +90,7 @@ function VirtualCashPointCrud() {
         const updatedVirtualCashPoint = {
           ...editingVirtualCashPoint,
           name,
-          idCashPoint: idCashPoint,
+          idCashPoint: idcashpoint.idcashpoint,
         };
         await axios.put(
           `/api/virtualCashPoints/${editingVirtualCashPoint.idvirtualcashpoint}`,
@@ -100,7 +100,6 @@ function VirtualCashPointCrud() {
         setEditingVirtualCashPoint(null);
         setShowEditModal(false);
         setName("");
-        setIdCashPoint("");
         setAlertInfo({
           variant: "success",
           message: "Cajero virtual actualizado exitosamente.",
@@ -147,7 +146,6 @@ function VirtualCashPointCrud() {
           <tr>
             <th>ID</th>
             <th>Nombre</th>
-            <th>ID de Caja</th>
             <th>Acciones</th>
           </tr>
         </thead>
@@ -156,7 +154,6 @@ function VirtualCashPointCrud() {
             <tr key={virtualCashPoint.idvirtualcashpoint}>
               <td>{virtualCashPoint.idvirtualcashpoint}</td>
               <td>{virtualCashPoint.name}</td>
-              <td>{virtualCashPoint.idcashpoint}</td>
               <td>
                 <Button
                   variant="success"
@@ -186,14 +183,6 @@ function VirtualCashPointCrud() {
                 onChange={(e) => setName(e.target.value)}
               />
             </Form.Group>
-            <Form.Group>
-              <Form.Label>ID de Caja</Form.Label>
-              <Form.Control
-                type="text"
-                value={idCashPoint}
-                onChange={(e) => setIdCashPoint(e.target.value)}
-              />
-            </Form.Group>
           </Form>
         </Modal.Body>
         <Modal.Footer>
@@ -220,14 +209,6 @@ function VirtualCashPointCrud() {
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-              />
-            </Form.Group>
-            <Form.Group>
-              <Form.Label>ID de Caja</Form.Label>
-              <Form.Control
-                type="text"
-                value={idCashPoint}
-                onChange={(e) => setIdCashPoint(e.target.value)}
               />
             </Form.Group>
           </Form>

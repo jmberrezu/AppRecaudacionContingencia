@@ -9,9 +9,10 @@ router.post("/", async (req, res) => {
   const { username, password } = req.body;
 
   // Busca usuario en la base de datos
-  const user = await db.oneOrNone('SELECT * FROM "User" WHERE username = $1', [
-    username,
-  ]);
+  const user = await db.oneOrNone(
+    'SELECT * FROM Supervisor WHERE "user" = $1',
+    [username]
+  );
 
   if (!user) {
     // Si el usuario no existe
@@ -22,12 +23,11 @@ router.post("/", async (req, res) => {
       return res.status(401).json({ message: "Contraseña Incorrecta" });
     }
 
+    console.log(user);
+
     const token = jwt.sign(
       {
-        id: user.iduser,
-        username: user.username,
-        role: user.role,
-        idvirtualcashpoint: user.idvirtualcashpoint,
+        username: user.user,
         idcashpoint: user.idcashpoint,
       },
       "secret-key",

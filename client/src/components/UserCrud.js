@@ -3,7 +3,7 @@ import axios from "axios";
 import { Container, Table, Button, Modal, Form, Alert } from "react-bootstrap";
 import bcrypt from "bcryptjs-react";
 
-function UserCrud() {
+function UserCrud(idcashpoint) {
   // Estado para almacenar los usuarios
   const [users, setUsers] = useState([]);
   // Estados para controlar la visibilidad de los modales
@@ -13,7 +13,6 @@ function UserCrud() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [role, setRole] = useState("");
-  const [idCashPoint, setIdCashPoint] = useState("");
   const [idVirtualCashPoint, setIdVirtualCashPoint] = useState("");
   // Estado para almacenar datos de cajas virtuales
   const [virtualCashPoints, setVirtualCashPoints] = useState([]);
@@ -24,8 +23,11 @@ function UserCrud() {
 
   // Cargar datos iniciales
   useEffect(() => {
-    fetchUsers();
-  }, []);
+    if (idcashpoint) {
+      // Verifica si idcashpoint existe antes de llamar a fetchUsers
+      fetchUsers();
+    }
+  }, [idcashpoint]); // Agrega idcashpoint como dependencia
 
   // Limpiar formulario y alerta cuando se cierra el modal
   useEffect(() => {
@@ -33,7 +35,6 @@ function UserCrud() {
       setUsername("");
       setPassword("");
       setRole("");
-      setIdCashPoint("");
       setIdVirtualCashPoint("");
       setAlertInfo(null);
     }
@@ -45,16 +46,15 @@ function UserCrud() {
       setUsername("");
       setPassword("");
       setRole("");
-      setIdCashPoint("");
       setIdVirtualCashPoint("");
       setAlertInfo(null);
     }
   }, [showEditModal]);
 
-  // Función para obtener la lista de usuarios
+  // Función para obtener la lista de usuarios de la caja en especifico
   const fetchUsers = async () => {
     try {
-      const response = await axios.get("/api/users");
+      const response = await axios.get(`/api/users/${idcashpoint.idcashpoint}`);
       setUsers(response.data);
     } catch (error) {
       console.error(error);
@@ -65,7 +65,9 @@ function UserCrud() {
   const fetchVirtualCashPoints = async () => {
     let response = null;
     try {
-      response = await axios.get("/api/virtualcashpoints");
+      response = await axios.get(
+        `/api/virtualcashpoints/${idcashpoint.idcashpoint}`
+      );
       setVirtualCashPoints(response.data);
     } catch (error) {
       console.error(error);
@@ -87,19 +89,18 @@ function UserCrud() {
   // Función para crear un usuario
   const createUser = async () => {
     try {
-      if (username && password && role && idCashPoint && idVirtualCashPoint) {
+      if (username && password && role && idVirtualCashPoint) {
         const hashedPassword = await bcrypt.hash(password, 10);
         await axios.post("/api/users", {
           username,
           password: hashedPassword,
           role,
-          idCashPoint,
+          idCashPoint: idcashpoint.idcashpoint,
           idVirtualCashPoint,
         });
         setUsername("");
         setPassword("");
         setRole("");
-        setIdCashPoint("");
         setIdVirtualCashPoint("");
         setAlertInfo({
           variant: "success",
@@ -122,7 +123,6 @@ function UserCrud() {
     setEditingUser(user);
     setUsername(user.username);
     setRole(user.role);
-    setIdCashPoint(user.idcashpoint);
     setIdVirtualCashPoint(user.idvirtualcashpoint);
     setShowEditModal(true);
   };
@@ -135,7 +135,7 @@ function UserCrud() {
           ...editingUser,
           username,
           role,
-          idCashPoint,
+          idCashPoint: idcashpoint.idcashpoint,
           idVirtualCashPoint,
         };
 
@@ -153,7 +153,6 @@ function UserCrud() {
         setUsername("");
         setPassword("");
         setRole("");
-        setIdCashPoint("");
         setIdVirtualCashPoint("");
         setAlertInfo({
           variant: "success",
@@ -195,7 +194,6 @@ function UserCrud() {
             <th>ID</th>
             <th>Usuario</th>
             <th>Rol</th>
-            <th>Caja</th>
             <th>Caja Virtual</th>
             <th>Acciones</th>
           </tr>
@@ -206,7 +204,6 @@ function UserCrud() {
               <td>{user.iduser}</td>
               <td>{user.username}</td>
               <td>{user.role}</td>
-              <td>{user.idcashpoint}</td>
               <td>{user.idvirtualcashpoint}</td>
               <td>
                 <Button
@@ -259,14 +256,6 @@ function UserCrud() {
                 <option value="cajero">Cajero</option>
                 <option value="gerente">Gerente</option>
               </Form.Select>
-            </Form.Group>
-            <Form.Group>
-              <Form.Label>ID de Caja</Form.Label>
-              <Form.Control
-                type="text"
-                value={idCashPoint}
-                onChange={(e) => setIdCashPoint(e.target.value)}
-              />
             </Form.Group>
             <Form.Group>
               <Form.Label>Caja Virtual</Form.Label>
@@ -331,14 +320,6 @@ function UserCrud() {
                 <option value="cajero">Cajero</option>
                 <option value="gerente">Gerente</option>
               </Form.Select>
-            </Form.Group>
-            <Form.Group>
-              <Form.Label>ID de Caja</Form.Label>
-              <Form.Control
-                type="text"
-                value={idCashPoint}
-                onChange={(e) => setIdCashPoint(e.target.value)}
-              />
             </Form.Group>
             <Form.Group>
               <Form.Label>Caja Virtual</Form.Label>

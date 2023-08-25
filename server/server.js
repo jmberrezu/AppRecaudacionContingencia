@@ -12,12 +12,14 @@ const virtualCashPointsRoutes = require("./routes/virtualCashPointsRoutes");
 const loginRoutes = require("./routes/loginRoutes");
 const paymentRoutes = require("./routes/paymentRoutes");
 const adminRoutes = require("./routes/adminRoutes");
+const supervisorRoutes = require("./routes/supervisorRoutes");
 
 app.use("/api/users", userRoutes);
 app.use("/api/virtualCashPoints", virtualCashPointsRoutes);
 app.use("/api/login", loginRoutes);
 app.use("/api/paymentRoutes", paymentRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/supervisor", supervisorRoutes);
 
 app.listen(port, () => {
   console.log(`Servidor Express escuchando en el puerto ${port}`);
