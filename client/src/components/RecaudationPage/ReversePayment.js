@@ -127,10 +127,12 @@ function ReversePayment(props) {
           <thead>
             <tr>
               <th>PID</th>
+              <th>Grupo</th>
               <th>Fecha</th>
               <th>Monto</th>
               <th>Caja</th>
               <th>Usuario</th>
+
               <th>Acciones</th>
             </tr>
           </thead>
@@ -138,6 +140,7 @@ function ReversePayment(props) {
             {sortedPayments.map((payment) => (
               <tr key={payment.paymenttransactionid}>
                 <td>{payment.paymenttransactionid}</td>
+                <td>{payment.cashpointpaymentgroupreferenceid}</td>
                 <td>{formatDate(payment.valuedate)}</td>
                 <td>{payment.paymentamountcurrencycode}</td>
                 <td>{payment.idvirtualcashpoint}</td>

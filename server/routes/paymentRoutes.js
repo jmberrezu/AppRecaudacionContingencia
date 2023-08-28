@@ -14,6 +14,10 @@ function generatePaymentTransactionID(
   return `PID-${officeCode}-${currentDate}-${formattedUserId}${formattedVirtualCashPointId}${formattedSecuencial}`;
 }
 
+function generateGroupID(officeCode, currentDate, formattedVirtualCashPointId) {
+  return `${officeCode}-${currentDate}${formattedVirtualCashPointId}`;
+}
+
 // Ruta protegida: Buscar cliente por cuenta o contrato
 router.get("/buscar-cliente/:cuentaContrato", verifyToken, async (req, res) => {
   const { cuentaContrato } = req.params;
@@ -43,6 +47,45 @@ router.post("/realizar-pago", verifyToken, async (req, res) => {
   const fecha = new Date();
 
   try {
+    let groupID = generateGroupID(
+      user.idcashpoint.split("-")[1] + user.idcashpoint.split("-")[2],
+      fecha.toISOString().slice(0, 10).replace(/-/g, ""),
+      user.idvirtualcashpoint.toString().slice(-2).padStart(2, "0")
+    );
+
+    // Si el groupID no esta en la base de datos, se agrega
+    const insertGroupIDQuery = `
+      INSERT INTO PaymentGroup (CashPointPaymentGroupReferenceID)
+      VALUES ($1)
+      ON CONFLICT (CashPointPaymentGroupReferenceID)
+      DO NOTHING;
+    `;
+    await db.none(insertGroupIDQuery, [groupID]);
+
+    // Verificar si el PaymentGroup ya está en CashClosing
+    const checkCashClosingQuery = `
+      SELECT CashPointPaymentGroupReferenceID
+      FROM CashClosing
+      WHERE CashPointPaymentGroupReferenceID = $1;
+    `;
+
+    const cashClosingExists = await db.oneOrNone(checkCashClosingQuery, [
+      groupID,
+    ]);
+
+    //Si existe un CashClosing con el PaymentGroup, el groupID tiene que ser del dia siguiente
+    if (cashClosingExists) {
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      groupID = generateGroupID(
+        user.idcashpoint.split("-")[1] + user.idcashpoint.split("-")[2],
+        tomorrow.toISOString().slice(0, 10).replace(/-/g, ""),
+        user.idvirtualcashpoint.toString().slice(-2).padStart(2, "0")
+      );
+    }
+
+    //--------------------
+
     const getSeqQuery = `
       SELECT LastSeq
       FROM LastPaymentSeq
@@ -67,9 +110,9 @@ router.post("/realizar-pago", verifyToken, async (req, res) => {
     const insertQuery = `
       INSERT INTO Payment (
         PaymentTransactionID, valueDate, paymentAmountCurrencyCode,
-        PayerContractAccountID, idUser, idVirtualCashPoint, idCashPoint
+        PayerContractAccountID, idUser, CashPointPaymentGroupReferenceID, idVirtualCashPoint, idCashPoint
       )
-      VALUES ($1, CURRENT_DATE, $2, $3, $4, $5, $6);
+      VALUES ($1, CURRENT_DATE, $2, $3, $4, $5, $6, $7);
     `;
 
     await db.none(insertQuery, [
@@ -77,6 +120,7 @@ router.post("/realizar-pago", verifyToken, async (req, res) => {
       cantidadTotal,
       cuentaContrato,
       user.id,
+      groupID,
       user.idvirtualcashpoint,
       user.idcashpoint,
     ]);
