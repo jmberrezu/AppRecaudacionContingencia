@@ -205,7 +205,7 @@ function UserCrud(idcashpoint) {
                 <td>{user.iduser}</td>
                 <td>{user.username}</td>
                 <td>{user.role}</td>
-                <td>{user.idglobalvirtualcashpoint}</td>
+                <td>{user.virtualcashpointname}</td>
                 <td>
                   <Button
                     variant="success"
@@ -271,7 +271,7 @@ function UserCrud(idcashpoint) {
                     key={virtualCashPoint.idglobalvirtualcashpoint}
                     value={virtualCashPoint.idglobalvirtualcashpoint}
                   >
-                    {virtualCashPoint.idglobalvirtualcashpoint}
+                    {virtualCashPoint.name}
                   </option>
                 ))}
               </Form.Select>
@@ -334,7 +334,7 @@ function UserCrud(idcashpoint) {
                     key={virtualCashPoint.idglobalvirtualcashpoint}
                     value={virtualCashPoint.idglobalvirtualcashpoint}
                   >
-                    {virtualCashPoint.idglobalvirtualcashpoint}
+                    {virtualCashPoint.name}
                   </option>
                 ))}
               </Form.Select>

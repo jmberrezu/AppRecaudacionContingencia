@@ -5,9 +5,7 @@ import {
   PersonFill,
   SendFill,
   PersonCircle,
-  Tools,
   BoxSeam,
-  ArrowLeftRight,
 } from "react-bootstrap-icons";
 
 function Sidebar({ user, handleLogout, setActiveComponent, activeComponent }) {

@@ -50,7 +50,7 @@ router.post("/realizar-pago", verifyToken, async (req, res) => {
     let groupID = generateGroupID(
       user.idcashpoint.split("-")[1] + user.idcashpoint.split("-")[2],
       fecha.toISOString().slice(0, 10).replace(/-/g, ""),
-      user.idglobalvirtualcashpoint.toString().slice(-2).padStart(2, "0")
+      user.idvirtualcashpoint.toString().slice(-2).padStart(2, "0")
     );
 
     // Si el groupID no esta en la base de datos, se agrega
@@ -80,7 +80,7 @@ router.post("/realizar-pago", verifyToken, async (req, res) => {
       groupID = generateGroupID(
         user.idcashpoint.split("-")[1] + user.idcashpoint.split("-")[2],
         tomorrow.toISOString().slice(0, 10).replace(/-/g, ""),
-        user.idglobalvirtualcashpoint.toString().slice(-2).padStart(2, "0")
+        user.idvirtualcashpoint.toString().slice(-2).padStart(2, "0")
       );
     }
 
@@ -94,7 +94,7 @@ router.post("/realizar-pago", verifyToken, async (req, res) => {
 
     const lastSeqResult = await db.oneOrNone(getSeqQuery, [
       user.id,
-      user.idglobalvirtualcashpoint,
+      user.idvirtualcashpoint,
     ]);
 
     const lastSeq = lastSeqResult ? lastSeqResult.lastseq : 1;
@@ -103,7 +103,7 @@ router.post("/realizar-pago", verifyToken, async (req, res) => {
       user.idcashpoint.split("-")[1] + user.idcashpoint.split("-")[2],
       fecha.toISOString().slice(0, 10).replace(/-/g, ""),
       user.id.toString().slice(-3).padStart(3, "0"),
-      user.idglobalvirtualcashpoint.toString().slice(-3).padStart(3, "0"),
+      user.idvirtualcashpoint.toString().slice(-3).padStart(3, "0"),
       lastSeq.toString().padStart(6, "0")
     );
 
@@ -134,7 +134,7 @@ router.post("/realizar-pago", verifyToken, async (req, res) => {
 
     await db.none(updateSeqQuery, [
       user.id,
-      user.idglobalvirtualcashpoint,
+      user.idvirtualcashpoint,
       lastSeq + 1,
     ]);
 
@@ -164,7 +164,15 @@ router.get("/pagos/:idcashPoint", verifyToken, async (req, res) => {
   const idcashPoint = req.params.idcashPoint;
   try {
     const query = `
-      SELECT * FROM Payment WHERE idCashPoint=$1;
+      SELECT 
+        Payment.*,
+        VirtualCashPoint.idVirtualCashPoint,
+        VirtualCashPoint.name AS virtualCashPointName,
+        "User".username
+      FROM Payment
+      INNER JOIN VirtualCashPoint ON Payment.idGlobalVirtualCashPoint = VirtualCashPoint.idGlobalVirtualCashPoint
+      INNER JOIN "User" ON Payment.idUser = "User".idUser
+      WHERE Payment.idCashPoint=$1;
     `;
 
     const payments = await db.any(query, [idcashPoint]);

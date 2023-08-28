@@ -96,7 +96,7 @@ function Sidebar({ user, handleLogout, setActiveComponent, activeComponent }) {
             </Nav.Item>
             <Nav.Item className="mb-2  ms-3">
               <BoxSeam size={16} className="align-middle mb-1 me-3" />
-              Caja: <strong>{user.idglobalvirtualcashpoint}</strong>
+              Caja: <strong>{user.virtualcashpointname}</strong>
             </Nav.Item>
             <Nav.Item className="d-grid">
               <Button

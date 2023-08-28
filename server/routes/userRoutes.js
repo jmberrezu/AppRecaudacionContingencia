@@ -2,14 +2,17 @@ const express = require("express");
 const router = express.Router();
 const db = require("../db");
 
-// Obtener todos los usuarios de una caja en especifico
+// Obtener todos los usuarios de una caja en específico
 router.get("/:idcashPoint", async (req, res) => {
   const idcashPoint = req.params.idcashPoint;
   try {
     const users = await db.any(
-      'SELECT * FROM "User" WHERE idCashPoint=$1',
-      idcashPoint
+      'SELECT "User".*, VirtualCashPoint.idVirtualCashPoint, VirtualCashPoint.name AS virtualCashPointName FROM "User" ' +
+        'INNER JOIN VirtualCashPoint ON "User".idGlobalVirtualCashPoint = VirtualCashPoint.idGlobalVirtualCashPoint ' +
+        'WHERE "User".idCashPoint = $1',
+      [idcashPoint]
     );
+
     res.json(users);
   } catch (error) {
     res.status(500).json({ error: error.message });

@@ -47,8 +47,8 @@ function ReversePayment(props) {
       case "Caja":
         sortedPaymentsCopy.sort((a, b) =>
           sortDirection === "asc"
-            ? a.idglobalvirtualcashpoint - b.idglobalvirtualcashpoint
-            : b.idglobalvirtualcashpoint - a.idglobalvirtualcashpoint
+            ? a.idvirtualcashpoint - b.idvirtualcashpoint
+            : b.idvirtualcashpoint - a.idvirtualcashpoint
         );
         break;
       case "Usuario":
@@ -143,8 +143,8 @@ function ReversePayment(props) {
                 <td>{payment.cashpointpaymentgroupreferenceid}</td>
                 <td>{formatDate(payment.valuedate)}</td>
                 <td>{payment.paymentamountcurrencycode}</td>
-                <td>{payment.idglobalvirtualcashpoint}</td>
-                <td>{payment.iduser}</td>
+                <td>{payment.virtualcashpointname}</td>
+                <td>{payment.username}</td>
                 <td>
                   <Button
                     variant="danger"

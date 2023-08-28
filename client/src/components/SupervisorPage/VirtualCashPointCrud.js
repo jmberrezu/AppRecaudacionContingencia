@@ -153,7 +153,7 @@ function VirtualCashPointCrud(idcashpoint) {
           <tbody>
             {virtualCashPoints.map((virtualCashPoint) => (
               <tr key={virtualCashPoint.idglobalvirtualcashpoint}>
-                <td>{virtualCashPoint.idglobalvirtualcashpoint}</td>
+                <td>{virtualCashPoint.idvirtualcashpoint}</td>
                 <td>{virtualCashPoint.name}</td>
                 <td>
                   <Button

@@ -8,33 +8,43 @@ const verifyToken = require("./verifyToken");
 router.post("/", async (req, res) => {
   const { username, password } = req.body;
 
-  // Busca usuario en la base de datos
-  const user = await db.oneOrNone('SELECT * FROM "User" WHERE username = $1', [
-    username,
-  ]);
-
-  if (!user) {
-    // Si el usuario no existe
-    return res.status(401).json({ message: "Usuario no Encontrado." });
-  } else {
-    if (!(await bcrypt.compare(password, user.password))) {
-      // Si el password es incorrecto
-      return res.status(401).json({ message: "Contraseña Incorrecta" });
-    }
-
-    const token = jwt.sign(
-      {
-        id: user.iduser,
-        username: user.username,
-        role: user.role,
-        idglobalvirtualcashpoint: user.idglobalvirtualcashpoint,
-        idcashpoint: user.idcashpoint,
-      },
-      "secret-key",
-      { expiresIn: "3h" }
+  try {
+    // Buscar usuario en la base de datos
+    const user = await db.oneOrNone(
+      'SELECT "User".*, VirtualCashPoint.idVirtualCashPoint, VirtualCashPoint.name AS virtualCashPointName ' +
+        'FROM "User" ' +
+        'INNER JOIN VirtualCashPoint ON "User".idGlobalVirtualCashPoint = VirtualCashPoint.idGlobalVirtualCashPoint ' +
+        "WHERE username = $1",
+      [username]
     );
 
-    res.json({ token });
+    if (!user) {
+      // Si el usuario no existe
+      return res.status(401).json({ message: "Usuario no Encontrado." });
+    } else {
+      if (!(await bcrypt.compare(password, user.password))) {
+        // Si la contraseña es incorrecta
+        return res.status(401).json({ message: "Contraseña Incorrecta" });
+      }
+
+      const token = jwt.sign(
+        {
+          id: user.iduser,
+          username: user.username,
+          role: user.role,
+          idglobalvirtualcashpoint: user.idglobalvirtualcashpoint,
+          idcashpoint: user.idcashpoint,
+          idvirtualcashpoint: user.idvirtualcashpoint, // Agregar idVirtualCashPoint al token
+          virtualcashpointname: user.virtualcashpointname, // Agregar virtualCashPointName al token
+        },
+        "secret-key",
+        { expiresIn: "3h" }
+      );
+
+      res.json({ token });
+    }
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
 });
 
