@@ -50,7 +50,7 @@ router.post("/realizar-pago", verifyToken, async (req, res) => {
     let groupID = generateGroupID(
       user.idcashpoint.split("-")[1] + user.idcashpoint.split("-")[2],
       fecha.toISOString().slice(0, 10).replace(/-/g, ""),
-      user.idvirtualcashpoint.toString().slice(-2).padStart(2, "0")
+      user.idglobalvirtualcashpoint.toString().slice(-2).padStart(2, "0")
     );
 
     // Si el groupID no esta en la base de datos, se agrega
@@ -80,7 +80,7 @@ router.post("/realizar-pago", verifyToken, async (req, res) => {
       groupID = generateGroupID(
         user.idcashpoint.split("-")[1] + user.idcashpoint.split("-")[2],
         tomorrow.toISOString().slice(0, 10).replace(/-/g, ""),
-        user.idvirtualcashpoint.toString().slice(-2).padStart(2, "0")
+        user.idglobalvirtualcashpoint.toString().slice(-2).padStart(2, "0")
       );
     }
 
@@ -94,7 +94,7 @@ router.post("/realizar-pago", verifyToken, async (req, res) => {
 
     const lastSeqResult = await db.oneOrNone(getSeqQuery, [
       user.id,
-      user.idvirtualcashpoint,
+      user.idglobalvirtualcashpoint,
     ]);
 
     const lastSeq = lastSeqResult ? lastSeqResult.lastseq : 1;
@@ -103,14 +103,14 @@ router.post("/realizar-pago", verifyToken, async (req, res) => {
       user.idcashpoint.split("-")[1] + user.idcashpoint.split("-")[2],
       fecha.toISOString().slice(0, 10).replace(/-/g, ""),
       user.id.toString().slice(-3).padStart(3, "0"),
-      user.idvirtualcashpoint.toString().slice(-3).padStart(3, "0"),
+      user.idglobalvirtualcashpoint.toString().slice(-3).padStart(3, "0"),
       lastSeq.toString().padStart(6, "0")
     );
 
     const insertQuery = `
       INSERT INTO Payment (
         PaymentTransactionID, valueDate, paymentAmountCurrencyCode,
-        PayerContractAccountID, idUser, CashPointPaymentGroupReferenceID, idVirtualCashPoint, idCashPoint
+        PayerContractAccountID, idUser, CashPointPaymentGroupReferenceID, idGlobalVirtualCashPoint, idCashPoint
       )
       VALUES ($1, CURRENT_DATE, $2, $3, $4, $5, $6, $7);
     `;
@@ -121,7 +121,7 @@ router.post("/realizar-pago", verifyToken, async (req, res) => {
       cuentaContrato,
       user.id,
       groupID,
-      user.idvirtualcashpoint,
+      user.idglobalvirtualcashpoint,
       user.idcashpoint,
     ]);
 
@@ -134,7 +134,7 @@ router.post("/realizar-pago", verifyToken, async (req, res) => {
 
     await db.none(updateSeqQuery, [
       user.id,
-      user.idvirtualcashpoint,
+      user.idglobalvirtualcashpoint,
       lastSeq + 1,
     ]);
 

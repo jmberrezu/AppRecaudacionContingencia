@@ -27,7 +27,7 @@ router.post("/", async (req, res) => {
         id: user.iduser,
         username: user.username,
         role: user.role,
-        idvirtualcashpoint: user.idvirtualcashpoint,
+        idglobalvirtualcashpoint: user.idglobalvirtualcashpoint,
         idcashpoint: user.idcashpoint,
       },
       "secret-key",

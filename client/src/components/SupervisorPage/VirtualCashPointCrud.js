@@ -93,7 +93,7 @@ function VirtualCashPointCrud(idcashpoint) {
           idCashPoint: idcashpoint.idcashpoint,
         };
         await axios.put(
-          `/api/virtualCashPoints/${editingVirtualCashPoint.idvirtualcashpoint}`,
+          `/api/virtualCashPoints/${editingVirtualCashPoint.idglobalvirtualcashpoint}`,
           updatedVirtualCashPoint
         );
 
@@ -152,8 +152,8 @@ function VirtualCashPointCrud(idcashpoint) {
           </thead>
           <tbody>
             {virtualCashPoints.map((virtualCashPoint) => (
-              <tr key={virtualCashPoint.idvirtualcashpoint}>
-                <td>{virtualCashPoint.idvirtualcashpoint}</td>
+              <tr key={virtualCashPoint.idglobalvirtualcashpoint}>
+                <td>{virtualCashPoint.idglobalvirtualcashpoint}</td>
                 <td>{virtualCashPoint.name}</td>
                 <td>
                   <Button
@@ -222,7 +222,9 @@ function VirtualCashPointCrud(idcashpoint) {
           <Button
             variant="danger"
             onClick={() =>
-              deleteVirtualCashPoint(editingVirtualCashPoint.idvirtualcashpoint)
+              deleteVirtualCashPoint(
+                editingVirtualCashPoint.idglobalvirtualcashpoint
+              )
             }
           >
             Eliminar

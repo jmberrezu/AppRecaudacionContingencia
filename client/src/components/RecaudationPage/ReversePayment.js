@@ -47,8 +47,8 @@ function ReversePayment(props) {
       case "Caja":
         sortedPaymentsCopy.sort((a, b) =>
           sortDirection === "asc"
-            ? a.idvirtualcashpoint - b.idvirtualcashpoint
-            : b.idvirtualcashpoint - a.idvirtualcashpoint
+            ? a.idglobalvirtualcashpoint - b.idglobalvirtualcashpoint
+            : b.idglobalvirtualcashpoint - a.idglobalvirtualcashpoint
         );
         break;
       case "Usuario":
@@ -87,7 +87,7 @@ function ReversePayment(props) {
 
   return (
     <Container className="py-4">
-      <h1>Reverse Payment</h1>
+      <h1>Anular Pago</h1>
       <Container className="my-3">
         <Row className="justify-content-between">
           <Col xs={6} className="text-start">
@@ -143,7 +143,7 @@ function ReversePayment(props) {
                 <td>{payment.cashpointpaymentgroupreferenceid}</td>
                 <td>{formatDate(payment.valuedate)}</td>
                 <td>{payment.paymentamountcurrencycode}</td>
-                <td>{payment.idvirtualcashpoint}</td>
+                <td>{payment.idglobalvirtualcashpoint}</td>
                 <td>{payment.iduser}</td>
                 <td>
                   <Button

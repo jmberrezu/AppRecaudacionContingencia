@@ -18,17 +18,17 @@ router.get("/:idcashPoint", async (req, res) => {
 
 // Agregar un nuevo usuario
 router.post("/", async (req, res) => {
-  const { username, password, role, idCashPoint, idVirtualCashPoint } =
+  const { username, password, role, idCashPoint, idGlobalVirtualCashPoint } =
     req.body;
   try {
-    // Reiniciar la secuencia para la columna idVirtualCashPoint al valor más alto utilizado previamente
+    // Reiniciar la secuencia para la columna idGlobalVirtualCashPoint al valor más alto utilizado previamente
     await db.one(
       'SELECT setval(\'public."User_iduser_seq"\', COALESCE((SELECT MAX(idUser) + 1 FROM "User"), 1), false);'
     );
     const newUser = await db.one(
-      `INSERT INTO "User" (username, password, role, idCashPoint, idVirtualCashPoint)
+      `INSERT INTO "User" (username, password, role, idCashPoint, idGlobalVirtualCashPoint)
          VALUES ($1, $2, $3, $4, $5) RETURNING *`,
-      [username, password, role, idCashPoint, idVirtualCashPoint]
+      [username, password, role, idCashPoint, idGlobalVirtualCashPoint]
     );
     res.json(newUser);
   } catch (error) {
@@ -39,13 +39,13 @@ router.post("/", async (req, res) => {
 // Actualizar un usuario existente
 router.put("/:id", async (req, res) => {
   const id = req.params.id;
-  const { username, password, role, idCashPoint, idVirtualCashPoint } =
+  const { username, password, role, idCashPoint, idGlobalVirtualCashPoint } =
     req.body;
   try {
     const updatedUser = await db.one(
-      `UPDATE "User" SET username=$1, password=$2, role=$3, idCashPoint=$4, idVirtualCashPoint=$5
+      `UPDATE "User" SET username=$1, password=$2, role=$3, idCashPoint=$4, idGlobalVirtualCashPoint=$5
          WHERE idUser=$6 RETURNING *`,
-      [username, password, role, idCashPoint, idVirtualCashPoint, id]
+      [username, password, role, idCashPoint, idGlobalVirtualCashPoint, id]
     );
     res.json(updatedUser);
   } catch (error) {

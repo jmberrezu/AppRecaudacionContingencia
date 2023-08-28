@@ -13,7 +13,7 @@ function UserCrud(idcashpoint) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [role, setRole] = useState("");
-  const [idVirtualCashPoint, setIdVirtualCashPoint] = useState("");
+  const [idGlobalVirtualCashPoint, setIdGlobalVirtualCashPoint] = useState("");
   // Estado para almacenar datos de cajas virtuales
   const [virtualCashPoints, setVirtualCashPoints] = useState([]);
   // Estado para mostrar alertas
@@ -35,7 +35,7 @@ function UserCrud(idcashpoint) {
       setUsername("");
       setPassword("");
       setRole("");
-      setIdVirtualCashPoint("");
+      setIdGlobalVirtualCashPoint("");
       setAlertInfo(null);
     }
   }, [showModal]);
@@ -46,7 +46,7 @@ function UserCrud(idcashpoint) {
       setUsername("");
       setPassword("");
       setRole("");
-      setIdVirtualCashPoint("");
+      setIdGlobalVirtualCashPoint("");
       setAlertInfo(null);
     }
   }, [showEditModal]);
@@ -89,19 +89,19 @@ function UserCrud(idcashpoint) {
   // Función para crear un usuario
   const createUser = async () => {
     try {
-      if (username && password && role && idVirtualCashPoint) {
+      if (username && password && role && idGlobalVirtualCashPoint) {
         const hashedPassword = await bcrypt.hash(password, 10);
         await axios.post("/api/users", {
           username,
           password: hashedPassword,
           role,
           idCashPoint: idcashpoint.idcashpoint,
-          idVirtualCashPoint,
+          idGlobalVirtualCashPoint,
         });
         setUsername("");
         setPassword("");
         setRole("");
-        setIdVirtualCashPoint("");
+        setIdGlobalVirtualCashPoint("");
         setAlertInfo({
           variant: "success",
           message: "Usuario agregado exitosamente.",
@@ -123,7 +123,7 @@ function UserCrud(idcashpoint) {
     setEditingUser(user);
     setUsername(user.username);
     setRole(user.role);
-    setIdVirtualCashPoint(user.idvirtualcashpoint);
+    setIdGlobalVirtualCashPoint(user.idglobalvirtualcashpoint);
     setShowEditModal(true);
   };
 
@@ -136,7 +136,7 @@ function UserCrud(idcashpoint) {
           username,
           role,
           idCashPoint: idcashpoint.idcashpoint,
-          idVirtualCashPoint,
+          idGlobalVirtualCashPoint,
         };
 
         if (password !== "") {
@@ -153,7 +153,7 @@ function UserCrud(idcashpoint) {
         setUsername("");
         setPassword("");
         setRole("");
-        setIdVirtualCashPoint("");
+        setIdGlobalVirtualCashPoint("");
         setAlertInfo({
           variant: "success",
           message: "Usuario actualizado exitosamente.",
@@ -205,7 +205,7 @@ function UserCrud(idcashpoint) {
                 <td>{user.iduser}</td>
                 <td>{user.username}</td>
                 <td>{user.role}</td>
-                <td>{user.idvirtualcashpoint}</td>
+                <td>{user.idglobalvirtualcashpoint}</td>
                 <td>
                   <Button
                     variant="success"
@@ -262,16 +262,16 @@ function UserCrud(idcashpoint) {
             <Form.Group>
               <Form.Label>Caja Virtual</Form.Label>
               <Form.Select
-                value={idVirtualCashPoint}
-                onChange={(e) => setIdVirtualCashPoint(e.target.value)}
+                value={idGlobalVirtualCashPoint}
+                onChange={(e) => setIdGlobalVirtualCashPoint(e.target.value)}
               >
                 <option value="">-- Seleccione una opción --</option>
                 {virtualCashPoints.map((virtualCashPoint) => (
                   <option
-                    key={virtualCashPoint.idvirtualcashpoint}
-                    value={virtualCashPoint.idvirtualcashpoint}
+                    key={virtualCashPoint.idglobalvirtualcashpoint}
+                    value={virtualCashPoint.idglobalvirtualcashpoint}
                   >
-                    {virtualCashPoint.idvirtualcashpoint}
+                    {virtualCashPoint.idglobalvirtualcashpoint}
                   </option>
                 ))}
               </Form.Select>
@@ -326,15 +326,15 @@ function UserCrud(idcashpoint) {
             <Form.Group>
               <Form.Label>Caja Virtual</Form.Label>
               <Form.Select
-                value={idVirtualCashPoint}
-                onChange={(e) => setIdVirtualCashPoint(e.target.value)}
+                value={idGlobalVirtualCashPoint}
+                onChange={(e) => setIdGlobalVirtualCashPoint(e.target.value)}
               >
                 {virtualCashPoints.map((virtualCashPoint) => (
                   <option
-                    key={virtualCashPoint.idvirtualcashpoint}
-                    value={virtualCashPoint.idvirtualcashpoint}
+                    key={virtualCashPoint.idglobalvirtualcashpoint}
+                    value={virtualCashPoint.idglobalvirtualcashpoint}
                   >
-                    {virtualCashPoint.idvirtualcashpoint}
+                    {virtualCashPoint.idglobalvirtualcashpoint}
                   </option>
                 ))}
               </Form.Select>

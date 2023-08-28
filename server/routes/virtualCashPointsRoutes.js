@@ -20,9 +20,9 @@ router.get("/:idcashPoint", async (req, res) => {
 router.post("/", async (req, res) => {
   const { name, idCashPoint } = req.body;
   try {
-    // Reiniciar la secuencia para la columna idVirtualCashPoint al valor más alto utilizado previamente
+    // Reiniciar la secuencia para la columna idGlobalVirtualCashPoint al valor más alto utilizado previamente
     await db.one(
-      "SELECT setval('virtualcashpoint_idvirtualcashpoint_seq', COALESCE((SELECT MAX(idVirtualCashPoint) + 1 FROM VirtualCashPoint), 1), false);"
+      "SELECT setval('virtualcashpoint_idglobalvirtualcashpoint_seq', COALESCE((SELECT MAX(idGlobalVirtualCashPoint) + 1 FROM VirtualCashPoint), 1), false);"
     );
 
     const newVirtualCashPoint = await db.one(
@@ -41,7 +41,7 @@ router.put("/:id", async (req, res) => {
   const { name, idCashPoint } = req.body;
   try {
     const updatedVirtualCashPoint = await db.one(
-      "UPDATE VirtualCashPoint SET name=$1, idCashPoint=$2 WHERE idVirtualCashPoint=$3 RETURNING *",
+      "UPDATE VirtualCashPoint SET name=$1, idCashPoint=$2 WHERE idGlobalVirtualCashPoint=$3 RETURNING *",
       [name, idCashPoint, id]
     );
     res.json(updatedVirtualCashPoint);
@@ -56,7 +56,7 @@ router.delete("/:id", async (req, res) => {
   try {
     // Si se esta eliminando una caja que tiene usuarios asignados, muestra un mensaje de error ya que deberia eliminar primero los usuarios asignados a esa caja
     const users = await db.any(
-      'SELECT * FROM "User" where idVirtualCashPoint=$1',
+      'SELECT * FROM "User" where idGlobalVirtualCashPoint=$1',
       [id]
     );
 
@@ -68,9 +68,10 @@ router.delete("/:id", async (req, res) => {
       return;
     }
 
-    await db.none("DELETE FROM VirtualCashPoint WHERE idVirtualCashPoint=$1", [
-      id,
-    ]);
+    await db.none(
+      "DELETE FROM VirtualCashPoint WHERE idGlobalVirtualCashPoint=$1",
+      [id]
+    );
 
     res.json({ message: "Cajero virtual eliminado exitosamente" });
   } catch (error) {
