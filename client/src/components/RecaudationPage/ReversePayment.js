@@ -11,7 +11,7 @@ import {
 import { CaretUpFill, CaretDownFill } from "react-bootstrap-icons";
 
 function ReversePayment(props) {
-  const { token, idcashpoint } = props;
+  const { token, idcashpoint, user } = props;
   const [payments, setPayments] = useState([]);
   const [sortedPayments, setSortedPayments] = useState([]);
   const [sortBy, setSortBy] = useState("Fecha");
@@ -76,8 +76,27 @@ function ReversePayment(props) {
     );
   };
 
-  const anularPago = async (id) => {
-    console.log(id);
+  const anularPago = async (pid, ammount, contractaccount) => {
+    try {
+      const response = await fetch(`/api/paymentRoutes/anular-pago/${pid}`, {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          user,
+          ammount,
+          contractaccount,
+        }),
+      });
+
+      if (response.ok) {
+        fetchPayments();
+      }
+    } catch (error) {
+      console.error(error);
+    }
   };
 
   const formatDate = (dateString) => {
@@ -148,7 +167,13 @@ function ReversePayment(props) {
                 <td>
                   <Button
                     variant="danger"
-                    onClick={() => anularPago(payment.paymenttransactionid)}
+                    onClick={() =>
+                      anularPago(
+                        payment.paymenttransactionid,
+                        payment.paymentamountcurrencycode,
+                        payment.payercontractaccountid
+                      )
+                    }
                   >
                     Anular Pago
                   </Button>

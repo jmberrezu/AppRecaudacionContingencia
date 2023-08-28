@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Container } from "react-bootstrap";
+import { Container, Col, Row } from "react-bootstrap";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import Payment from "./Payment";
@@ -13,6 +13,15 @@ function Recaudation() {
   const [token, setToken] = useState("");
   const [user, setUser] = useState(null);
   const [activeComponent, setActiveComponent] = useState("payment"); // Inicialmente muestra el componente Payment
+  const [currentDateTime, setCurrentDateTime] = useState(new Date());
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentDateTime(new Date());
+    }, 1000); // Actualiza cada segundo
+
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -51,12 +60,32 @@ function Recaudation() {
         activeComponent={activeComponent}
       />
       <Container fluid className="my-3">
-        <h1>Página de Recaudación</h1>
+        <Container className="d-flex">
+          <div className="me-auto d-flex align-items-center">
+            <h1>Página de Recaudación</h1>
+          </div>
+          <div className="h5 d-flex align-items-center">
+            <strong className="pe-2">Fecha: </strong>
+            {currentDateTime.toLocaleDateString()}
+          </div>
+          <div className="h5 mx-4 d-flex align-items-center">
+            <strong>|</strong>
+          </div>
+          <div className="h5 d-flex align-items-center">
+            <strong className="pe-2">Hora: </strong>
+            {currentDateTime.toLocaleTimeString()}
+          </div>
+        </Container>
+
         <hr />
         {activeComponent === "payment" && <Payment user={user} token={token} />}
         {activeComponent === "cashClose" && <CashClose />}
         {activeComponent === "reversePayment" && (
-          <ReversePayment token={token} idcashpoint={user.idcashpoint} />
+          <ReversePayment
+            token={token}
+            idcashpoint={user.idcashpoint}
+            user={user}
+          />
         )}
         {activeComponent === "reverseCashClose" && <ReverseCashClose />}
       </Container>

@@ -18,16 +18,6 @@ function Payment(props) {
   // Estado para mostrar alertas
   const [alertInfo, setAlertInfo] = useState(null);
 
-  const [currentDateTime, setCurrentDateTime] = useState(new Date());
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentDateTime(new Date());
-    }, 1000); // Actualiza cada segundo
-
-    return () => clearInterval(interval);
-  }, []);
-
   const buscarCliente = async (cuentaContrato) => {
     setAlertInfo(null);
 
@@ -176,10 +166,7 @@ function Payment(props) {
   return (
     <Container className="py-4 border" style={{ maxWidth: "800px" }}>
       <h1>Realizar Pago</h1>
-      <p>
-        <strong>Fecha y Hora Actual: </strong>
-        {currentDateTime.toLocaleString()}
-      </p>
+
       <Form>
         <div className="input-group my-3 mb-4">
           <Form.Control

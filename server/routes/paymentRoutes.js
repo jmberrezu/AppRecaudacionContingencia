@@ -5,13 +5,14 @@ const verifyToken = require("./verifyToken");
 
 // Función para generar un ID único de transacción de pago
 function generatePaymentTransactionID(
+  ajuste,
   officeCode,
   currentDate,
   formattedUserId,
   formattedVirtualCashPointId,
   formattedSecuencial
 ) {
-  return `PID-${officeCode}-${currentDate}-${formattedUserId}${formattedVirtualCashPointId}${formattedSecuencial}`;
+  return `PID-${officeCode}-${currentDate}-${ajuste}${formattedUserId}${formattedVirtualCashPointId}${formattedSecuencial}`;
 }
 
 function generateGroupID(officeCode, currentDate, formattedVirtualCashPointId) {
@@ -100,10 +101,11 @@ router.post("/realizar-pago", verifyToken, async (req, res) => {
     const lastSeq = lastSeqResult ? lastSeqResult.lastseq : 1;
 
     const paymentTransactionID = generatePaymentTransactionID(
+      (ajuste = "0"), // Si existiese ajuste, se cambia a "A" -- Por Implementar
       user.idcashpoint.split("-")[1] + user.idcashpoint.split("-")[2],
       fecha.toISOString().slice(0, 10).replace(/-/g, ""),
       user.id.toString().slice(-3).padStart(3, "0"),
-      user.idvirtualcashpoint.toString().slice(-3).padStart(3, "0"),
+      user.idvirtualcashpoint.toString().slice(-3).padStart(2, "0"),
       lastSeq.toString().padStart(6, "0")
     );
 
@@ -178,6 +180,43 @@ router.get("/pagos/:idcashPoint", verifyToken, async (req, res) => {
     const payments = await db.any(query, [idcashPoint]);
 
     res.status(200).json(payments);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Error en el servidor" });
+  }
+});
+
+//Ruta para anular pago
+router.put("/anular-pago/:PID", verifyToken, async (req, res) => {
+  const { PID } = req.params;
+  const { user, ammount, contractaccount } = req.body;
+
+  try {
+    //Quito de la tabla de pagos
+    const query = `
+      DELETE FROM Payment
+      WHERE PaymentTransactionID = $1;
+    `;
+    await db.none(query, [PID]);
+
+    //Agrego a la tabla de anulaciones
+    const insertQuery = `
+      INSERT INTO ReversePayment (
+        PaymentTransactionID, idUser
+      )
+      VALUES ($1, $2);
+    `;
+    await db.none(insertQuery, [PID, user.id]);
+
+    //Actualizo la deuda del cliente
+    const updateDebtQuery = `
+      UPDATE Client
+      SET debt = debt + $1
+      WHERE PayerContractAccountID = $2;
+    `;
+    await db.none(updateDebtQuery, [ammount, contractaccount]);
+
+    res.status(200).json({ message: "Pago anulado con éxito." });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Error en el servidor" });
