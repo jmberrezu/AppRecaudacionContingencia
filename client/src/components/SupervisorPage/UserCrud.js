@@ -147,7 +147,7 @@ function UserCrud(idcashpoint) {
           };
         }
 
-        await axios.put(`/api/users/${editingUser.iduser}`, updatedUser);
+        await axios.put(`/api/users/${editingUser.idglobaluser}`, updatedUser);
         setEditingUser(null);
         setShowEditModal(false);
         setUsername("");
@@ -201,7 +201,7 @@ function UserCrud(idcashpoint) {
           </thead>
           <tbody>
             {users.map((user) => (
-              <tr key={user.iduser}>
+              <tr key={user.idglobaluser}>
                 <td>{user.iduser}</td>
                 <td>{user.username}</td>
                 <td>{user.role}</td>
@@ -347,7 +347,7 @@ function UserCrud(idcashpoint) {
           </Button>
           <Button
             variant="danger"
-            onClick={() => deleteUser(editingUser.iduser)}
+            onClick={() => deleteUser(editingUser.idglobaluser)}
           >
             Eliminar
           </Button>

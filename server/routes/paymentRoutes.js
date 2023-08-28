@@ -90,12 +90,13 @@ router.post("/realizar-pago", verifyToken, async (req, res) => {
     const getSeqQuery = `
       SELECT LastSeq
       FROM LastPaymentSeq
-      WHERE UserId = $1 AND VirtualCashPointId = $2;
+      WHERE SeqDate = $1 AND UserId = $2 AND VirtualCashPointId = $3;
     `;
 
     const lastSeqResult = await db.oneOrNone(getSeqQuery, [
-      user.id,
-      user.idvirtualcashpoint,
+      fecha.toISOString().slice(0, 10),
+      user.idglobaluser,
+      user.idglobalvirtualcashpoint,
     ]);
 
     const lastSeq = lastSeqResult ? lastSeqResult.lastseq : 1;
@@ -112,7 +113,7 @@ router.post("/realizar-pago", verifyToken, async (req, res) => {
     const insertQuery = `
       INSERT INTO Payment (
         PaymentTransactionID, valueDate, paymentAmountCurrencyCode,
-        PayerContractAccountID, idUser, CashPointPaymentGroupReferenceID, idGlobalVirtualCashPoint, idCashPoint
+        PayerContractAccountID, idGlobalUser, CashPointPaymentGroupReferenceID, idGlobalVirtualCashPoint, idCashPoint
       )
       VALUES ($1, CURRENT_DATE, $2, $3, $4, $5, $6, $7);
     `;
@@ -121,22 +122,23 @@ router.post("/realizar-pago", verifyToken, async (req, res) => {
       paymentTransactionID,
       cantidadTotal,
       cuentaContrato,
-      user.id,
+      user.idglobaluser,
       groupID,
       user.idglobalvirtualcashpoint,
       user.idcashpoint,
     ]);
 
     const updateSeqQuery = `
-      INSERT INTO LastPaymentSeq (UserId, VirtualCashPointId, LastSeq)
-      VALUES ($1, $2, $3)
-      ON CONFLICT (UserId, VirtualCashPointId)
-      DO UPDATE SET LastSeq = $3;
+      INSERT INTO LastPaymentSeq (SeqDate, UserId, VirtualCashPointId, LastSeq)
+      VALUES ($1, $2, $3, $4)
+      ON CONFLICT (SeqDate, UserId, VirtualCashPointId)
+      DO UPDATE SET LastSeq = $4;
     `;
 
     await db.none(updateSeqQuery, [
-      user.id,
-      user.idvirtualcashpoint,
+      fecha.toISOString().slice(0, 10),
+      user.idglobaluser,
+      user.idglobalvirtualcashpoint,
       lastSeq + 1,
     ]);
 
@@ -173,7 +175,7 @@ router.get("/pagos/:idcashPoint", verifyToken, async (req, res) => {
         "User".username
       FROM Payment
       INNER JOIN VirtualCashPoint ON Payment.idGlobalVirtualCashPoint = VirtualCashPoint.idGlobalVirtualCashPoint
-      INNER JOIN "User" ON Payment.idUser = "User".idUser
+      INNER JOIN "User" ON Payment.idGlobalUser = "User".idGlobalUser
       WHERE Payment.idCashPoint=$1;
     `;
 
@@ -202,11 +204,11 @@ router.put("/anular-pago/:PID", verifyToken, async (req, res) => {
     //Agrego a la tabla de anulaciones
     const insertQuery = `
       INSERT INTO ReversePayment (
-        PaymentTransactionID, idUser
+        PaymentTransactionID, idGlobalUser
       )
       VALUES ($1, $2);
     `;
-    await db.none(insertQuery, [PID, user.id]);
+    await db.none(insertQuery, [PID, user.idglobaluser]);
 
     //Actualizo la deuda del cliente
     const updateDebtQuery = `

@@ -30,6 +30,7 @@ router.post("/", async (req, res) => {
       const token = jwt.sign(
         {
           id: user.iduser,
+          idglobaluser: user.idglobaluser,
           username: user.username,
           role: user.role,
           idglobalvirtualcashpoint: user.idglobalvirtualcashpoint,

@@ -32,8 +32,6 @@ router.post("/", async (req, res) => {
         maxIdVirtualCashPointResult.maxidvirtualcashpoint + 1;
     }
 
-    console.log("nextIdVirtualCashPoint: " + nextIdVirtualCashPoint);
-
     // Insertar el nuevo cajero virtual
     const newVirtualCashPoint = await db.one(
       "INSERT INTO VirtualCashPoint (idVirtualCashPoint, name, idCashPoint) VALUES ($1, $2, $3) RETURNING *",
@@ -92,7 +90,7 @@ router.delete("/:id", async (req, res) => {
     );
 
     if (idCashPointResult) {
-      const idCashPoint = idCashPointResult.idCashPoint;
+      const idCashPoint = idCashPointResult.idcashpoint;
 
       // Eliminar el cajero virtual
       await db.none(
@@ -106,7 +104,7 @@ router.delete("/:id", async (req, res) => {
         [idCashPoint]
       );
 
-      if (remainingVirtualCashPoints === 0) {
+      if (remainingVirtualCashPoints.count === "0") {
         // Si ya no quedan cajeros virtuales para este idCashPoint, eliminar el registro de MaxVirtualCashPointSeq
         await db.none(
           "DELETE FROM MaxVirtualCashPointSeq WHERE idCashPoint = $1",
