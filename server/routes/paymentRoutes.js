@@ -214,6 +214,28 @@ router.get("/pagos/:idcashPoint", verifyToken, async (req, res) => {
   }
 });
 
+// Ruta protegida: Obtener lista de pagos anulados
+router.get("/pagosAnulados/:idcashPoint", verifyToken, async (req, res) => {
+  const idcashPoint = req.params.idcashPoint;
+  try {
+    const query = `
+        SELECT
+          ReversePayment.*,
+          "User".username
+        FROM ReversePayment
+        INNER JOIN "User" ON ReversePayment.idGlobalUser = "User".idGlobalUser
+        WHERE ReversePayment.idCashPoint=$1;
+      `;
+
+    const payments = await db.any(query, [idcashPoint]);
+
+    res.status(200).json(payments);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Error en el servidor" });
+  }
+});
+
 //Ruta para anular pago
 router.put("/anular-pago/:PID", verifyToken, async (req, res) => {
   const { PID } = req.params;

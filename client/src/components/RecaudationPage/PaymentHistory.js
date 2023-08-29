@@ -13,9 +13,11 @@ import { CaretUpFill, CaretDownFill } from "react-bootstrap-icons";
 function PaymentHistory(props) {
   const { token, idcashpoint, user } = props;
   const [payments, setPayments] = useState([]);
+  const [reversePayments, setReversePayments] = useState([]);
   const [sortedPayments, setSortedPayments] = useState([]);
   const [sortBy, setSortBy] = useState("Fecha");
   const [sortDirection, setSortDirection] = useState("asc");
+  const [groupedPayments, setGroupedPayments] = useState({});
 
   // Función para obtener la lista de pagos
   const fetchPayments = useCallback(async () => {
@@ -29,6 +31,29 @@ function PaymentHistory(props) {
       if (response.ok) {
         const paymentsData = await response.json();
         setPayments(paymentsData);
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  }, [idcashpoint, token]);
+
+  // Funcion para obtener la lista de pagos anulados
+  const fetchReversePayments = useCallback(async () => {
+    try {
+      const response = await fetch(
+        `/api/paymentRoutes/pagosAnulados/${idcashpoint}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (response.ok) {
+        const paymentsData = await response.json();
+
+        setReversePayments(paymentsData);
+        console.log(paymentsData);
       }
     } catch (error) {
       console.error(error);
@@ -59,16 +84,37 @@ function PaymentHistory(props) {
       default:
         break;
     }
+    if (sortDirection === "desc") {
+      sortedPaymentsCopy.reverse();
+    }
     setSortedPayments(sortedPaymentsCopy);
   }, [payments, sortBy, sortDirection]);
 
+  // Función para agrupar los pagos por grupo
+  const groupPayments = useCallback(() => {
+    const groupedPaymentsObj = payments.reduce((acc, payment) => {
+      const group = payment.cashpointpaymentgroupreferenceid;
+      if (!acc[group]) {
+        acc[group] = [];
+      }
+      acc[group].push(payment);
+      return acc;
+    }, {});
+    setGroupedPayments(groupedPaymentsObj);
+  }, [payments]);
+
   useEffect(() => {
     fetchPayments();
-  }, [fetchPayments]);
+    fetchReversePayments();
+  }, [fetchPayments, fetchReversePayments]);
 
   useEffect(() => {
     sortPayments();
   }, [sortPayments]);
+
+  useEffect(() => {
+    groupPayments();
+  }, [groupPayments]);
 
   const toggleSortDirection = () => {
     setSortDirection((prevDirection) =>
@@ -81,68 +127,90 @@ function PaymentHistory(props) {
     return new Date(dateString).toLocaleDateString(undefined, options);
   };
 
+  const handleSortBy = (sortType) => {
+    setSortBy(sortType);
+    toggleSortDirection();
+  };
+
   return (
     <Container className="py-4">
-      <h1>Historial de Pagos</h1>
-      <Container className="my-3">
-        <Row className="justify-content-between">
-          <Col xs={6} className="text-start">
-            <DropdownButton
-              id="sort-dropdown"
-              title={`Ordenar por ${sortBy}`}
-              variant="outline-dark"
-            >
-              <Dropdown.Item onClick={() => setSortBy("Fecha")}>
-                Fecha
-              </Dropdown.Item>
-              <Dropdown.Item onClick={() => setSortBy("Caja")}>
-                Caja
-              </Dropdown.Item>
-              <Dropdown.Item onClick={() => setSortBy("Usuario")}>
-                Usuario
-              </Dropdown.Item>
-            </DropdownButton>
-          </Col>
-          <Col xs={6} className="text-end">
-            <Button variant="outline-dark" onClick={toggleSortDirection}>
-              {sortDirection === "asc" ? (
-                <span>
-                  Ascendente <CaretUpFill className="align-middle mb-1" />
-                </span>
-              ) : (
-                <span>
-                  Descendente <CaretDownFill className="align-middle mb-1" />
-                </span>
+      <Row className="mb-3">
+        <Col>
+          <DropdownButton
+            id="dropdown-basic-button"
+            variant="outline-dark"
+            title={`Ordenar por ${sortBy} ${
+              sortDirection === "asc" ? "(ascendente)" : "(descendente)"
+            }`}
+          >
+            <Dropdown.Item onClick={() => handleSortBy("Fecha")}>
+              Fecha
+              {sortBy === "Fecha" && sortDirection === "asc" && (
+                <CaretUpFill className="ms-2" />
               )}
-            </Button>
-          </Col>
-        </Row>
-      </Container>
+              {sortBy === "Fecha" && sortDirection === "desc" && (
+                <CaretDownFill className="ms-2" />
+              )}
+            </Dropdown.Item>
+            <Dropdown.Item onClick={() => handleSortBy("Caja")}>
+              Caja
+              {sortBy === "Caja" && sortDirection === "asc" && (
+                <CaretUpFill className="ms-2" />
+              )}
+              {sortBy === "Caja" && sortDirection === "desc" && (
+                <CaretDownFill className="ms-2" />
+              )}
+            </Dropdown.Item>
+            <Dropdown.Item onClick={() => handleSortBy("Usuario")}>
+              Usuario
+              {sortBy === "Usuario" && sortDirection === "asc" && (
+                <CaretUpFill className="ms-2" />
+              )}
+              {sortBy === "Usuario" && sortDirection === "desc" && (
+                <CaretDownFill className="ms-2" />
+              )}
+            </Dropdown.Item>
+          </DropdownButton>
+        </Col>
+      </Row>
       <div style={{ height: "70vh", overflowY: "auto" }}>
-        <Table striped bordered responsive>
-          <thead>
-            <tr>
-              <th>PID</th>
-              <th>Grupo</th>
-              <th>Fecha</th>
-              <th>Monto</th>
-              <th>Caja</th>
-              <th>Usuario</th>
-            </tr>
-          </thead>
-          <tbody>
-            {sortedPayments.map((payment) => (
-              <tr key={payment.paymenttransactionid}>
-                <td>{payment.paymenttransactionid}</td>
-                <td>{payment.cashpointpaymentgroupreferenceid}</td>
-                <td>{formatDate(payment.valuedate)}</td>
-                <td>{payment.paymentamountcurrencycode}</td>
-                <td>{payment.virtualcashpointname}</td>
-                <td>{payment.username}</td>
-              </tr>
-            ))}
-          </tbody>
-        </Table>
+        {Object.entries(groupedPayments).map(([group, payments]) => (
+          <div key={group}>
+            <h5 className="h5">
+              <strong>Grupo: </strong>
+              {group}
+            </h5>
+
+            <Table striped bordered responsive>
+              <thead>
+                <tr>
+                  <th>PID</th>
+                  <th>Fecha</th>
+                  <th>Monto</th>
+                  <th>Caja</th>
+                  <th>Usuario</th>
+                </tr>
+              </thead>
+              <tbody>
+                {sortedPayments
+                  .filter(
+                    (payment) =>
+                      payment.cashpointpaymentgroupreferenceid === group
+                  )
+                  .map((payment) => (
+                    <tr key={payment.paymenttransactionid}>
+                      <td>{payment.paymenttransactionid}</td>
+                      <td>{formatDate(payment.valuedate)}</td>
+                      <td>{payment.paymentamountcurrencycode}</td>
+                      <td>{payment.virtualcashpointname}</td>
+                      <td>{payment.username}</td>
+                    </tr>
+                  ))}
+              </tbody>
+            </Table>
+            <hr />
+          </div>
+        ))}
       </div>
     </Container>
   );
