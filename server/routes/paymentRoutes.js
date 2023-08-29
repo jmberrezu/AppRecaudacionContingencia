@@ -98,13 +98,6 @@ router.post("/realizar-pago", verifyToken, async (req, res) => {
       fecha_cash = tomorrow;
     }
 
-    console.log("fecha_cash", fecha_cash);
-
-    console.log(
-      "fecha_cash",
-      fecha_cash.toISOString().slice(0, 10).replace(/-/g, "")
-    );
-
     const insertGroupIDQuery = `
     INSERT INTO PaymentGroup (CashPointPaymentGroupReferenceID, valueDate, idCashPoint, idVirtualCashPoint)
     VALUES ($1, $2, $3, $4)
@@ -234,12 +227,12 @@ router.put("/anular-pago/:PID", verifyToken, async (req, res) => {
     `;
     await db.none(query, [PID]);
 
-    //Agrego a la tabla de anulaciones
+    //Agrego a la tabla de anulaciones, incluyendo la fecha y hora actual
     const insertQuery = `
       INSERT INTO ReversePayment (
-        PaymentTransactionID, idGlobalUser
+        PaymentTransactionID, idGlobalUser, fecha_hora
       )
-      VALUES ($1, $2);
+      VALUES ($1, $2, NOW());
     `;
     await db.none(insertQuery, [PID, user.idglobaluser]);
 

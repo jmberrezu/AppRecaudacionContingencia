@@ -7,6 +7,7 @@ import CashClose from "./CashClose";
 import ReverseCashClose from "./ReverseCashClose";
 import ReversePayment from "./ReversePayment";
 import Sidebar from "./Sidebar";
+import PaymentHistory from "./PaymentHistory";
 
 function Recaudation() {
   const navigate = useNavigate();
@@ -90,6 +91,13 @@ function Recaudation() {
           />
         )}
         {activeComponent === "reverseCashClose" && <ReverseCashClose />}
+        {activeComponent === "history" && (
+          <PaymentHistory
+            token={token}
+            idcashpoint={user.idcashpoint}
+            user={user}
+          />
+        )}
       </Container>
     </div>
   );

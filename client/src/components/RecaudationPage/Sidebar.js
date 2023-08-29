@@ -9,6 +9,7 @@ import {
   BoxSeam,
   ArrowCounterclockwise,
   ArrowLeftRight,
+  ClockHistory,
 } from "react-bootstrap-icons";
 
 function Sidebar({ user, handleLogout, setActiveComponent, activeComponent }) {
@@ -80,6 +81,21 @@ function Sidebar({ user, handleLogout, setActiveComponent, activeComponent }) {
             </Link>
           </Nav.Item>
         )}
+        <hr />
+        <strong className="mb-2">Historial</strong>
+
+        <Nav.Item>
+          <Link
+            to="#"
+            className={`nav-link ${
+              activeComponent === "history" ? "active" : "text-black"
+            } `}
+            onClick={() => setActiveComponent("history")}
+          >
+            <ClockHistory size={16} className="align-middle mb-1 me-2" />{" "}
+            Historial de Pagos
+          </Link>
+        </Nav.Item>
       </Nav>
 
       <div className="mt-auto">
