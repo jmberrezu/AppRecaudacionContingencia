@@ -54,15 +54,6 @@ router.post("/realizar-pago", verifyToken, async (req, res) => {
       user.idvirtualcashpoint.toString().slice(-2).padStart(2, "0")
     );
 
-    // Si el groupID no esta en la base de datos, se agrega
-    const insertGroupIDQuery = `
-      INSERT INTO PaymentGroup (CashPointPaymentGroupReferenceID)
-      VALUES ($1)
-      ON CONFLICT (CashPointPaymentGroupReferenceID)
-      DO NOTHING;
-    `;
-    await db.none(insertGroupIDQuery, [groupID]);
-
     // Verificar si el PaymentGroup ya está en CashClosing
     const checkCashClosingQuery = `
       SELECT CashPointPaymentGroupReferenceID
@@ -74,6 +65,8 @@ router.post("/realizar-pago", verifyToken, async (req, res) => {
       groupID,
     ]);
 
+    let fecha_cash = fecha;
+
     //Si existe un CashClosing con el PaymentGroup, el groupID tiene que ser del dia siguiente
     if (cashClosingExists) {
       const tomorrow = new Date();
@@ -83,7 +76,47 @@ router.post("/realizar-pago", verifyToken, async (req, res) => {
         tomorrow.toISOString().slice(0, 10).replace(/-/g, ""),
         user.idvirtualcashpoint.toString().slice(-2).padStart(2, "0")
       );
+
+      // Si existe un CashClosing con el PaymentGroup al dia siguiente, retorna error
+      const checkCashClosingQuery2 = `
+      SELECT CashPointPaymentGroupReferenceID
+      FROM CashClosing
+      WHERE CashPointPaymentGroupReferenceID = $1;
+    `;
+
+      const cashClosingExists2 = await db.oneOrNone(checkCashClosingQuery2, [
+        groupID,
+      ]);
+
+      if (cashClosingExists2) {
+        return res.status(400).json({
+          error:
+            "No se puede realizar el pago porque ya se cerró la caja del día " +
+            tomorrow.toISOString().slice(0, 10),
+        });
+      }
+      fecha_cash = tomorrow;
     }
+
+    console.log("fecha_cash", fecha_cash);
+
+    console.log(
+      "fecha_cash",
+      fecha_cash.toISOString().slice(0, 10).replace(/-/g, "")
+    );
+
+    const insertGroupIDQuery = `
+    INSERT INTO PaymentGroup (CashPointPaymentGroupReferenceID, valueDate, idCashPoint, idVirtualCashPoint)
+    VALUES ($1, $2, $3, $4)
+    ON CONFLICT (CashPointPaymentGroupReferenceID)
+    DO NOTHING;
+  `;
+    await db.none(insertGroupIDQuery, [
+      groupID,
+      fecha_cash.toISOString().slice(0, 10).replace(/-/g, ""),
+      user.idcashpoint,
+      user.idvirtualcashpoint,
+    ]);
 
     //--------------------
 

@@ -71,6 +71,8 @@ function Payment(props) {
     const cantidadTotal = parseFloat(dolares + "." + centavos);
 
     try {
+      //Si todo esta bien se reestablecen los campos
+      setAlertInfo(null);
       const response = await fetch("api/paymentRoutes/realizar-pago", {
         method: "POST",
         headers: {
@@ -94,6 +96,15 @@ function Payment(props) {
           message: "Error al realizar el pago.",
         });
       }
+
+      // Si recibo un error 400 muestro el mensaje
+      if (response.status === 400) {
+        const responseData = await response.json();
+        setAlertInfo({
+          variant: "danger",
+          message: responseData.error,
+        });
+      }
     } catch (error) {
       console.error(error);
       setAlertInfo({
@@ -101,9 +112,6 @@ function Payment(props) {
         message: "Ocurrió un error al realizar el pago.",
       });
     }
-
-    //Si todo esta bien se reestablecen los campos
-    setAlertInfo(null);
   };
 
   const handleCuentaContratoChange = (e) => {
