@@ -217,6 +217,7 @@ router.get("/pagos/:idcashPoint", verifyToken, async (req, res) => {
 // Ruta protegida: Obtener lista de pagos anulados
 router.get("/pagosAnulados/:idcashPoint", verifyToken, async (req, res) => {
   const idcashPoint = req.params.idcashPoint;
+
   try {
     const query = `
         SELECT
@@ -252,11 +253,11 @@ router.put("/anular-pago/:PID", verifyToken, async (req, res) => {
     //Agrego a la tabla de anulaciones, incluyendo la fecha y hora actual
     const insertQuery = `
       INSERT INTO ReversePayment (
-        PaymentTransactionID, idGlobalUser, fecha_hora
+        PaymentTransactionID, idGlobalUser, fecha_hora, idCashPoint
       )
-      VALUES ($1, $2, NOW());
+      VALUES ($1, $2, NOW(), $3);
     `;
-    await db.none(insertQuery, [PID, user.idglobaluser]);
+    await db.none(insertQuery, [PID, user.idglobaluser, user.idcashpoint]);
 
     //Actualizo la deuda del cliente
     const updateDebtQuery = `

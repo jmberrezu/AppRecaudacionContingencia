@@ -9,7 +9,6 @@ import {
 } from "react-bootstrap-icons";
 
 function Sidebar({ user, handleLogout, setActiveComponent, activeComponent }) {
-  console.log("Sidebar: ", setActiveComponent, activeComponent);
   return (
     <div
       className="d-flex flex-column flex-shrink-0 p-3 bg-body-tertiary"

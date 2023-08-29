@@ -114,7 +114,6 @@ function VirtualCashPointCrud(idcashpoint) {
   // Función para eliminar un cajero virtual
   const deleteVirtualCashPoint = async (id) => {
     try {
-      console.log("q pts");
       const response = await axios.delete(`/api/virtualCashPoints/${id}`);
 
       if (response.data.message === "Cajero virtual eliminado exitosamente") {

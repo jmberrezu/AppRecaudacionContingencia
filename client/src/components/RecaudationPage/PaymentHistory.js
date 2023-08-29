@@ -6,7 +6,10 @@ import {
   Dropdown,
   DropdownButton,
   Row,
+  Tab,
+  Nav,
   Col,
+  NavLink,
 } from "react-bootstrap";
 import { CaretUpFill, CaretDownFill } from "react-bootstrap-icons";
 
@@ -15,6 +18,7 @@ function PaymentHistory(props) {
   const [payments, setPayments] = useState([]);
   const [reversePayments, setReversePayments] = useState([]);
   const [sortedPayments, setSortedPayments] = useState([]);
+  const [sortedReversePayments, setSortedReversePayments] = useState([]);
   const [sortBy, setSortBy] = useState("Fecha");
   const [sortDirection, setSortDirection] = useState("asc");
   const [groupedPayments, setGroupedPayments] = useState({});
@@ -53,7 +57,6 @@ function PaymentHistory(props) {
         const paymentsData = await response.json();
 
         setReversePayments(paymentsData);
-        console.log(paymentsData);
       }
     } catch (error) {
       console.error(error);
@@ -90,6 +93,31 @@ function PaymentHistory(props) {
     setSortedPayments(sortedPaymentsCopy);
   }, [payments, sortBy, sortDirection]);
 
+  // Función para ordenar los pagos anulados
+  const sortReversePayments = useCallback(() => {
+    let sortedReversePaymentsCopy = [...reversePayments];
+    switch (sortBy) {
+      case "Fecha":
+        sortedReversePaymentsCopy.sort(
+          (a, b) => new Date(a.fecha_hora) - new Date(b.fecha_hora)
+        );
+        break;
+      case "Usuario":
+        sortedReversePaymentsCopy.sort((a, b) =>
+          sortDirection === "asc"
+            ? a.username - b.username
+            : b.username - a.username
+        );
+        break;
+      default:
+        break;
+    }
+    if (sortDirection === "desc") {
+      sortedReversePaymentsCopy.reverse();
+    }
+    setSortedReversePayments(sortedReversePaymentsCopy);
+  }, [reversePayments, sortBy, sortDirection]);
+
   // Función para agrupar los pagos por grupo
   const groupPayments = useCallback(() => {
     const groupedPaymentsObj = payments.reduce((acc, payment) => {
@@ -105,8 +133,11 @@ function PaymentHistory(props) {
 
   useEffect(() => {
     fetchPayments();
-    fetchReversePayments();
-  }, [fetchPayments, fetchReversePayments]);
+  }, [fetchPayments]);
+
+  useEffect(() => {
+    sortReversePayments();
+  }, [sortReversePayments]);
 
   useEffect(() => {
     sortPayments();
@@ -127,6 +158,11 @@ function PaymentHistory(props) {
     return new Date(dateString).toLocaleDateString(undefined, options);
   };
 
+  const formatTime = (dateString) => {
+    const options = { hour: "numeric", minute: "numeric", second: "numeric" };
+    return new Date(dateString).toLocaleTimeString(undefined, options);
+  };
+
   const handleSortBy = (sortType) => {
     setSortBy(sortType);
     toggleSortDirection();
@@ -134,84 +170,161 @@ function PaymentHistory(props) {
 
   return (
     <Container className="py-4">
-      <Row className="mb-3">
-        <Col>
-          <DropdownButton
-            id="dropdown-basic-button"
-            variant="outline-dark"
-            title={`Ordenar por ${sortBy} ${
-              sortDirection === "asc" ? "(ascendente)" : "(descendente)"
-            }`}
-          >
-            <Dropdown.Item onClick={() => handleSortBy("Fecha")}>
-              Fecha
-              {sortBy === "Fecha" && sortDirection === "asc" && (
-                <CaretUpFill className="ms-2" />
-              )}
-              {sortBy === "Fecha" && sortDirection === "desc" && (
-                <CaretDownFill className="ms-2" />
-              )}
-            </Dropdown.Item>
-            <Dropdown.Item onClick={() => handleSortBy("Caja")}>
-              Caja
-              {sortBy === "Caja" && sortDirection === "asc" && (
-                <CaretUpFill className="ms-2" />
-              )}
-              {sortBy === "Caja" && sortDirection === "desc" && (
-                <CaretDownFill className="ms-2" />
-              )}
-            </Dropdown.Item>
-            <Dropdown.Item onClick={() => handleSortBy("Usuario")}>
-              Usuario
-              {sortBy === "Usuario" && sortDirection === "asc" && (
-                <CaretUpFill className="ms-2" />
-              )}
-              {sortBy === "Usuario" && sortDirection === "desc" && (
-                <CaretDownFill className="ms-2" />
-              )}
-            </Dropdown.Item>
-          </DropdownButton>
-        </Col>
-      </Row>
-      <div style={{ height: "70vh", overflowY: "auto" }}>
-        {Object.entries(groupedPayments).map(([group, payments]) => (
-          <div key={group}>
-            <h5 className="h5">
-              <strong>Grupo: </strong>
-              {group}
-            </h5>
+      <Tab.Container id="left-tabs-example" defaultActiveKey="pagos">
+        <Row className="mb-3">
+          <Col>
+            <Nav variant="tabs">
+              <Nav.Item>
+                <Nav.Link eventKey="pagos">Pagos</Nav.Link>
+              </Nav.Item>
+              {/* Llamo a  fetchReversePayments(); */}
+              <Nav.Item onClick={fetchReversePayments}>
+                <Nav.Link eventKey="anulados">Pagos Anulados</Nav.Link>
+              </Nav.Item>
+            </Nav>
+          </Col>
+        </Row>
+        <Tab.Content>
+          <Tab.Pane eventKey="pagos">
+            <Row className="mb-3">
+              <Col>
+                <DropdownButton
+                  id="dropdown-basic-button"
+                  variant="outline-dark"
+                  title={`Ordenar por ${sortBy} ${
+                    sortDirection === "asc" ? "(ascendente)" : "(descendente)"
+                  }`}
+                >
+                  <Dropdown.Item onClick={() => handleSortBy("Fecha")}>
+                    Fecha
+                    {sortBy === "Fecha" && sortDirection === "asc" && (
+                      <CaretUpFill className="ms-2" />
+                    )}
+                    {sortBy === "Fecha" && sortDirection === "desc" && (
+                      <CaretDownFill className="ms-2" />
+                    )}
+                  </Dropdown.Item>
+                  <Dropdown.Item onClick={() => handleSortBy("Caja")}>
+                    Caja
+                    {sortBy === "Caja" && sortDirection === "asc" && (
+                      <CaretUpFill className="ms-2" />
+                    )}
+                    {sortBy === "Caja" && sortDirection === "desc" && (
+                      <CaretDownFill className="ms-2" />
+                    )}
+                  </Dropdown.Item>
+                  <Dropdown.Item onClick={() => handleSortBy("Usuario")}>
+                    Usuario
+                    {sortBy === "Usuario" && sortDirection === "asc" && (
+                      <CaretUpFill className="ms-2" />
+                    )}
+                    {sortBy === "Usuario" && sortDirection === "desc" && (
+                      <CaretDownFill className="ms-2" />
+                    )}
+                  </Dropdown.Item>
+                </DropdownButton>
+              </Col>
+            </Row>
+            <div style={{ height: "70vh", overflowY: "auto" }}>
+              {Object.entries(groupedPayments).map(([group, payments]) => (
+                <div key={group}>
+                  <h5 className="h5">
+                    <strong>Grupo: </strong>
+                    {group}
+                  </h5>
 
-            <Table striped bordered responsive>
-              <thead>
-                <tr>
-                  <th>PID</th>
-                  <th>Fecha</th>
-                  <th>Monto</th>
-                  <th>Caja</th>
-                  <th>Usuario</th>
-                </tr>
-              </thead>
-              <tbody>
-                {sortedPayments
-                  .filter(
-                    (payment) =>
-                      payment.cashpointpaymentgroupreferenceid === group
-                  )
-                  .map((payment) => (
-                    <tr key={payment.paymenttransactionid}>
-                      <td>{payment.paymenttransactionid}</td>
-                      <td>{formatDate(payment.valuedate)}</td>
-                      <td>{payment.paymentamountcurrencycode}</td>
-                      <td>{payment.virtualcashpointname}</td>
-                      <td>{payment.username}</td>
+                  <Table striped bordered responsive>
+                    <thead>
+                      <tr>
+                        <th>PID</th>
+                        <th>Fecha</th>
+                        <th>Monto</th>
+                        <th>Caja</th>
+                        <th>Usuario</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {sortedPayments
+                        .filter(
+                          (payment) =>
+                            payment.cashpointpaymentgroupreferenceid === group
+                        )
+                        .map((payment) => (
+                          <tr key={payment.paymenttransactionid}>
+                            <td>{payment.paymenttransactionid}</td>
+                            <td>{formatDate(payment.valuedate)}</td>
+                            <td>{payment.paymentamountcurrencycode}</td>
+                            <td>{payment.virtualcashpointname}</td>
+                            <td>{payment.username}</td>
+                          </tr>
+                        ))}
+                    </tbody>
+                  </Table>
+                  <hr />
+                </div>
+              ))}
+            </div>
+          </Tab.Pane>
+          <Tab.Pane eventKey="anulados">
+            <Container className="py-4">
+              <Row className="mb-3">
+                <Col>
+                  <DropdownButton
+                    id="dropdown-basic-button-reverse"
+                    variant="outline-dark"
+                    title={`Ordenar por ${sortBy} ${
+                      sortDirection === "asc" ? "(ascendente)" : "(descendente)"
+                    }`}
+                  >
+                    <Dropdown.Item onClick={() => handleSortBy("Fecha")}>
+                      Fecha
+                      {sortBy === "Fecha" && sortDirection === "asc" && (
+                        <CaretUpFill className="ms-2" />
+                      )}
+                      {sortBy === "Fecha" && sortDirection === "desc" && (
+                        <CaretDownFill className="ms-2" />
+                      )}
+                    </Dropdown.Item>
+                    <Dropdown.Item onClick={() => handleSortBy("Usuario")}>
+                      Usuario
+                      {sortBy === "Usuario" && sortDirection === "asc" && (
+                        <CaretUpFill className="ms-2" />
+                      )}
+                      {sortBy === "Usuario" && sortDirection === "desc" && (
+                        <CaretDownFill className="ms-2" />
+                      )}
+                    </Dropdown.Item>
+                  </DropdownButton>
+                </Col>
+              </Row>
+              <div style={{ height: "70vh", overflowY: "auto" }}>
+                <Table striped bordered responsive>
+                  <thead>
+                    <tr>
+                      <th>PID</th>
+                      <th>Fecha</th>
+                      <th>Hora</th>
+                      <th>Usuario</th>
                     </tr>
-                  ))}
-              </tbody>
-            </Table>
-            <hr />
-          </div>
-        ))}
-      </div>
+                  </thead>
+
+                  <tbody>
+                    {sortedReversePayments.map((payment) => (
+                      <tr key={payment.paymenttransactionid}>
+                        <td>{payment.paymenttransactionid}</td>
+                        <td>{formatDate(payment.fecha_hora)}</td>
+                        <td>{formatTime(payment.fecha_hora)}</td>
+                        <td>{payment.username}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </Table>
+                <hr />
+              </div>
+            </Container>
+          </Tab.Pane>
+        </Tab.Content>
+      </Tab.Container>
     </Container>
   );
 }

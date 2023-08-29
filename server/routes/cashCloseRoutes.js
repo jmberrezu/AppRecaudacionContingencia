@@ -19,18 +19,10 @@ router.post("/", verifyToken, async (req, res) => {
       });
     }
 
-    console.log(results);
-
     // Si el grupo de pago tiene fecha del dia siguiente, retrona error
     let fechaDiaSiguiente = new Date();
     fechaDiaSiguiente.setDate(fechaDiaSiguiente.getDate() + 1);
     let fechaGrupo = new Date(results[0].valuedate);
-
-    console.log(
-      fechaDiaSiguiente.toISOString().slice(0, 10),
-      "-",
-      fechaGrupo.toISOString().slice(0, 10)
-    );
 
     if (
       fechaDiaSiguiente.toISOString().slice(0, 10) ===
