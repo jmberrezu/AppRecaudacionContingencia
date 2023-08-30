@@ -2,11 +2,17 @@ const express = require("express");
 const router = express.Router();
 const db = require("../db");
 const jwt = require("jsonwebtoken");
-const bcrypt = require("bcrypt");
 const verifyToken = require("./verifyToken");
+const { hashPassword, checkPassword } = require("../services/hashpassword");
 
+// Ruta para iniciar sesión
 router.post("/", async (req, res) => {
   const { username, password } = req.body;
+
+  // Si no se ha proporcionado usuario o contraseña
+  if (!username || !password) {
+    return res.status(400).json({ message: "User and Password Required" });
+  }
 
   // Busca usuario en la base de datos
   const user = await db.oneOrNone('SELECT * FROM Admin WHERE "user" = $1', [
@@ -15,28 +21,39 @@ router.post("/", async (req, res) => {
 
   if (!user) {
     // Si el usuario no existe
-    return res.status(401).json({ message: "Usuario no Encontrado." });
+    return res.status(401).json({ message: "User Not Found." });
   } else {
-    if (!(await bcrypt.compare(password, user.password))) {
-      // Si el password es incorrecto
-      return res.status(401).json({ message: "Contraseña Incorrecta" });
+    // Si el usuario existe
+
+    // Si el password es incorrecto
+    if (!(await checkPassword(password, user.password))) {
+      return res.status(401).json({ message: "Incorrect Password" });
     }
 
     const token = jwt.sign(
       {
-        id: user.iduser,
-        username: user.username,
-        idcashpoint: user.idcashpoint,
+        role: "admin",
       },
-      "secret-key",
-      { expiresIn: "3h" }
+      "admin_CTIC_2023!",
+      { expiresIn: "3h" } // El token expira en 3 horas
     );
 
     res.json({ token });
   }
 });
 
-router.get("/", async (req, res) => {
+// Verificar si el token es válido y devuelve el rol del usuario
+router.get("/verify", verifyToken, (req, res) => {
+  res.json({ role: req.user.role });
+});
+
+// Obtener todos los supervisores
+router.get("/", verifyToken, async (req, res) => {
+  // Si el rol del usuario no es admin
+  if (req.user.role !== "admin") {
+    return res.status(401).json({ message: "Unauthorized User" });
+  }
+
   try {
     const supervisors = await db.any("SELECT * FROM Supervisor");
     res.json(supervisors);
@@ -47,28 +64,153 @@ router.get("/", async (req, res) => {
 
 // Agregar un nuevo supervisor
 router.post("/agregar", verifyToken, async (req, res) => {
-  const { username, password, idCashPoint } = req.body; // Include idCashPoint
+  // Si el rol del usuario no es admin
+  if (req.user.role !== "admin") {
+    return res.status(401).json({ message: "Unauthorized User" });
+  }
+
+  const { username, idCashPoint } = req.body;
+  let { password } = req.body;
+
+  // Si no se recibe el idCashPoint
+  if (!idCashPoint) {
+    return res.status(400).json({ message: "idCashPoint required" });
+  } else {
+    // Si el idCashPoint no es de 16 o 21 caracteres
+    if (idCashPoint.length !== 16 && idCashPoint.length !== 21) {
+      return res
+        .status(400)
+        .json({ message: "idCashPoint must be 16 or 21 characters" });
+    }
+  }
+
+  // Si no se recibe el username
+  if (!username) {
+    return res.status(400).json({ message: "username required" });
+  } else {
+    // Si el username no es de 2 a 50 caracteres
+    if (username.length < 2 || username.length > 50) {
+      return res
+        .status(400)
+        .json({ message: "username must be 2 to 50 characters" });
+    }
+  }
+
+  // Si no se recibe el password
+  if (!password) {
+    return res.status(400).json({ message: "password required" });
+  } else {
+    // Si el password no es de 2 a 100 caracteres
+    if (password.length < 2 || password.length > 60) {
+      return res
+        .status(400)
+        .json({ message: "password must be 2 to 60 characters" });
+    }
+
+    // Hasheo el password
+    password = await hashPassword(password);
+  }
+
   try {
+    // Agrego el supervisor a la base de datos
     const newUser = await db.one(
       `INSERT INTO Supervisor (idCashPoint, "user", password)
-              VALUES ($1, $2, $3) RETURNING *`,
-      [idCashPoint, username, password] // Pass idCashPoint, username, and password
+              VALUES ($1, $2, $3) RETURNING idCashPoint, "user"`,
+      [idCashPoint, username, password]
     );
-    res.json(newUser);
+
+    res.json(newUser); // Devuelvo el usuario creado
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    // Si el idCashPoint ya existe
+    if (error.code === "23505") {
+      return res.status(400).json({ message: "idCashPoint already exists" });
+    } else {
+      res.status(500).json({ error: error.message });
+    }
   }
 });
 
 // Actualizar un supervisor existente
 router.put("/:idCashPoint", verifyToken, async (req, res) => {
-  const { username, password } = req.body;
+  // Si el rol del usuario no es admin
+  if (req.user.role !== "admin") {
+    return res.status(401).json({ message: "Unauthorizead User" });
+  }
+
+  const idCashPoint = req.params.idCashPoint;
+  const { username } = req.body;
+  let { password } = req.body;
+
+  // Si no se recibe el idCashPoint
+  if (!idCashPoint) {
+    return res.status(400).json({ message: "idCashPoint required" });
+  } else {
+    // Si el idCashPoint no es de 16 o 21 caracteres
+    if (idCashPoint.length !== 16 && idCashPoint.length !== 21) {
+      return res
+        .status(400)
+        .json({ message: "idCashPoint must be 16 or 21 characters" });
+    }
+  }
+
+  // Si no se recibe el username
+  if (!username) {
+    return res.status(400).json({ message: "username required" });
+  } else {
+    // Si el username no es de 2 a 50 caracteres
+    if (username.length < 2 || username.length > 50) {
+      return res
+
+        .status(400)
+        .json({ message: "username must be 2 to 50 characters" });
+    }
+  }
+
+  // Si se recibe el password
+  if (password) {
+    // Si el password no es de 2 a 100 caracteres
+    if (password.length < 2 || password.length > 60) {
+      return res
+        .status(400)
+        .json({ message: "password must be 2 to 60 characters" });
+    }
+
+    // Hasheo el password
+    password = await hashPassword(password);
+  }
+
   try {
+    // Busca el supervisor a actualizar
+    const supervisorToUpdate = await db.oneOrNone(
+      `SELECT * FROM Supervisor WHERE idCashPoint = $1`,
+      [idCashPoint]
+    );
+
+    if (!supervisorToUpdate) {
+      return res.status(404).json({ message: "Supervisor not found" });
+    }
+
+    // Si no hay contraseña
+    if (!password) {
+      // Actualiza el supervisor sin contraseña
+      const updatedUser = await db.one(
+        `UPDATE Supervisor SET "user"=$1
+          WHERE idCashPoint=$2 RETURNING idCashPoint, "user"`,
+        [username, idCashPoint]
+      );
+
+      // Devuelve la respuesta exitosa
+      return res.json(updatedUser);
+    }
+
+    // Realiza la actualización solo si el supervisor existe y hay contraseña
     const updatedUser = await db.one(
       `UPDATE Supervisor SET "user"=$1, password=$2
-                WHERE idCashPoint=$3 RETURNING *`,
-      [username, password, req.params.idCashPoint] // Use idCashPoint as identifier
+       WHERE idCashPoint=$3 RETURNING idCashPoint, "user"`,
+      [username, password, idCashPoint]
     );
+
+    // Devuelve la respuesta exitosa
     res.json(updatedUser);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -77,60 +219,86 @@ router.put("/:idCashPoint", verifyToken, async (req, res) => {
 
 // Eliminar un supervisor
 router.delete("/:idCashPoint", verifyToken, async (req, res) => {
+  // Si el rol del usuario no es admin
+  if (req.user.role !== "admin") {
+    return res.status(401).json({ message: "Unauthorized User" });
+  }
+
   const idCashPoint = req.params.idCashPoint;
+
+  // Si no se recibe el idCashPoint
+  if (!idCashPoint) {
+    return res.status(400).json({ message: "idCashPoint required" });
+  } else {
+    // Si el idCashPoint no es de 16 o 21 caracteres
+    if (idCashPoint.length !== 16 && idCashPoint.length !== 21) {
+      return res
+        .status(400)
+        .json({ message: "idCashPoint must be 16 or 21 characters" });
+    }
+  }
+
   try {
-    await db.none("DELETE FROM Supervisor WHERE idCashPoint=$1", [idCashPoint]);
-    res.json({ message: "Supervisor eliminado exitosamente" });
+    // Busca el supervisor a eliminar
+    const supervisorToDelete = await db.oneOrNone(
+      `SELECT * FROM Supervisor WHERE idCashPoint = $1`,
+      [idCashPoint]
+    );
+
+    if (!supervisorToDelete) {
+      return res.status(404).json({ message: "Supervisor not found" });
+    }
+
+    // Verificar si se puede eliminar el supervisor
+    const counts = await db.one(
+      `
+      SELECT
+        (SELECT COUNT(*) FROM "User" WHERE idCashPoint = $1) AS user_count,
+        (SELECT COUNT(*) FROM CashClosing WHERE idCashPoint = $1) AS cash_closing_count,
+        (SELECT COUNT(*) FROM VirtualCashPoint WHERE idCashPoint = $1) AS virtual_cash_point_count,
+        (SELECT COUNT(*) FROM Payment WHERE idCashPoint = $1) AS payment_count,
+        (SELECT COUNT(*) FROM ReversePayment WHERE idCashPoint = $1) AS reverse_payment_count,
+        (SELECT COUNT(*) FROM PaymentGroup WHERE idCashPoint = $1) AS payment_group_count
+    `,
+      [idCashPoint]
+    );
+
+    switch (true) {
+      case counts.user_count > 0:
+        return res.status(400).json({
+          message: "Supervisor cannot be deleted because it has users",
+        });
+      case counts.cash_closing_count > 0:
+        return res.status(400).json({
+          message: "Supervisor cannot be deleted because it has cash closings",
+        });
+      case counts.virtual_cash_point_count > 0:
+        return res.status(400).json({
+          message:
+            "Supervisor cannot be deleted because it has virtual cash points",
+        });
+      case counts.payment_count > 0:
+        return res.status(400).json({
+          message: "Supervisor cannot be deleted because it has payments",
+        });
+      case counts.reverse_payment_count > 0:
+        return res.status(400).json({
+          message:
+            "Supervisor cannot be deleted because it has reverse payments",
+        });
+      case counts.payment_group_count > 0:
+        return res.status(400).json({
+          message: "Supervisor cannot be deleted because it has payment groups",
+        });
+      default:
+        await db.none("DELETE FROM Supervisor WHERE idCashPoint=$1", [
+          idCashPoint,
+        ]);
+        res.json({ message: "Supervisor eliminado exitosamente" });
+    }
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
-});
-
-// Verificar si se puede eliminar un supervisor
-router.get("/canDelete/:idCashPoint", verifyToken, async (req, res) => {
-  const idCashPoint = req.params.idCashPoint;
-  try {
-    const canDeleteUser = await db.oneOrNone(
-      'SELECT COUNT(*) AS count FROM "User" WHERE idCashPoint = $1',
-      [idCashPoint]
-    );
-
-    const canDeleteCashClosing = await db.oneOrNone(
-      "SELECT COUNT(*) AS count FROM CashClosing WHERE idCashPoint = $1",
-      [idCashPoint]
-    );
-
-    const canDeleteVirtualCashPoint = await db.oneOrNone(
-      "SELECT COUNT(*) AS count FROM VirtualCashPoint WHERE idCashPoint = $1",
-      [idCashPoint]
-    );
-
-    const canDeletePayment = await db.oneOrNone(
-      "SELECT COUNT(*) AS count FROM Payment WHERE idCashPoint = $1",
-      [idCashPoint]
-    );
-
-    const canDelete =
-      canDeleteUser &&
-      parseInt(canDeleteUser.count, 10) === 0 &&
-      canDeleteCashClosing &&
-      parseInt(canDeleteCashClosing.count, 10) === 0 &&
-      canDeleteVirtualCashPoint &&
-      parseInt(canDeleteVirtualCashPoint.count, 10) === 0 &&
-      canDeletePayment &&
-      parseInt(canDeletePayment.count, 10) === 0;
-
-    res.json({ canDelete });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// Ruta protegida que solo puede ser accedida por usuarios autenticados
-router.get("/protected", verifyToken, (req, res) => {
-  // El middleware verifyToken verifica el token antes de llegar aquí
-  const decoded = req.user; // Esta información se guarda en el objeto de solicitud por el middleware
-  res.json({ message: "Ruta protegida accesible", user: decoded });
 });
 
 module.exports = router;

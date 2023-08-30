@@ -11,50 +11,63 @@ import {
   Nav,
   Navbar,
 } from "react-bootstrap";
-import bcrypt from "bcryptjs-react";
 
 function SupervisorCrud() {
+  // Para el token y la navegación
   const navigate = useNavigate();
   const [token, setToken] = useState("");
-
-  const [supervisors, setSupervisors] = useState([]);
+  // Para los modales
   const [showModal, setShowModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  // Para el CRUD
+  const [supervisors, setSupervisors] = useState([]);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [idCashPoint, setIdCashPoint] = useState(""); // Add state for idCashPoint
-  const [alertInfo, setAlertInfo] = useState(null);
+  const [idCashPoint, setIdCashPoint] = useState("");
+  // Para editar un supervisor
   const [editingSupervisor, setEditingSupervisor] = useState(null);
+  // Para mostrar alertas
+  const [alertInfo, setAlertInfo] = useState(null);
 
+  // Obtener token de local stroage
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      navigate("/");
-    } else {
+    const storedToken = localStorage.getItem("token");
+    if (storedToken) {
       axios
-        .get("/api/admin/protected", {
-          headers: { Authorization: `Bearer ${token}` },
+        .get("/api/admin/verify", {
+          headers: { Authorization: `Bearer ${storedToken}` },
         })
         .then((response) => {
-          setToken(token);
+          // Verificar el rol aquí
+          if (response.data.role !== "admin") {
+            navigate("/admin");
+          } else {
+            // Si el rol es admin, actualizar el estado del token
+            setToken(storedToken);
+          }
         })
         .catch((error) => {
-          console.error(error);
-          navigate("/");
+          // Manejar errores de la petición
+          console.error("Error verifying token:", error);
+          navigate("/admin");
         });
+    } else {
+      navigate("/admin");
     }
-  }, [navigate, setToken]);
+  }, [navigate]);
 
   // Cargar datos iniciales
   useEffect(() => {
-    fetchSupervisors();
-  }, []);
+    if (token) {
+      fetchSupervisors();
+    }
+  }, [token]);
 
   useEffect(() => {
     if (!showModal) {
       setUsername("");
       setPassword("");
-      setIdCashPoint(""); // Clear idCashPoint
+      setIdCashPoint("");
       setAlertInfo(null);
     }
   }, [showModal]);
@@ -63,7 +76,7 @@ function SupervisorCrud() {
     if (!showEditModal) {
       setUsername("");
       setPassword("");
-      setIdCashPoint(""); // Clear idCashPoint
+      setIdCashPoint("");
       setAlertInfo(null);
     }
   }, [showEditModal]);
@@ -71,17 +84,20 @@ function SupervisorCrud() {
   // Función para obtener la lista de usuarios
   const fetchSupervisors = async () => {
     try {
-      const response = await axios.get("/api/admin"); // No necesitas enviar el token aquí
+      const response = await axios.get("/api/admin", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       setSupervisors(response.data);
     } catch (error) {
       console.error(error);
     }
   };
 
+  // Función para editar un supervisor
   const editSupervisor = (supervisor) => {
     setEditingSupervisor(supervisor);
     setUsername(supervisor.user);
-    setIdCashPoint(supervisor.idcashpoint); // Set idCashPoint
+    setIdCashPoint(supervisor.idcashpoint);
     setShowEditModal(true);
   };
 
@@ -89,38 +105,25 @@ function SupervisorCrud() {
   const createSupervisor = async () => {
     try {
       if (username && password && idCashPoint) {
-        const hashedPassword = await bcrypt.hash(password, 10);
-        const existingSupervisor = supervisors.find(
-          (supervisor) => supervisor.idcashpoint === idCashPoint
+        await axios.post(
+          "/api/admin/agregar",
+          {
+            username: username,
+            password: password,
+            idCashPoint: idCashPoint,
+          },
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
         );
-
-        if (existingSupervisor) {
-          setAlertInfo({
-            variant: "danger",
-            message:
-              "La caja ya esta asignada a un supervisor. No se puede agregar.",
-          });
-        } else {
-          await axios.post(
-            "/api/admin/agregar",
-            {
-              username,
-              password: hashedPassword,
-              idCashPoint,
-            },
-            {
-              headers: { Authorization: `Bearer ${token}` },
-            }
-          );
-          setUsername("");
-          setPassword("");
-          setIdCashPoint("");
-          setAlertInfo({
-            variant: "success",
-            message: "Supervisor agregado exitosamente",
-          });
-          fetchSupervisors();
-        }
+        setUsername("");
+        setPassword("");
+        setIdCashPoint("");
+        setAlertInfo({
+          variant: "success",
+          message: "Supervisor agregado exitosamente",
+        });
+        fetchSupervisors();
       } else {
         setAlertInfo({
           variant: "danger",
@@ -128,99 +131,70 @@ function SupervisorCrud() {
         });
       }
     } catch (error) {
-      console.error(error);
-      setAlertInfo({
-        variant: "danger",
-        message: error.response.data.message,
-      });
-    }
-  };
-
-  const updateSupervisor = async () => {
-    try {
-      if (editingSupervisor) {
-        const existingSupervisor = supervisors.find(
-          (supervisor) =>
-            supervisor.idcashpoint === idCashPoint &&
-            supervisor.idcashpoint !== editingSupervisor.idcashpoint
-        );
-
-        if (existingSupervisor) {
-          setAlertInfo({
-            variant: "danger",
-            message:
-              "La caja ya esta asignada a un supervisor. No se puede actualizar.",
-          });
-        } else {
-          let updateSupervisor = {
-            ...editingSupervisor,
-            username,
-            password,
-            idCashPoint,
-          };
-          if (password !== "") {
-            const hashedPassword = await bcrypt.hash(password, 10);
-            updateSupervisor = {
-              ...updateSupervisor,
-              password: hashedPassword,
-            };
-          }
-          await axios.put(
-            `/api/admin/${editingSupervisor.idcashpoint}`,
-            updateSupervisor,
-            {
-              headers: { Authorization: `Bearer ${token}` },
-            }
-          );
-          setEditingSupervisor(null);
-          setShowEditModal(false);
-          setUsername("");
-          setPassword("");
-          setIdCashPoint("");
-          setAlertInfo({
-            variant: "success",
-            message: "Supervisor actualizado exitosamente",
-          });
-          fetchSupervisors();
-        }
-      }
-    } catch (error) {
-      console.error(error);
-      setAlertInfo({
-        variant: "danger",
-        message: error.response.data.message,
-      });
-    }
-  };
-
-  const canDeleteSupervisor = async (idCashPoint) => {
-    try {
-      const response = await axios.get(`/api/admin/canDelete/${idCashPoint}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      return response.data.canDelete;
-    } catch (error) {
-      console.error(error);
-      return false;
-    }
-  };
-
-  const deleteSupervisor = async (idcashpoint) => {
-    try {
-      const canDelete = await canDeleteSupervisor(idcashpoint);
-      if (canDelete) {
-        await axios.delete(`/api/admin/${idcashpoint}`, {
-          headers: { Authorization: `Bearer ${token}` },
+      // Si el idCashPoint ingresado no es de 16 o 21 caracteres
+      if (
+        error.response.data.message ===
+        "idCashPoint must be 16 or 21 characters"
+      ) {
+        setAlertInfo({
+          variant: "danger",
+          message: "El ID de caja debe ser de 16 o 21 caracteres.",
         });
-        fetchSupervisors();
-        setShowEditModal(false);
+      } else if (
+        error.response.data.message === "username must be 2 to 50 characters"
+      ) {
+        setAlertInfo({
+          variant: "danger",
+          message: "El usuario debe ser de 2 a 50 caracteres.",
+        });
+      } else if (
+        error.response.data.message === "password must be 2 to 60 characters"
+      ) {
+        setAlertInfo({
+          variant: "danger",
+          message: "La contraseña debe ser de mayor a 2 caracteres.",
+        });
+      } else if (error.response.data.message === "idCashPoint already exists") {
+        setAlertInfo({
+          variant: "danger",
+          message: "El ID de caja ya existe.",
+        });
       } else {
         setAlertInfo({
           variant: "danger",
-          message:
-            "No se puede eliminar la caja porque tiene registros relacionados.",
+          message: error.response.data.message,
         });
+        console.error(error);
       }
+    }
+  };
+
+  // Actualizar un supervisor
+  const updateSupervisor = async () => {
+    try {
+      let updateSupervisor = {
+        ...editingSupervisor,
+        username,
+        password,
+        idCashPoint,
+      };
+      await axios.put(
+        `/api/admin/${editingSupervisor.idcashpoint}`,
+        updateSupervisor,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      setEditingSupervisor(null);
+      setShowEditModal(false);
+      setUsername("");
+      setPassword("");
+      setIdCashPoint("");
+      setAlertInfo({
+        variant: "success",
+        message: "Supervisor actualizado exitosamente",
+      });
+      fetchSupervisors();
     } catch (error) {
       console.error(error);
       setAlertInfo({
@@ -230,6 +204,32 @@ function SupervisorCrud() {
     }
   };
 
+  // Eliminar un supervisor
+  const deleteSupervisor = async (idcashpoint) => {
+    try {
+      await axios.delete(`/api/admin/${idcashpoint}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      fetchSupervisors();
+      setShowEditModal(false);
+    } catch (error) {
+      // Si el error es 400 es que el supervisor no puede ser eliminado ya que tiene transacciones
+      if (error.response.status === 400) {
+        setAlertInfo({
+          variant: "danger",
+          message:
+            "El supervisor no puede ser eliminado ya que tiene transacciones.",
+        });
+      } else {
+        setAlertInfo({
+          variant: "danger",
+          message: error.response.data.message,
+        });
+      }
+    }
+  };
+
+  // Cerrar sesión
   const handleLogout = () => {
     // Limpiar el token y redirigir al inicio de sesión
     localStorage.removeItem("token");
