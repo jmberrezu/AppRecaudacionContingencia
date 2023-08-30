@@ -141,7 +141,7 @@ function ReversePayment(props) {
           </Col>
         </Row>
       </Container>
-      <div style={{ height: "70vh", overflowY: "auto" }}>
+      <div style={{ height: "68vh", overflowY: "auto" }}>
         <Table striped bordered responsive>
           <thead>
             <tr>

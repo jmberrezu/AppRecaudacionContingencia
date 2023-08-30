@@ -123,9 +123,13 @@ function PaymentHistory(props) {
     const groupedPaymentsObj = payments.reduce((acc, payment) => {
       const group = payment.cashpointpaymentgroupreferenceid;
       if (!acc[group]) {
-        acc[group] = [];
+        acc[group] = {
+          payments: [],
+          totalAmount: 0, // Agregar un campo para rastrear el monto total
+        };
       }
-      acc[group].push(payment);
+      acc[group].payments.push(payment);
+      acc[group].totalAmount += parseFloat(payment.paymentamountcurrencycode); // Sumar el monto al total del grupo
       return acc;
     }, {});
     setGroupedPayments(groupedPaymentsObj);
@@ -167,6 +171,11 @@ function PaymentHistory(props) {
     setSortBy(sortType);
     toggleSortDirection();
   };
+
+  const totalReversePaymentsAmount = reversePayments.reduce(
+    (acc, payment) => acc + parseFloat(payment.paymentamountcurrencycode),
+    0
+  );
 
   return (
     <Container className="py-4">
@@ -225,44 +234,55 @@ function PaymentHistory(props) {
                 </DropdownButton>
               </Col>
             </Row>
-            <div style={{ height: "70vh", overflowY: "auto" }}>
-              {Object.entries(groupedPayments).map(([group, payments]) => (
-                <div key={group}>
-                  <h5 className="h5">
-                    <strong>Grupo: </strong>
-                    {group}
-                  </h5>
-
-                  <Table striped bordered responsive>
-                    <thead>
-                      <tr>
-                        <th>PID</th>
-                        <th>Fecha</th>
-                        <th>Monto</th>
-                        <th>Caja</th>
-                        <th>Usuario</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {sortedPayments
-                        .filter(
-                          (payment) =>
-                            payment.cashpointpaymentgroupreferenceid === group
-                        )
-                        .map((payment) => (
-                          <tr key={payment.paymenttransactionid}>
-                            <td>{payment.paymenttransactionid}</td>
-                            <td>{formatDate(payment.valuedate)}</td>
-                            <td>{payment.paymentamountcurrencycode}</td>
-                            <td>{payment.virtualcashpointname}</td>
-                            <td>{payment.username}</td>
-                          </tr>
-                        ))}
-                    </tbody>
-                  </Table>
-                  <hr />
-                </div>
-              ))}
+            <div style={{ height: "69vh", overflowY: "auto" }}>
+              {Object.entries(groupedPayments).map(
+                ([group, { payments, totalAmount }]) => (
+                  <div key={group}>
+                    <div class="row g-0">
+                      <div class="col-sm-8">
+                        <h5>
+                          <strong>Grupo: </strong>
+                          {group}
+                        </h5>
+                      </div>
+                      <div class="col-sm-4 text-end ">
+                        Monto Total del Grupo:{" "}
+                        <strong className="text-primary">
+                          {"$" + totalAmount.toFixed(2)}
+                        </strong>
+                      </div>
+                    </div>
+                    <Table striped bordered responsive>
+                      <thead>
+                        <tr>
+                          <th>PID</th>
+                          <th>Fecha</th>
+                          <th>Monto</th>
+                          <th>Caja</th>
+                          <th>Usuario</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {sortedPayments
+                          .filter(
+                            (payment) =>
+                              payment.cashpointpaymentgroupreferenceid === group
+                          )
+                          .map((payment) => (
+                            <tr key={payment.paymenttransactionid}>
+                              <td>{payment.paymenttransactionid}</td>
+                              <td>{formatDate(payment.valuedate)}</td>
+                              <td>{"$" + payment.paymentamountcurrencycode}</td>
+                              <td>{payment.virtualcashpointname}</td>
+                              <td>{payment.username}</td>
+                            </tr>
+                          ))}
+                      </tbody>
+                    </Table>
+                    <hr />
+                  </div>
+                )
+              )}
             </div>
           </Tab.Pane>
           <Tab.Pane eventKey="anulados">
@@ -297,11 +317,19 @@ function PaymentHistory(props) {
                   </DropdownButton>
                 </Col>
               </Row>
-              <div style={{ height: "70vh", overflowY: "auto" }}>
+              <div style={{ height: "63vh", overflowY: "auto" }}>
+                <div className=" text-end mb-2">
+                  Monto Total de Pagos Anulados:{" "}
+                  <strong className="text-primary">
+                    {"$" + totalReversePaymentsAmount.toFixed(2)}
+                  </strong>
+                </div>
+
                 <Table striped bordered responsive>
                   <thead>
                     <tr>
                       <th>PID</th>
+                      <th>Monto</th>
                       <th>Fecha</th>
                       <th>Hora</th>
                       <th>Usuario</th>
@@ -312,6 +340,7 @@ function PaymentHistory(props) {
                     {sortedReversePayments.map((payment) => (
                       <tr key={payment.paymenttransactionid}>
                         <td>{payment.paymenttransactionid}</td>
+                        <td>{"$" + payment.paymentamountcurrencycode}</td>
                         <td>{formatDate(payment.fecha_hora)}</td>
                         <td>{formatTime(payment.fecha_hora)}</td>
                         <td>{payment.username}</td>

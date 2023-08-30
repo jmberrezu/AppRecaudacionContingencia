@@ -61,20 +61,24 @@ function Recaudation() {
         activeComponent={activeComponent}
       />
       <Container fluid className="my-3">
-        <Container className="d-flex">
-          <div className="me-auto d-flex align-items-center">
-            <h1>Página de Recaudación</h1>
+        <Container className="d-flex flex-wrap align-items-center">
+          <div className="me-auto d-flex align-items-center mb-2">
+            <h1 className="text-sm">Página de Recaudación</h1>
           </div>
-          <div className="h5 d-flex align-items-center">
+          <div className="h5 d-none d-xl-block d-flex align-items-center mb-2">
             <strong className="pe-2">Fecha: </strong>
-            {currentDateTime.toLocaleDateString()}
+            <span className="text-sm">
+              {currentDateTime.toLocaleDateString()}
+            </span>
           </div>
-          <div className="h5 mx-4 d-flex align-items-center">
+          <div className="h5 mx-4 d-none d-xl-block d-flex align-items-center mb-2">
             <strong>|</strong>
           </div>
-          <div className="h5 d-flex align-items-center">
+          <div className="h5 d-none d-xl-block d-flex align-items-center mb-2">
             <strong className="pe-2">Hora: </strong>
-            {currentDateTime.toLocaleTimeString()}
+            <span className="text-sm">
+              {currentDateTime.toLocaleTimeString()}
+            </span>
           </div>
         </Container>
 

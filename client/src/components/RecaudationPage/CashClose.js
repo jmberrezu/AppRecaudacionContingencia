@@ -147,10 +147,16 @@ function CashClose(props) {
         <Alert variant={alertInfo.variant}>{alertInfo.message}</Alert>
       )}
       <InputGroup className="my-3 px-3">
-        <InputGroup.Text id="formCuentaContrato">Grupo</InputGroup.Text>
+        <InputGroup.Text id="group">Grupo</InputGroup.Text>
         <Form.Control
           type="text"
           value={grupo ? grupo.cashpointpaymentgroupreferenceid : ""} // Use an empty string if grupo is falsy
+          disabled
+        />
+        <InputGroup.Text id="TotalRecaudado">Total Recaudado</InputGroup.Text>
+        <Form.Control
+          type="text"
+          value={grupo ? "$" + grupo.total_sumado : ""} // Use an empty string if grupo is falsy
           disabled
         />
       </InputGroup>

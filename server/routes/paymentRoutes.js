@@ -207,6 +207,13 @@ router.get("/pagos/:idcashPoint", verifyToken, async (req, res) => {
 
     const payments = await db.any(query, [idcashPoint]);
 
+    // A todos los pagos, se les coloca con formato de 2 decimales
+    payments.forEach((payment) => {
+      payment.paymentamountcurrencycode = parseFloat(
+        payment.paymentamountcurrencycode
+      ).toFixed(2);
+    });
+
     res.status(200).json(payments);
   } catch (error) {
     console.error(error);
@@ -253,11 +260,16 @@ router.put("/anular-pago/:PID", verifyToken, async (req, res) => {
     //Agrego a la tabla de anulaciones, incluyendo la fecha y hora actual
     const insertQuery = `
       INSERT INTO ReversePayment (
-        PaymentTransactionID, idGlobalUser, fecha_hora, idCashPoint
+        PaymentTransactionID, idGlobalUser, fecha_hora, idCashPoint, paymentAmountCurrencyCode
       )
-      VALUES ($1, $2, NOW(), $3);
+      VALUES ($1, $2, NOW(), $3, $4);
     `;
-    await db.none(insertQuery, [PID, user.idglobaluser, user.idcashpoint]);
+    await db.none(insertQuery, [
+      PID,
+      user.idglobaluser,
+      user.idcashpoint,
+      ammount,
+    ]);
 
     //Actualizo la deuda del cliente
     const updateDebtQuery = `

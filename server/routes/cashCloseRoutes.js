@@ -11,7 +11,7 @@ router.post("/", verifyToken, async (req, res) => {
     //Obtengo los pagos de la caja ordenados por fecha
     const query = `SELECT * FROM PaymentGroup WHERE idCashPoint = $1 AND idVirtualCashPoint = $2 ORDER BY valueDate`;
 
-    const results = await db.query(query, [idcashpoint, idvirtualcashpoint]);
+    let results = await db.query(query, [idcashpoint, idvirtualcashpoint]);
 
     if (results.length === 0) {
       return res.status(404).json({
@@ -34,6 +34,15 @@ router.post("/", verifyToken, async (req, res) => {
           fechaGrupo.toISOString().slice(0, 10),
       });
     }
+
+    // Obtengo todos los pagos del grupo y los sumo
+    const query2 = `SELECT SUM(CAST(paymentAmountCurrencyCode AS NUMERIC)) AS total_sumado FROM Payment WHERE CashPointPaymentGroupReferenceID = $1;`;
+
+    let total_sumado = await db.one(query2, [
+      results[0].cashpointpaymentgroupreferenceid,
+    ]);
+
+    results[0].total_sumado = total_sumado.total_sumado;
 
     res.json(results[0]);
   } catch (error) {
