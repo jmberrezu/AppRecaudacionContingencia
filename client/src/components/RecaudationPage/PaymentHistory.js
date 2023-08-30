@@ -2,19 +2,17 @@ import React, { useState, useEffect, useCallback } from "react";
 import {
   Container,
   Table,
-  Button,
   Dropdown,
   DropdownButton,
   Row,
   Tab,
   Nav,
   Col,
-  NavLink,
 } from "react-bootstrap";
 import { CaretUpFill, CaretDownFill } from "react-bootstrap-icons";
 
 function PaymentHistory(props) {
-  const { token, idcashpoint, user } = props;
+  const { token, idcashpoint } = props;
   const [payments, setPayments] = useState([]);
   const [reversePayments, setReversePayments] = useState([]);
   const [sortedPayments, setSortedPayments] = useState([]);

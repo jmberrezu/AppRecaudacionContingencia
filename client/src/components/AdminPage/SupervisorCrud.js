@@ -3,18 +3,15 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import {
   Container,
-  Col,
   Button,
   Table,
   Modal,
   Alert,
   Form,
-  Row,
   Nav,
   Navbar,
 } from "react-bootstrap";
 import bcrypt from "bcryptjs-react";
-import { PersonCircle, BoxSeam } from "react-bootstrap-icons";
 
 function SupervisorCrud() {
   const navigate = useNavigate();

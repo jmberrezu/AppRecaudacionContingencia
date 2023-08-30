@@ -102,11 +102,7 @@ function Recaudation() {
           />
         )}
         {activeComponent === "history" && (
-          <PaymentHistory
-            token={token}
-            idcashpoint={user.idcashpoint}
-            user={user}
-          />
+          <PaymentHistory token={token} idcashpoint={user.idcashpoint} />
         )}
       </Container>
     </div>
