@@ -94,7 +94,13 @@ function Recaudation() {
             user={user}
           />
         )}
-        {activeComponent === "reverseCashClose" && <ReverseCashClose />}
+        {activeComponent === "reverseCashClose" && (
+          <ReverseCashClose
+            token={token}
+            idcashpoint={user.idcashpoint}
+            user={user}
+          />
+        )}
         {activeComponent === "history" && (
           <PaymentHistory
             token={token}

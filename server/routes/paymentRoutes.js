@@ -15,6 +15,7 @@ function generatePaymentTransactionID(
   return `PID-${officeCode}-${currentDate}-${ajuste}${formattedUserId}${formattedVirtualCashPointId}${formattedSecuencial}`;
 }
 
+// Función para generar un ID único de grupo de pago
 function generateGroupID(officeCode, currentDate, formattedVirtualCashPointId) {
   return `${officeCode}-${currentDate}${formattedVirtualCashPointId}`;
 }

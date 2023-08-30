@@ -104,4 +104,59 @@ router.post("/close", verifyToken, async (req, res) => {
   }
 });
 
+// Obtengo las cajas cerradas
+router.get("/closedcash/:idcashpoint", verifyToken, async (req, res) => {
+  const { idcashpoint } = req.params;
+
+  try {
+    const query = `SELECT CashClosing.*,
+    VirtualCashPoint.idVirtualCashPoint,
+        VirtualCashPoint.name AS virtualCashPointName
+    FROM CashClosing
+    INNER JOIN VirtualCashPoint ON CashClosing.idGlobalVirtualCashPoint = VirtualCashPoint.idGlobalVirtualCashPoint
+    WHERE CashClosing.idCashPoint = $1`;
+
+    const results = await db.query(query, [idcashpoint]);
+
+    res.json(results);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Error retrieving data" });
+  }
+});
+
+// Anulo el cierre de caja
+router.put(
+  "/anular-cierre-caja/:cashpointpaymentgroupreferenceid",
+  verifyToken,
+  async (req, res) => {
+    const { cashpointpaymentgroupreferenceid } = req.params;
+    const { user } = req.body;
+
+    try {
+      // Abro el grupo de pago
+      const query = `INSERT INTO PaymentGroup (CashPointPaymentGroupReferenceID, valueDate, idCashPoint, idVirtualCashPoint)
+      VALUES ($1, $2, $3, $4);`;
+
+      await db.none(query, [
+        cashpointpaymentgroupreferenceid,
+        cashpointpaymentgroupreferenceid.split("-")[1].substring(0, 8),
+        user.idcashpoint,
+        cashpointpaymentgroupreferenceid.split("-")[1].substring(8, 12),
+      ]);
+
+      // Elimino el cierre de caja
+
+      const query2 = `DELETE FROM CashClosing WHERE CashPointPaymentGroupReferenceID = $1`;
+
+      await db.none(query2, [cashpointpaymentgroupreferenceid]);
+
+      res.status(200).json({ message: "Cierre de caja anulado correctamente" });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ error: "Error en el servidor" });
+    }
+  }
+);
+
 module.exports = router;

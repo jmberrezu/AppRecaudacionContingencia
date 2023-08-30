@@ -31,6 +31,8 @@ function CashClose(props) {
   }, [setGrupo]);
 
   const getGrupo = async () => {
+    setAlertInfo(null);
+    setNoPagos(false);
     try {
       const response = await fetch("/api/cashClose", {
         method: "POST",
@@ -125,6 +127,30 @@ function CashClose(props) {
       }
     } catch (error) {
       setAlertInfo({ variant: "danger", message: error.message });
+    }
+  };
+
+  const anularcierre = async () => {
+    try {
+      const response = await fetch(
+        `/api/cashClose/anular-cierre-caja/${grupo.cashpointpaymentgroupreferenceid}`,
+        {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            user: user,
+          }),
+        }
+      );
+
+      if (response.ok) {
+        await getGrupo();
+      }
+    } catch (error) {
+      console.error(error);
     }
   };
 
@@ -239,6 +265,7 @@ function CashClose(props) {
           <Button
             variant="outline-danger"
             onClick={() => {
+              anularcierre();
               setShowDifferenceModal(false);
               setDolares("");
               setCentavos("");
