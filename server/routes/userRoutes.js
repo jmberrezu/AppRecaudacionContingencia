@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 const db = require("../db");
 const verifyToken = require("./verifyToken");
-const { hashPassword, checkPassword } = require("../services/hashpassword");
+const { hashPassword } = require("../services/hashpassword");
 
 // Obtener todos los usuarios de una caja en específico
 router.get("/:idcashPoint", verifyToken, async (req, res) => {

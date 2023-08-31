@@ -94,14 +94,6 @@ function SupervisorCrud() {
     }
   };
 
-  // Función para editar un supervisor
-  const editSupervisor = (supervisor) => {
-    setEditingSupervisor(supervisor);
-    setUsername(supervisor.user);
-    setIdCashPoint(supervisor.idcashpoint);
-    setShowEditModal(true);
-  };
-
   // Agregar un nuevo supervisor
   const createSupervisor = async () => {
     try {
@@ -168,6 +160,14 @@ function SupervisorCrud() {
         console.error(error);
       }
     }
+  };
+
+  // Función para editar un supervisor
+  const editSupervisor = (supervisor) => {
+    setEditingSupervisor(supervisor);
+    setUsername(supervisor.user);
+    setIdCashPoint(supervisor.idcashpoint);
+    setShowEditModal(true);
   };
 
   // Actualizar un supervisor

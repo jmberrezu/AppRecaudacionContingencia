@@ -43,7 +43,7 @@ function SupervisorView() {
       // Si no hay token, redirigir al inicio de sesión
       navigate("/supervisor");
     }
-  }, [navigate, user]);
+  }, [navigate]);
 
   // Cerrar sesión
   const handleLogout = () => {

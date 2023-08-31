@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { Container, Table, Button, Modal, Form, Alert } from "react-bootstrap";
-import bcrypt from "bcryptjs-react";
+import { useNavigate } from "react-router-dom";
 
 function UserCrud(idcashpoint) {
+  // Para el token y la navegación
+  const navigate = useNavigate();
+  const [token, setToken] = useState("");
   // Estado para almacenar los usuarios
   const [users, setUsers] = useState([]);
   // Estados para controlar la visibilidad de los modales
@@ -21,10 +24,42 @@ function UserCrud(idcashpoint) {
   // Estado para el usuario en edición
   const [editingUser, setEditingUser] = useState(null);
 
+  // Obtener el token del local storage
+  useEffect(() => {
+    const storedToken = localStorage.getItem("token");
+    if (storedToken) {
+      axios
+        .get("/api/supervisor/verify", {
+          headers: {
+            Authorization: `Bearer ${storedToken}`,
+          },
+        })
+        .then((response) => {
+          // Verificar el rol
+          if (response.data.role !== "supervisor") {
+            navigate("/supervisor");
+          } else {
+            // Guardar el token
+            setToken(storedToken);
+          }
+        })
+        .catch((error) => {
+          // Si el token no es válido, redirigir al inicio de sesión
+          console.error("Error verifying token: ", error);
+          navigate("/supervisor");
+        });
+    } else {
+      // Si no hay token, redirigir al inicio de sesión
+      navigate("/supervisor");
+    }
+  }, [navigate]);
+
   // Cargar datos iniciales
   useEffect(() => {
-    fetchUsers();
-  }, [idcashpoint]); // Agrega idcashpoint como dependencia
+    if (token) {
+      fetchUsers();
+    }
+  }, [token, idcashpoint]); // Agrega idcashpoint como dependencia
 
   // Limpiar formulario y alerta cuando se cierra el modal
   useEffect(() => {
@@ -50,11 +85,20 @@ function UserCrud(idcashpoint) {
 
   // Función para obtener la lista de usuarios de la caja en especifico
   const fetchUsers = async () => {
-    try {
-      const response = await axios.get(`/api/users/${idcashpoint.idcashpoint}`);
-      setUsers(response.data);
-    } catch (error) {
-      console.error(error);
+    if (idcashpoint.idcashpoint) {
+      try {
+        const response = await axios.get(
+          `/api/users/${idcashpoint.idcashpoint}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+        setUsers(response.data);
+      } catch (error) {
+        console.error(error);
+      }
     }
   };
 
@@ -87,14 +131,21 @@ function UserCrud(idcashpoint) {
   const createUser = async () => {
     try {
       if (username && password && role && idGlobalVirtualCashPoint) {
-        const hashedPassword = await bcrypt.hash(password, 10);
-        await axios.post("/api/users", {
-          username,
-          password: hashedPassword,
-          role,
-          idCashPoint: idcashpoint.idcashpoint,
-          idGlobalVirtualCashPoint,
-        });
+        await axios.post(
+          "/api/users",
+          {
+            username,
+            password,
+            role,
+            idCashPoint: idcashpoint.idcashpoint,
+            idGlobalVirtualCashPoint,
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
         setUsername("");
         setPassword("");
         setRole("");
@@ -111,7 +162,26 @@ function UserCrud(idcashpoint) {
         });
       }
     } catch (error) {
-      console.error(error);
+      if (
+        error.response.data.message === "username must be 2 to 50 characters"
+      ) {
+        setAlertInfo({
+          variant: "danger",
+          message: "El nombre de usuario debe tener entre 2 y 50 caracteres.",
+        });
+      } else if (
+        error.response.data.message === "password must be 2 to 60 characters"
+      ) {
+        setAlertInfo({
+          variant: "danger",
+          message: "La contraseña debe tener entre 2 y 60 caracteres.",
+        });
+      } else {
+        setAlertInfo({
+          variant: "danger",
+          message: error.response.data.message,
+        });
+      }
     }
   };
 
@@ -127,49 +197,63 @@ function UserCrud(idcashpoint) {
   // Función para actualizar un usuario
   const updateUser = async () => {
     try {
-      if (editingUser) {
-        let updatedUser = {
-          ...editingUser,
-          username,
-          role,
-          idCashPoint: idcashpoint.idcashpoint,
-          idGlobalVirtualCashPoint,
-        };
-
-        if (password !== "") {
-          const hashedPassword = await bcrypt.hash(password, 10);
-          updatedUser = {
-            ...updatedUser,
-            password: hashedPassword,
-          };
-        }
-
-        await axios.put(`/api/users/${editingUser.idglobaluser}`, updatedUser);
-        setEditingUser(null);
-        setShowEditModal(false);
-        setUsername("");
-        setPassword("");
-        setRole("");
-        setIdGlobalVirtualCashPoint("");
-        setAlertInfo({
-          variant: "success",
-          message: "Usuario actualizado exitosamente.",
-        });
-        fetchUsers();
-      }
+      let updatedUser = {
+        ...editingUser,
+        username,
+        password,
+        role,
+        idCashPoint: idcashpoint.idcashpoint,
+        idGlobalVirtualCashPoint,
+      };
+      await axios.put(`/api/users/${editingUser.idglobaluser}`, updatedUser, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setEditingUser(null);
+      setShowEditModal(false);
+      setUsername("");
+      setPassword("");
+      setRole("");
+      setIdGlobalVirtualCashPoint("");
+      setAlertInfo({
+        variant: "success",
+        message: "Usuario actualizado exitosamente.",
+      });
+      fetchUsers();
     } catch (error) {
       console.error(error);
+      setAlertInfo({
+        variant: "danger",
+        message: error.response.data.message,
+      });
     }
   };
 
   // Función para eliminar un usuario
   const deleteUser = async (id) => {
     try {
-      await axios.delete(`/api/users/${id}`);
+      await axios.delete(`/api/users/${id}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
       fetchUsers();
       setShowEditModal(false);
     } catch (error) {
-      console.error(error);
+      // Si el error es 400 es que el usuario no puede ser eliminado ya que tiene pagos
+      if (error.response.status === 400) {
+        setAlertInfo({
+          variant: "danger",
+          message:
+            "El usuario no puede ser eliminado ya que tiene pagos asociados.",
+        });
+      } else {
+        setAlertInfo({
+          variant: "danger",
+          message: error.response.data.message,
+        });
+      }
     }
   };
 
