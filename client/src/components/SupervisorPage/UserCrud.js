@@ -23,10 +23,7 @@ function UserCrud(idcashpoint) {
 
   // Cargar datos iniciales
   useEffect(() => {
-    if (idcashpoint) {
-      // Verifica si idcashpoint existe antes de llamar a fetchUsers
-      fetchUsers();
-    }
+    fetchUsers();
   }, [idcashpoint]); // Agrega idcashpoint como dependencia
 
   // Limpiar formulario y alerta cuando se cierra el modal

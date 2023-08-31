@@ -8,45 +8,49 @@ import SendPrincipalService from "./SendPrincipalService";
 import Sidebar from "./Sidebar";
 
 function SupervisorView() {
+  // Para el token y la navegación
   const navigate = useNavigate();
+  // Para el componente activo
+  const [activeComponent, setActiveComponent] = useState("crudusuarios"); // Inicialmente muestra el componente de CRUD de usuarios
+
+  // Para obtener el usuario
   const [user, setUser] = useState(null);
-  const [token, setToken] = useState("");
-  const [userLoaded, setUserLoaded] = useState(false); // Nuevo estado
-  const [activeComponent, setActiveComponent] = useState("crudusuarios"); // Inicialmente muestra el componente Payment
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      // If no token, redirect to login
-      navigate("/");
-    } else {
-      // If token exists, verify its validity
+    const storedToken = localStorage.getItem("token");
+    if (storedToken) {
       axios
-        .get("/api/supervisor/protected", {
-          headers: { Authorization: `Bearer ${token}` },
+        .get("/api/supervisor/verify", {
+          headers: {
+            Authorization: `Bearer ${storedToken}`,
+          },
         })
         .then((response) => {
-          setToken(token);
-          setUser(response.data.user); // Save user data
-          setUserLoaded(true); // Indicar que el usuario se ha cargado
+          // Verificar el rol
+          if (response.data.role !== "supervisor") {
+            navigate("/supervisor");
+          } else {
+            // Guardar el usuario
+            setUser(response.data);
+          }
         })
         .catch((error) => {
-          console.error(error);
+          // Si el token no es válido, redirigir al inicio de sesión
+          console.error("Error verifying token: ", error);
           navigate("/supervisor");
         });
+    } else {
+      // Si no hay token, redirigir al inicio de sesión
+      navigate("/supervisor");
     }
-  }, [navigate, setToken]); // Include setToken as a dependency
+  }, [navigate, user]);
 
+  // Cerrar sesión
   const handleLogout = () => {
     // Limpiar el token y redirigir al inicio de sesión
     localStorage.removeItem("token");
     navigate("/supervisor");
   };
-
-  if (!userLoaded) {
-    // Mostrar algún indicador de carga mientras se obtienen los datos del usuario
-    return <div>Cargando...</div>;
-  }
 
   return (
     <div className="d-flex">
@@ -56,18 +60,17 @@ function SupervisorView() {
         setActiveComponent={setActiveComponent}
         activeComponent={activeComponent}
       />
-
       <Container fluid className="my-3">
         <h1>Página de Supervisor</h1>
         <hr />
         {activeComponent === "crudusuarios" && (
-          <UserCrud idcashpoint={user && user.idcashpoint} />
+          <UserCrud idcashpoint={user?.idcashpoint} />
         )}
         {activeComponent === "crudcajasvirtuales" && (
-          <VirtualCashPointCrud idcashpoint={user && user.idcashpoint} />
+          <VirtualCashPointCrud idcashpoint={user?.idcashpoint} />
         )}
         {activeComponent === "envio" && (
-          <SendPrincipalService idcashpoint={user && user.idcashpoint} />
+          <SendPrincipalService idcashpoint={user?.idcashpoint} />
         )}
       </Container>
     </div>

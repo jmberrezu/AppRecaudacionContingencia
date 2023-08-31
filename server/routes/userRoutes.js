@@ -1,13 +1,38 @@
 const express = require("express");
 const router = express.Router();
 const db = require("../db");
+const verifyToken = require("./verifyToken");
+const { hashPassword, checkPassword } = require("../services/hashpassword");
 
 // Obtener todos los usuarios de una caja en específico
-router.get("/:idcashPoint", async (req, res) => {
+router.get("/:idcashPoint", verifyToken, async (req, res) => {
+  // Si el rol del usuario no es supervisor
+  if (req.user.role !== "supervisor") {
+    return res.status(401).json({ message: "Unauthorized User" });
+  }
   const idcashPoint = req.params.idcashPoint;
+
+  // Si el idcashPoint no es de 16 o 21 caracteres
+  if (idcashPoint.length !== 16 && idcashPoint.length !== 21) {
+    return res
+      .status(400)
+      .json({ message: "idcashPoint must be 16 or 21 characters" });
+  }
+
+  // Si no existe el idcashPoint
+  const idCashPointResult = await db.oneOrNone(
+    "SELECT idCashPoint FROM Supervisor WHERE idCashPoint = $1",
+    [idcashPoint]
+  );
+
+  if (!idCashPointResult) {
+    return res.status(400).json({ message: "idcashPoint does not exist" });
+  }
+
   try {
+    // Obtener todos los usuarios de la caja
     const users = await db.any(
-      'SELECT "User".*, VirtualCashPoint.idVirtualCashPoint, VirtualCashPoint.name AS virtualCashPointName FROM "User" ' +
+      'SELECT "User".idglobaluser, "User".iduser, "User".username, "User".role, "User".idcashpoint, "User".idglobalvirtualcashpoint , VirtualCashPoint.idVirtualCashPoint, VirtualCashPoint.name AS virtualCashPointName FROM "User" ' +
         'INNER JOIN VirtualCashPoint ON "User".idGlobalVirtualCashPoint = VirtualCashPoint.idGlobalVirtualCashPoint ' +
         'WHERE "User".idCashPoint = $1',
       [idcashPoint]
@@ -20,9 +45,101 @@ router.get("/:idcashPoint", async (req, res) => {
 });
 
 // Agregar un nuevo usuario
-router.post("/", async (req, res) => {
-  const { username, password, role, idCashPoint, idGlobalVirtualCashPoint } =
-    req.body;
+router.post("/", verifyToken, async (req, res) => {
+  // Si el rol del usuario no es supervisor
+  if (req.user.role !== "supervisor") {
+    return res.status(401).json({ message: "Unauthorized User" });
+  }
+
+  const { username, role, idCashPoint, idGlobalVirtualCashPoint } = req.body;
+
+  let { password } = req.body;
+
+  // Si no se recibe el idCashPoint
+  if (!idCashPoint) {
+    return res.status(400).json({ message: "idCashPoint required" });
+  } else {
+    // Si el idCashPoint no es de 16 o 21 caracteres
+    if (idCashPoint.length !== 16 && idCashPoint.length !== 21) {
+      return res
+        .status(400)
+        .json({ message: "idCashPoint must be 16 or 21 characters" });
+    }
+    // Si el idCashPoint no existe
+    const idCashPointResult = await db.oneOrNone(
+      "SELECT idCashPoint FROM Supervisor WHERE idCashPoint = $1",
+      [idCashPoint]
+    );
+
+    if (!idCashPointResult) {
+      return res.status(400).json({ message: "idCashPoint does not exist" });
+    }
+  }
+
+  // Si no se recibe el username
+  if (!username) {
+    return res.status(400).json({ message: "username required" });
+  } else {
+    // Si el username no es de 2 a 50 caracteres
+    if (username.length < 2 || username.length > 50) {
+      return res
+        .status(400)
+        .json({ message: "username must be 2 to 50 characters" });
+    }
+  }
+
+  // Si no se recibe el password
+  if (!password) {
+    return res.status(400).json({ message: "password required" });
+  } else {
+    // Si el password no es de 2 a 60 caracteres
+    if (password.length < 2 || password.length > 60) {
+      return res
+        .status(400)
+        .json({ message: "password must be 2 to 60 characters" });
+    }
+    // Hasheo el password
+    password = await hashPassword(password);
+  }
+
+  // Si no se recibe el role
+  if (!role) {
+    return res.status(400).json({ message: "role required" });
+  } else {
+    // Si el role no es gerente o cajero
+    if (role !== "gerente" && role !== "cajero") {
+      return res
+        .status(400)
+        .json({ message: "role must be gerente or cajero" });
+    }
+  }
+
+  // Si no se recibe el idGlobalVirtualCashPoint
+  if (!idGlobalVirtualCashPoint) {
+    return res
+      .status(400)
+      .json({ message: "idGlobalVirtualCashPoint required" });
+  } else {
+    // Si el idGlobalVirtualCashPoint no es un numero
+    if (isNaN(idGlobalVirtualCashPoint)) {
+      return res
+        .status(400)
+        .json({ message: "idGlobalVirtualCashPoint must be a number" });
+    }
+
+    // Si el idGlobalVirtualCashPoint no existe o no pertenece al idCashPoint
+    const idGlobalVirtualCashPointResult = await db.oneOrNone(
+      "SELECT idGlobalVirtualCashPoint FROM VirtualCashPoint WHERE idGlobalVirtualCashPoint = $1 AND idCashPoint = $2",
+      [idGlobalVirtualCashPoint, idCashPoint]
+    );
+
+    if (!idGlobalVirtualCashPointResult) {
+      return res
+        .status(400)
+        .json({ message: "idGlobalVirtualCashPoint does not exist" });
+    }
+  }
+
   try {
     // Obtener el valor máximo de idUser para el idCashPoint actual
     const maxIdUserResult = await db.oneOrNone(
@@ -38,7 +155,7 @@ router.post("/", async (req, res) => {
     // Insertar el nuevo usuario
     const newUser = await db.one(
       'INSERT INTO "User" (idUser, username, password, role, idCashPoint, idGlobalVirtualCashPoint) ' +
-        "VALUES ($1, $2, $3, $4, $5, $6) RETURNING *",
+        "VALUES ($1, $2, $3, $4, $5, $6) RETURNING idUser, username, role, idCashPoint, idGlobalVirtualCashPoint",
 
       [
         nextIdUser,
@@ -63,51 +180,196 @@ router.post("/", async (req, res) => {
 });
 
 // Actualizar un usuario existente
-router.put("/:id", async (req, res) => {
+router.put("/:id", verifyToken, async (req, res) => {
+  // Si el rol del usuario no es supervisor
+  if (req.user.role !== "supervisor") {
+    return res.status(401).json({ message: "Unauthorized User" });
+  }
+
   const id = req.params.id;
-  const { username, password, role, idCashPoint, idGlobalVirtualCashPoint } =
-    req.body;
-  try {
-    const updatedUser = await db.one(
-      `UPDATE "User" SET username=$1, password=$2, role=$3, idCashPoint=$4, idGlobalVirtualCashPoint=$5
-         WHERE idGlobalUser=$6 RETURNING *`,
-      [username, password, role, idCashPoint, idGlobalVirtualCashPoint, id]
+  const { username, role, idCashPoint, idGlobalVirtualCashPoint } = req.body;
+
+  let { password } = req.body;
+
+  // Si el id no es un numero
+  if (isNaN(id)) {
+    return res.status(400).json({ message: "id must be a number" });
+  }
+  // Si el id no existe
+  const idResult = await db.oneOrNone(
+    'SELECT idGlobalUser FROM "User" WHERE idGlobalUser=$1',
+    [id]
+  );
+
+  if (!idResult) {
+    return res.status(400).json({ message: "id does not exist" });
+  }
+
+  // Si no se recibe el idCashPoint
+  if (!idCashPoint) {
+    return res.status(400).json({ message: "idCashPoint required" });
+  } else {
+    // Si el idCashPoint no es de 16 o 21 caracteres
+    if (idCashPoint.length !== 16 && idCashPoint.length !== 21) {
+      return res
+        .status(400)
+        .json({ message: "idCashPoint must be 16 or 21 characters" });
+    }
+    // Si el idCashPoint no existe
+    const idCashPointResult = await db.oneOrNone(
+      "SELECT idCashPoint FROM Supervisor WHERE idCashPoint = $1",
+      [idCashPoint]
     );
-    res.json(updatedUser);
+
+    if (!idCashPointResult) {
+      return res.status(400).json({ message: "idCashPoint does not exist" });
+    }
+  }
+
+  // Si no se recibe el username
+  if (!username) {
+    return res.status(400).json({ message: "username required" });
+  } else {
+    // Si el username no es de 2 a 50 caracteres
+    if (username.length < 2 || username.length > 50) {
+      return res
+        .status(400)
+        .json({ message: "username must be 2 to 50 characters" });
+    }
+  }
+
+  // Si no se recibe el rol
+  if (!role) {
+    return res.status(400).json({ message: "role required" });
+  } else {
+    // Si el rol no es gerente o cajero
+    if (role !== "gerente" && role !== "cajero") {
+      return res
+        .status(400)
+        .json({ message: "role must be gerente or cajero" });
+    }
+  }
+
+  // Si no se recibe el idGlobalVirtualCashPoint
+  if (!idGlobalVirtualCashPoint) {
+    return res
+      .status(400)
+      .json({ message: "idGlobalVirtualCashPoint required" });
+  } else {
+    // Si el idGlobalVirtualCashPoint no es un numero
+    if (isNaN(idGlobalVirtualCashPoint)) {
+      return res
+        .status(400)
+        .json({ message: "idGlobalVirtualCashPoint must be a number" });
+    }
+
+    // Si el idGlobalVirtualCashPoint no existe o no pertenece al idCashPoint
+    const idGlobalVirtualCashPointResult = await db.oneOrNone(
+      "SELECT idGlobalVirtualCashPoint FROM VirtualCashPoint WHERE idGlobalVirtualCashPoint = $1 AND idCashPoint = $2",
+      [idGlobalVirtualCashPoint, idCashPoint]
+    );
+
+    if (!idGlobalVirtualCashPointResult) {
+      return res
+        .status(400)
+        .json({ message: "idGlobalVirtualCashPoint does not exist" });
+    }
+  }
+
+  try {
+    // Si no hay contraseña
+    if (!password) {
+      // Actualiza el usuario sin contraseña
+      const updatedUser = await db.one(
+        `UPDATE "User" SET username=$1, role=$2, idCashPoint=$3, idGlobalVirtualCashPoint=$4
+        WHERE idGlobalUser=$5 RETURNING idGlobalUser, idUser, username, role, idCashPoint, idGlobalVirtualCashPoint`,
+        [username, role, idCashPoint, idGlobalVirtualCashPoint, id]
+      );
+      res.json(updatedUser);
+    } else {
+      // Si el password no es de 2 a 60 caracteres
+      if (password.length < 2 || password.length > 60) {
+        return res
+          .status(400)
+          .json({ message: "password must be 2 to 60 characters" });
+      }
+
+      // Hasheo el password
+      password = await hashPassword(password);
+
+      // Actualiza el usuario con contraseña
+      const updatedUser = await db.one(
+        `UPDATE "User" SET username=$1, password=$2, role=$3, idCashPoint=$4, idGlobalVirtualCashPoint=$5
+        WHERE idGlobalUser=$6 RETURNING idGlobalUser, idUser, username, role, idCashPoint, idGlobalVirtualCashPoint`,
+        [username, password, role, idCashPoint, idGlobalVirtualCashPoint, id]
+      );
+      res.json(updatedUser);
+    }
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
 
 // Eliminar un usuario
-router.delete("/:id", async (req, res) => {
+router.delete("/:id", verifyToken, async (req, res) => {
+  // Si el rol del usuario no es supervisor
+  if (req.user.role !== "supervisor") {
+    return res.status(401).json({ message: "Unauthorized User" });
+  }
+
   const id = req.params.id;
+
+  // Si el id no es un numero
+  if (isNaN(id)) {
+    return res.status(400).json({ message: "id must be a number" });
+  }
+
   try {
-    // Obtener el idCashPoint del usuario a eliminar
-    const idCashPointResult = await db.one(
-      'SELECT idCashPoint FROM "User" WHERE idGlobalUser=$1',
+    // Si el id no existe y obtiene el idCashPoint del usuario a eliminar
+    const idResult = await db.oneOrNone(
+      'SELECT idGlobalUser, idCashPoint FROM "User" WHERE idGlobalUser=$1',
       [id]
     );
 
-    if (idCashPointResult) {
-      const idCashPoint = idCashPointResult.idcashpoint;
-      await db.none('DELETE FROM "User" WHERE idGlobalUser=$1', [id]);
+    if (!idResult) {
+      return res.status(400).json({ message: "id does not exist" });
+    }
 
+    // Verificar si se puede eliminar el usuario
+
+    const counts = await db.one(
+      // Si el usuario tiene pagos o pagos reversos
+      "SELECT (SELECT COUNT(*) AS count FROM Payment WHERE idGlobalUser = $1) AS payment_count, " +
+        "(SELECT COUNT(*) AS count FROM ReversePayment WHERE idGlobalUser = $1) AS reverse_payment_count",
+      [id]
+    );
+
+    if (counts.payment_count !== "0" || counts.reverse_payment_count !== "0") {
+      return res
+        .status(400)
+        .json({ message: "User has payments or reverse payments" });
+    }
+
+    // Eliminamos el usuario
+    const deletedUser = await db.oneOrNone(
+      'DELETE FROM "User" WHERE idGlobalUser=$1 RETURNING idGlobalUser',
+      [id]
+    );
+
+    if (deletedUser) {
       // Actualizar o eliminar el registro de MaxUserSeq según sea necesario
       const remainingUsers = await db.oneOrNone(
         'SELECT COUNT(*) AS count FROM "User" WHERE idCashPoint = $1',
-        [idCashPoint]
+        [idResult.idcashpoint]
       );
 
       if (remainingUsers.count === "0") {
         await db.none("DELETE FROM MaxUserSeq WHERE idCashPoint = $1", [
-          idCashPoint,
+          idResult.idcashpoint,
         ]);
       }
 
-      res.json({ message: "Usuario eliminado exitosamente" });
-    } else {
-      res.status(500).json({ error: "No se encontró el usuario" });
+      res.json({ message: "User deleted successfully" });
     }
   } catch (error) {
     res.status(500).json({ error: error.message });

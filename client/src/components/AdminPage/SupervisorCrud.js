@@ -63,6 +63,7 @@ function SupervisorCrud() {
     }
   }, [token]);
 
+  // Limpiar los campos de los modales
   useEffect(() => {
     if (!showModal) {
       setUsername("");
