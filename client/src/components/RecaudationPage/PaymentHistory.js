@@ -1,3 +1,4 @@
+import axios from "axios";
 import React, { useState, useEffect, useCallback } from "react";
 import {
   Container,
@@ -10,9 +11,11 @@ import {
   Col,
 } from "react-bootstrap";
 import { CaretUpFill, CaretDownFill } from "react-bootstrap-icons";
+import { useNavigate } from "react-router-dom";
 
-function PaymentHistory(props) {
-  const { token, idcashpoint } = props;
+function PaymentHistory({ user }) {
+  const navigate = useNavigate();
+  const [token, setToken] = useState("");
   const [payments, setPayments] = useState([]);
   const [reversePayments, setReversePayments] = useState([]);
   const [sortedPayments, setSortedPayments] = useState([]);
@@ -21,45 +24,80 @@ function PaymentHistory(props) {
   const [sortDirection, setSortDirection] = useState("asc");
   const [groupedPayments, setGroupedPayments] = useState({});
 
+  // Obtener el token del local storage
+  useEffect(() => {
+    const storedToken = localStorage.getItem("token");
+    if (storedToken) {
+      axios
+        .get("/api/login/verify", {
+          headers: { Authorization: `Bearer ${storedToken}` },
+        })
+        .then((response) => {
+          // Verificar el rol ya sea cajero o gerente
+          if (
+            response.data.role !== "cajero" &&
+            response.data.role !== "gerente"
+          ) {
+            navigate("/");
+          } else {
+            // Guardar el token
+            setToken(storedToken);
+          }
+        })
+        .catch((error) => {
+          // Si el token no es válido, redirigir al inicio de sesión
+          console.error("Error verifying token: ", error);
+          navigate("/");
+        });
+    } else {
+      // Si no hay token, redirigir al inicio de sesión
+      navigate("/");
+    }
+  }, [navigate]);
+
   // Función para obtener la lista de pagos
   const fetchPayments = useCallback(async () => {
-    try {
-      const response = await fetch(`/api/paymentRoutes/pagos/${idcashpoint}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (response.ok) {
-        const paymentsData = await response.json();
-        setPayments(paymentsData);
+    if (user.idcashpoint) {
+      try {
+        const response = await fetch(
+          `/api/paymentRoutes/pagos/${user.idcashpoint}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+        if (response.ok) {
+          const paymentsData = await response.json();
+          setPayments(paymentsData);
+        }
+      } catch (error) {
+        console.error(error);
       }
-    } catch (error) {
-      console.error(error);
     }
-  }, [idcashpoint, token]);
+  });
 
   // Funcion para obtener la lista de pagos anulados
   const fetchReversePayments = useCallback(async () => {
-    try {
-      const response = await fetch(
-        `/api/paymentRoutes/pagosAnulados/${idcashpoint}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+    if (user.idcashpoint) {
+      try {
+        const response = await fetch(
+          `/api/paymentRoutes/pagosAnulados/${user.idcashpoint}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+        if (response.ok) {
+          const paymentsData = await response.json();
+          setReversePayments(paymentsData);
         }
-      );
-
-      if (response.ok) {
-        const paymentsData = await response.json();
-
-        setReversePayments(paymentsData);
+      } catch (error) {
+        console.error(error);
       }
-    } catch (error) {
-      console.error(error);
     }
-  }, [idcashpoint, token]);
+  });
 
   // Función para ordenar los pagos
   const sortPayments = useCallback(() => {
@@ -134,8 +172,10 @@ function PaymentHistory(props) {
   }, [payments]);
 
   useEffect(() => {
-    fetchPayments();
-  }, [fetchPayments]);
+    if (token) {
+      fetchPayments();
+    }
+  }, [token, user.idcashpoint]);
 
   useEffect(() => {
     sortReversePayments();
@@ -181,7 +221,7 @@ function PaymentHistory(props) {
         <Row className="mb-3">
           <Col>
             <Nav variant="tabs">
-              <Nav.Item>
+              <Nav.Item onClick={fetchPayments}>
                 <Nav.Link eventKey="pagos">Pagos</Nav.Link>
               </Nav.Item>
               {/* Llamo a  fetchReversePayments(); */}
@@ -236,14 +276,14 @@ function PaymentHistory(props) {
               {Object.entries(groupedPayments).map(
                 ([group, { payments, totalAmount }]) => (
                   <div key={group}>
-                    <div class="row g-0">
-                      <div class="col-sm-8">
+                    <div className="row g-0">
+                      <div className="col-sm-8">
                         <h5>
                           <strong>Grupo: </strong>
                           {group}
                         </h5>
                       </div>
-                      <div class="col-sm-4 text-end ">
+                      <div className="col-sm-4 text-end ">
                         Monto Total del Grupo:{" "}
                         <strong className="text-primary">
                           {"$" + totalAmount.toFixed(2)}

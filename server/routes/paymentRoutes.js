@@ -22,18 +22,38 @@ function generateGroupID(officeCode, currentDate, formattedVirtualCashPointId) {
 
 // Ruta protegida: Buscar cliente por cuenta o contrato
 router.get("/buscar-cliente/:cuentaContrato", verifyToken, async (req, res) => {
+  // Verificar que el usuario sea cajero o gerente
+  if (req.user.role !== "cajero" && req.user.role !== "gerente") {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+
   const { cuentaContrato } = req.params;
 
+  // Si no se ha proporcionado una cuenta contrato o CUEN
+  if (!cuentaContrato) {
+    return res.status(400).json({ message: "Cuenta contrato o CUEN" });
+  }
+
+  // Si la cuenta contrato o CUEN no es un número de 10 o 12 dígitos
+  if (
+    isNaN(cuentaContrato) ||
+    (cuentaContrato.length !== 10 && cuentaContrato.length !== 12)
+  ) {
+    return res.status(400).json({ message: "Cuenta contrato o CUEN inválida" });
+  }
+
   try {
-    const query = `
+    const client = await db.oneOrNone(
+      `
       SELECT * FROM Client
       WHERE PayerContractAccountID = $1 OR CUEN = $1;
-    `;
+    `,
+      [cuentaContrato]
+    );
 
-    const client = await db.any(query, [cuentaContrato]);
-
-    if (client.length === 1) {
-      res.status(200).json(client[0]);
+    // Si el cliente existe
+    if (client) {
+      res.status(200).json(client);
     } else {
       res.status(404).json({ message: "Cliente no encontrado" });
     }
@@ -45,137 +65,207 @@ router.get("/buscar-cliente/:cuentaContrato", verifyToken, async (req, res) => {
 
 // Ruta protegida: Realizar pago
 router.post("/realizar-pago", verifyToken, async (req, res) => {
+  // Verificar que el usuario sea cajero o gerente
+  if (req.user.role !== "cajero" && req.user.role !== "gerente") {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+
   const { cantidadTotal, cuentaContrato, user } = req.body;
   const fecha = new Date();
 
+  // Si no se ha proporcionado una cuenta contrato o CUEN
+  if (!cuentaContrato) {
+    return res
+      .status(400)
+      .json({ message: "No contract account or CUEN entered" });
+  } else {
+    // Si la cuenta contrato o CUEN no es un número de 10 o 12 dígitos
+    if (
+      isNaN(cuentaContrato) ||
+      (cuentaContrato.length !== 10 && cuentaContrato.length !== 12)
+    ) {
+      return res
+        .status(400)
+        .json({ message: "Invalid contract account or CUEN" });
+    }
+  }
+
+  // Si no se ha proporcionado una cantidad total
+  if (!cantidadTotal) {
+    return res.status(400).json({ message: "No total amount entered" });
+  } else {
+    // Si la cantidad total no es un número
+    if (isNaN(cantidadTotal)) {
+      return res.status(400).json({ message: "Invalid total amount" });
+    }
+  }
+
+  // Si no se ha proporcionado un usuario
+  if (!user) {
+    return res.status(400).json({ message: "No user entered" });
+  } else {
+    // Si el usuario no tiene un id o idcashpoint o idvirtualcashpoint idglobaluser o idglobalvirtualcashpoint
+    if (
+      !user.id ||
+      !user.idcashpoint ||
+      !user.idvirtualcashpoint ||
+      !user.idglobaluser ||
+      !user.idglobalvirtualcashpoint
+    ) {
+      return res.status(400).json({ message: "Invalid user" });
+    }
+  }
+
   try {
-    let groupID = generateGroupID(
-      user.idcashpoint.split("-")[1] + user.idcashpoint.split("-")[2],
-      fecha.toISOString().slice(0, 10).replace(/-/g, ""),
-      user.idvirtualcashpoint.toString().slice(-2).padStart(2, "0")
-    );
+    await db.tx(async (transaction) => {
+      // Verificar si el cliente existe
+      const client = await transaction.oneOrNone(
+        `
+      SELECT * FROM Client
+      WHERE PayerContractAccountID = $1 OR CUEN = $1;
+    `,
+        [cuentaContrato]
+      );
 
-    // Verificar si el PaymentGroup ya está en CashClosing
-    const checkCashClosingQuery = `
-      SELECT CashPointPaymentGroupReferenceID
-      FROM CashClosing
-      WHERE CashPointPaymentGroupReferenceID = $1;
-    `;
+      // Si el cliente no existe
+      if (!client) {
+        return res.status(404).json({
+          message: "No client found.",
+        });
+      }
 
-    const cashClosingExists = await db.oneOrNone(checkCashClosingQuery, [
-      groupID,
-    ]);
-
-    let fecha_cash = fecha;
-
-    //Si existe un CashClosing con el PaymentGroup, el groupID tiene que ser del dia siguiente
-    if (cashClosingExists) {
-      const tomorrow = new Date();
-      tomorrow.setDate(tomorrow.getDate() + 1);
-      groupID = generateGroupID(
+      let groupID = generateGroupID(
         user.idcashpoint.split("-")[1] + user.idcashpoint.split("-")[2],
-        tomorrow.toISOString().slice(0, 10).replace(/-/g, ""),
+        fecha.toISOString().slice(0, 10).replace(/-/g, ""),
         user.idvirtualcashpoint.toString().slice(-2).padStart(2, "0")
       );
 
-      // Si existe un CashClosing con el PaymentGroup al dia siguiente, retorna error
-      const checkCashClosingQuery2 = `
+      // Verificar si el PaymentGroup ya está en CashClosing
+      const cashClosingExists = await transaction.oneOrNone(
+        `
       SELECT CashPointPaymentGroupReferenceID
       FROM CashClosing
       WHERE CashPointPaymentGroupReferenceID = $1;
-    `;
+    `,
+        [groupID]
+      );
 
-      const cashClosingExists2 = await db.oneOrNone(checkCashClosingQuery2, [
-        groupID,
-      ]);
+      let fecha_cash = fecha;
 
-      if (cashClosingExists2) {
-        return res.status(400).json({
-          error:
-            "No se puede realizar el pago porque ya se cerró la caja del día " +
-            tomorrow.toISOString().slice(0, 10),
-        });
+      //Si existe un CashClosing con el PaymentGroup, el groupID tiene que ser del dia siguiente
+      if (cashClosingExists) {
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        groupID = generateGroupID(
+          user.idcashpoint.split("-")[1] + user.idcashpoint.split("-")[2],
+          tomorrow.toISOString().slice(0, 10).replace(/-/g, ""),
+          user.idvirtualcashpoint.toString().slice(-2).padStart(2, "0")
+        );
+
+        // Si existe un CashClosing con el PaymentGroup al dia siguiente, retorna error
+        const cashClosingExists2 = await transaction.oneOrNone(
+          `
+      SELECT CashPointPaymentGroupReferenceID
+      FROM CashClosing
+      WHERE CashPointPaymentGroupReferenceID = $1;
+    `,
+          [groupID]
+        );
+
+        if (cashClosingExists2) {
+          return res.status(400).json({
+            error:
+              "No se puede realizar el pago porque ya se cerró la caja del día " +
+              tomorrow.toISOString().slice(0, 10),
+          });
+        }
+        fecha_cash = tomorrow;
       }
-      fecha_cash = tomorrow;
-    }
 
-    const insertGroupIDQuery = `
+      await transaction.none(
+        `
     INSERT INTO PaymentGroup (CashPointPaymentGroupReferenceID, valueDate, idCashPoint, idVirtualCashPoint)
     VALUES ($1, $2, $3, $4)
     ON CONFLICT (CashPointPaymentGroupReferenceID)
     DO NOTHING;
-  `;
-    await db.none(insertGroupIDQuery, [
-      groupID,
-      fecha_cash.toISOString().slice(0, 10).replace(/-/g, ""),
-      user.idcashpoint,
-      user.idvirtualcashpoint,
-    ]);
+  `,
+        [
+          groupID,
+          fecha_cash.toISOString().slice(0, 10).replace(/-/g, ""),
+          user.idcashpoint,
+          user.idvirtualcashpoint,
+        ]
+      );
 
-    //--------------------
+      //--------------------
 
-    const getSeqQuery = `
+      const lastSeqResult = await transaction.oneOrNone(
+        `
       SELECT LastSeq
       FROM LastPaymentSeq
       WHERE SeqDate = $1 AND UserId = $2 AND VirtualCashPointId = $3;
-    `;
+    `,
+        [
+          fecha.toISOString().slice(0, 10),
+          user.idglobaluser,
+          user.idglobalvirtualcashpoint,
+        ]
+      );
 
-    const lastSeqResult = await db.oneOrNone(getSeqQuery, [
-      fecha.toISOString().slice(0, 10),
-      user.idglobaluser,
-      user.idglobalvirtualcashpoint,
-    ]);
+      const lastSeq = lastSeqResult ? lastSeqResult.lastseq : 1;
 
-    const lastSeq = lastSeqResult ? lastSeqResult.lastseq : 1;
+      const paymentTransactionID = generatePaymentTransactionID(
+        (ajuste = "0"), // Si existiese ajuste, se cambia a "A" -- Por Implementar
+        user.idcashpoint.split("-")[1] + user.idcashpoint.split("-")[2],
+        fecha.toISOString().slice(0, 10).replace(/-/g, ""),
+        user.id.toString().slice(-3).padStart(3, "0"),
+        user.idvirtualcashpoint.toString().slice(-3).padStart(2, "0"),
+        lastSeq.toString().padStart(6, "0")
+      );
 
-    const paymentTransactionID = generatePaymentTransactionID(
-      (ajuste = "0"), // Si existiese ajuste, se cambia a "A" -- Por Implementar
-      user.idcashpoint.split("-")[1] + user.idcashpoint.split("-")[2],
-      fecha.toISOString().slice(0, 10).replace(/-/g, ""),
-      user.id.toString().slice(-3).padStart(3, "0"),
-      user.idvirtualcashpoint.toString().slice(-3).padStart(2, "0"),
-      lastSeq.toString().padStart(6, "0")
-    );
-
-    const insertQuery = `
+      await transaction.none(
+        `
       INSERT INTO Payment (
         PaymentTransactionID, valueDate, paymentAmountCurrencyCode,
         PayerContractAccountID, idGlobalUser, CashPointPaymentGroupReferenceID, idGlobalVirtualCashPoint, idCashPoint
       )
       VALUES ($1, CURRENT_DATE, $2, $3, $4, $5, $6, $7);
-    `;
+    `,
+        [
+          paymentTransactionID,
+          cantidadTotal,
+          cuentaContrato,
+          user.idglobaluser,
+          groupID,
+          user.idglobalvirtualcashpoint,
+          user.idcashpoint,
+        ]
+      );
 
-    await db.none(insertQuery, [
-      paymentTransactionID,
-      cantidadTotal,
-      cuentaContrato,
-      user.idglobaluser,
-      groupID,
-      user.idglobalvirtualcashpoint,
-      user.idcashpoint,
-    ]);
-
-    const updateSeqQuery = `
+      await transaction.none(
+        `
       INSERT INTO LastPaymentSeq (SeqDate, UserId, VirtualCashPointId, LastSeq)
       VALUES ($1, $2, $3, $4)
       ON CONFLICT (SeqDate, UserId, VirtualCashPointId)
       DO UPDATE SET LastSeq = $4;
-    `;
+    `,
+        [
+          fecha.toISOString().slice(0, 10),
+          user.idglobaluser,
+          user.idglobalvirtualcashpoint,
+          lastSeq + 1,
+        ]
+      );
 
-    await db.none(updateSeqQuery, [
-      fecha.toISOString().slice(0, 10),
-      user.idglobaluser,
-      user.idglobalvirtualcashpoint,
-      lastSeq + 1,
-    ]);
-
-    const updateDebtQuery = `
+      await transaction.none(
+        `
       UPDATE Client
       SET Debt = Debt - $1
       WHERE PayerContractAccountID = $2 OR CUEN = $2;
-    `;
-
-    await db.none(updateDebtQuery, [cantidadTotal, cuentaContrato]);
+    `,
+        [cantidadTotal, cuentaContrato]
+      );
+    });
 
     res.status(200).json({
       message: "Pago realizado con éxito.",
@@ -190,12 +280,168 @@ router.post("/realizar-pago", verifyToken, async (req, res) => {
   }
 });
 
+//Ruta para anular pago
+router.put("/anular-pago/:PID", verifyToken, async (req, res) => {
+  // Verificar que el usuario sea solo gerente
+  if (req.user.role !== "gerente") {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+
+  const { PID } = req.params;
+  const { user, ammount, contractaccount } = req.body;
+
+  // Si no se ha proporcionado un PID
+  if (!PID) {
+    return res.status(400).json({ message: "No PaymentTransactionID entered" });
+  } else {
+    //Si el PID no existe
+    const query = await db.oneOrNone(
+      `
+      SELECT PaymentTransactionID
+      FROM Payment
+      WHERE PaymentTransactionID = $1;
+    `,
+      [PID]
+    );
+
+    if (!query) {
+      return res.status(400).json({ message: "Invalid PaymentTransactionID" });
+    }
+  }
+
+  // Si la cuenta contrato no se ha proporcionado
+  if (!contractaccount) {
+    return res
+      .status(400)
+      .json({ message: "No contract account or CUEN entered" });
+  } else {
+    // Si la cuenta contrato o CUEN no es un número de 10 o 12 dígitos
+    if (
+      isNaN(contractaccount) ||
+      (contractaccount.length !== 10 && contractaccount.length !== 12)
+    ) {
+      return res
+        .status(400)
+        .json({ message: "Invalid contract account or CUEN" });
+    }
+  }
+
+  // Si no se ha proporcionado un usuario
+  if (!user) {
+    return res.status(400).json({ message: "No user entered" });
+  } else {
+    // Si el usuario no tiene un idcashpoint  idglobaluser
+    if (!user.idglobaluser || !user.idcashpoint) {
+      return res.status(400).json({ message: "Invalid user" });
+    }
+  }
+
+  // Si no se ha proporcionado un monto
+  if (!ammount) {
+    return res.status(400).json({ message: "No amount entered" });
+  } else {
+    if (isNaN(ammount)) {
+      return res.status(400).json({ message: "Invalid amount" });
+    }
+  }
+
+  //Si el monto no es igual al del pago
+  const query = await db.oneOrNone(
+    `
+    SELECT PaymentAmountCurrencyCode
+    FROM Payment
+    WHERE PaymentTransactionID = $1;
+  `,
+    [PID]
+  );
+
+  if (query.paymentamountcurrencycode != ammount) {
+    return res
+      .status(400)
+      .json({ message: "Invalid amount, is diferent from the payment" });
+  }
+
+  try {
+    await db.tx(async (transaction) => {
+      //Quito de la tabla de pagos
+      await transaction.none(
+        `
+      DELETE FROM Payment
+      WHERE PaymentTransactionID = $1;
+    `,
+        [PID]
+      );
+
+      //Agrego a la tabla de anulaciones, incluyendo la fecha y hora actual
+      const insertQuery = await transaction.none(
+        `
+      INSERT INTO ReversePayment (
+        PaymentTransactionID, idGlobalUser, fecha_hora, idCashPoint, paymentAmountCurrencyCode
+      )
+      VALUES ($1, $2, NOW(), $3, $4);
+    `,
+        [PID, user.idglobaluser, user.idcashpoint, ammount]
+      );
+
+      //Actualizo la deuda del cliente
+      await transaction.none(
+        `
+      UPDATE Client
+      SET debt = debt + $1
+      WHERE PayerContractAccountID = $2;
+    `,
+        [ammount, contractaccount]
+      );
+    });
+
+    res.status(200).json({ message: "Payment reversed successfully." });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Error en el servidor" });
+  }
+});
+
 // Ruta protegida: Obtener lista de pagos
 router.get("/pagos/:idcashPoint", verifyToken, async (req, res) => {
+  // Si el usuario no es cajero o gerente no puede ver los pagos
+  if (req.user.role !== "cajero" && req.user.role !== "gerente") {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+
   const idcashPoint = req.params.idcashPoint;
+
+  // Si no se ha proporcionado un idcashPoint
+  if (!idcashPoint) {
+    return res.status(400).json({ message: "No idcashPoint entered" });
+  } else {
+    // Si el idCashPoint no es el mismo que el del usuario
+    if (idcashPoint !== req.user.idcashpoint) {
+      return res.status(400).json({ message: "Invalid idcashPoint" });
+    }
+  }
+
   try {
-    const query = `
-      SELECT 
+    let payments = [];
+    // Si el usuario es cajero, solo puede ver los pagos de su caja
+    if (req.user.role === "cajero") {
+      payments = await db.any(
+        `
+      SELECT
+        Payment.*,
+        VirtualCashPoint.idVirtualCashPoint,
+        VirtualCashPoint.name AS virtualCashPointName,
+        "User".username
+      FROM Payment
+      INNER JOIN VirtualCashPoint ON Payment.idGlobalVirtualCashPoint = VirtualCashPoint.idGlobalVirtualCashPoint
+      INNER JOIN "User" ON Payment.idGlobalUser = "User".idGlobalUser
+      WHERE Payment.idCashPoint=$1 AND Payment.idglobalvirtualcashpoint=$2;
+    `,
+        [idcashPoint, req.user.idglobalvirtualcashpoint]
+      );
+    } else if (req.user.role === "gerente") {
+      payments = await db.any(
+        `
+      SELECT
         Payment.*,
         VirtualCashPoint.idVirtualCashPoint,
         VirtualCashPoint.name AS virtualCashPointName,
@@ -204,9 +450,10 @@ router.get("/pagos/:idcashPoint", verifyToken, async (req, res) => {
       INNER JOIN VirtualCashPoint ON Payment.idGlobalVirtualCashPoint = VirtualCashPoint.idGlobalVirtualCashPoint
       INNER JOIN "User" ON Payment.idGlobalUser = "User".idGlobalUser
       WHERE Payment.idCashPoint=$1;
-    `;
-
-    const payments = await db.any(query, [idcashPoint]);
+    `,
+        [idcashPoint]
+      );
+    }
 
     // A todos los pagos, se les coloca con formato de 2 decimales
     payments.forEach((payment) => {
@@ -215,7 +462,7 @@ router.get("/pagos/:idcashPoint", verifyToken, async (req, res) => {
       ).toFixed(2);
     });
 
-    res.status(200).json(payments);
+    res.json(payments);
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Error en el servidor" });
@@ -224,63 +471,53 @@ router.get("/pagos/:idcashPoint", verifyToken, async (req, res) => {
 
 // Ruta protegida: Obtener lista de pagos anulados
 router.get("/pagosAnulados/:idcashPoint", verifyToken, async (req, res) => {
+  // Si el usuario no es gerente no puede ver los pagos anulados
+  if (req.user.role !== "gerente") {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+
   const idcashPoint = req.params.idcashPoint;
 
-  try {
-    const query = `
-        SELECT
-          ReversePayment.*,
-          "User".username
-        FROM ReversePayment
-        INNER JOIN "User" ON ReversePayment.idGlobalUser = "User".idGlobalUser
-        WHERE ReversePayment.idCashPoint=$1;
-      `;
-
-    const payments = await db.any(query, [idcashPoint]);
-
-    res.status(200).json(payments);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Error en el servidor" });
+  // Si no se ha proporcionado un idcashPoint
+  if (!idcashPoint) {
+    return res.status(400).json({ message: "No idcashPoint entered" });
+  } else {
+    // Si el idCashPoint no es el mismo que el del usuario
+    if (idcashPoint !== req.user.idcashpoint) {
+      return res.status(400).json({ message: "Invalid idcashPoint" });
+    }
   }
-});
-
-//Ruta para anular pago
-router.put("/anular-pago/:PID", verifyToken, async (req, res) => {
-  const { PID } = req.params;
-  const { user, ammount, contractaccount } = req.body;
 
   try {
-    //Quito de la tabla de pagos
-    const query = `
-      DELETE FROM Payment
-      WHERE PaymentTransactionID = $1;
-    `;
-    await db.none(query, [PID]);
+    let reversePayments = [];
+    // Si el usuario es cajero, solo puede ver los pagos anulados de su caja
+    if (req.user.role === "cajero") {
+      reversePayments = await db.any(
+        `
+      SELECT
+        ReversePayment.*,
+        "User".username
+      FROM ReversePayment
+      INNER JOIN "User" ON ReversePayment.idGlobalUser = "User".idGlobalUser
+      WHERE ReversePayment.idCashPoint=$1 AND ReversePayment.idglobalvirtualcashpoint=$2;
+    `,
+        [idcashPoint, req.user.idglobalvirtualcashpoint]
+      );
+    } else if (req.user.role === "gerente") {
+      reversePayments = await db.any(
+        `
+      SELECT
+        ReversePayment.*,
+        "User".username
+      FROM ReversePayment
+      INNER JOIN "User" ON ReversePayment.idGlobalUser = "User".idGlobalUser
+      WHERE ReversePayment.idCashPoint=$1;
+    `,
+        [idcashPoint]
+      );
+    }
 
-    //Agrego a la tabla de anulaciones, incluyendo la fecha y hora actual
-    const insertQuery = `
-      INSERT INTO ReversePayment (
-        PaymentTransactionID, idGlobalUser, fecha_hora, idCashPoint, paymentAmountCurrencyCode
-      )
-      VALUES ($1, $2, NOW(), $3, $4);
-    `;
-    await db.none(insertQuery, [
-      PID,
-      user.idglobaluser,
-      user.idcashpoint,
-      ammount,
-    ]);
-
-    //Actualizo la deuda del cliente
-    const updateDebtQuery = `
-      UPDATE Client
-      SET debt = debt + $1
-      WHERE PayerContractAccountID = $2;
-    `;
-    await db.none(updateDebtQuery, [ammount, contractaccount]);
-
-    res.status(200).json({ message: "Pago anulado con éxito." });
+    res.status(200).json(reversePayments);
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Error en el servidor" });

@@ -1,10 +1,13 @@
+import axios from "axios";
 import React, { useState, useEffect } from "react";
 import { Alert, Container, Form, Button, InputGroup } from "react-bootstrap";
 import { Cash, Search } from "react-bootstrap-icons";
 import Modal from "react-bootstrap/Modal";
+import { useNavigate } from "react-router-dom";
 
-function Payment(props) {
-  const { user, token } = props;
+function Payment({ user }) {
+  const navigate = useNavigate();
+  const [token, setToken] = useState("");
 
   const [showModal, setShowModal] = useState(false); // Estado para controlar la visualización del modal
   const [paymentData, setPaymentData] = useState(null); // Estado para almacenar los datos del pago
@@ -18,6 +21,36 @@ function Payment(props) {
   // Estado para mostrar alertas
   const [alertInfo, setAlertInfo] = useState(null);
 
+  // Obtener el token del local storage
+  useEffect(() => {
+    const storedToken = localStorage.getItem("token");
+    if (storedToken) {
+      axios
+        .get("/api/login/verify", {
+          headers: {
+            Authorization: `Bearer ${storedToken}`,
+          },
+        })
+        .then((response) => {
+          // Verificar el rol del usuario
+          if (
+            response.data.role !== "cajero" &&
+            response.data.role !== "gerente"
+          ) {
+            navigate("/");
+          } else {
+            setToken(storedToken);
+          }
+        })
+        .catch((error) => {
+          console.error("Error verifying token: ", error);
+          navigate("/");
+        });
+    } else {
+      navigate("/");
+    }
+  }, [navigate]);
+
   const buscarCliente = async (cuentaContrato) => {
     setAlertInfo(null);
 
@@ -26,7 +59,7 @@ function Payment(props) {
         `api/paymentRoutes/buscar-cliente/${cuentaContrato}`,
         {
           headers: {
-            Authorization: `Bearer ${token}`, // Agregar el token a la cabecera
+            Authorization: `Bearer ${token}`,
           },
         }
       );
@@ -59,6 +92,7 @@ function Payment(props) {
   };
 
   const realizarPago = async () => {
+    console.log(user);
     //Comprobar que todos los campos esten llenos
     if (dolares === "" || centavos === "") {
       setAlertInfo({
@@ -73,6 +107,7 @@ function Payment(props) {
     try {
       //Si todo esta bien se reestablecen los campos
       setAlertInfo(null);
+
       const response = await fetch("api/paymentRoutes/realizar-pago", {
         method: "POST",
         headers: {
@@ -82,7 +117,7 @@ function Payment(props) {
         body: JSON.stringify({
           cantidadTotal,
           cuentaContrato,
-          user,
+          user: user,
         }),
       });
 

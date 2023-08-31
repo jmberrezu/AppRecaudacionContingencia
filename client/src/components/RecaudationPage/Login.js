@@ -6,7 +6,6 @@ import { Person } from "react-bootstrap-icons";
 
 function Login() {
   const navigate = useNavigate();
-  const [token, setToken] = useState("");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [alertInfo, setAlertInfo] = useState(null);
@@ -18,7 +17,6 @@ function Login() {
         password,
       });
       const token = response.data.token;
-      setToken(token);
 
       // Guardar el token en localStorage
       localStorage.setItem("token", token);
@@ -28,12 +26,25 @@ function Login() {
         message: "Login correcto.",
       });
 
-      navigate("/recaudation", { state: { token } }); // Redirigir a la página de UserCrud
+      navigate("/recaudation"); // Redirigir a la página de UserCrud
     } catch (error) {
-      setAlertInfo({
-        variant: "danger",
-        message: error.response.data.message,
-      });
+      if (error.response.status === 400) {
+        setAlertInfo({
+          variant: "danger",
+          message: "Ingrese un usuario y contraseña.",
+        });
+      } else if (error.response.status === 401) {
+        setAlertInfo({
+          variant: "danger",
+          message: "Usuario o Contraseña incorrecta.",
+        });
+      } else {
+        setAlertInfo({
+          variant: "danger",
+          message: "Error.",
+        });
+        console.log(error);
+      }
     }
   };
 

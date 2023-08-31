@@ -9,31 +9,69 @@ import {
   Col,
 } from "react-bootstrap";
 import { CaretUpFill, CaretDownFill } from "react-bootstrap-icons";
+import { useNavigate } from "react-router-dom";
+import axios from "axios";
 
-function ReversePayment(props) {
-  const { token, idcashpoint, user } = props;
+function ReversePayment({ user }) {
   const [payments, setPayments] = useState([]);
   const [sortedPayments, setSortedPayments] = useState([]);
   const [sortBy, setSortBy] = useState("Fecha");
   const [sortDirection, setSortDirection] = useState("asc");
+  const navigate = useNavigate();
+  const [token, setToken] = useState(null);
+
+  // Verificar el token
+  useEffect(() => {
+    const storedToken = localStorage.getItem("token");
+    if (storedToken) {
+      axios
+        .get("/api/login/verify", {
+          headers: { Authorization: `Bearer ${storedToken}` },
+        })
+        .then((response) => {
+          // Verificar el rol ya sea cajero o gerente
+          if (
+            response.data.role !== "cajero" &&
+            response.data.role !== "gerente"
+          ) {
+            navigate("/");
+          } else {
+            setToken(storedToken);
+          }
+        })
+        .catch((error) => {
+          // Si el token no es válido, redirigir al inicio de sesión
+          console.error("Error verifying token: ", error);
+          navigate("/");
+        });
+    } else {
+      // Si no hay token, redirigir al inicio de sesión
+      navigate("/");
+    }
+  }, [navigate]);
 
   // Función para obtener la lista de pagos
   const fetchPayments = useCallback(async () => {
-    try {
-      const response = await fetch(`/api/paymentRoutes/pagos/${idcashpoint}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+    if (user.idcashpoint) {
+      try {
+        const response = await fetch(
+          `/api/paymentRoutes/pagos/${user.idcashpoint}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
 
-      if (response.ok) {
-        const paymentsData = await response.json();
-        setPayments(paymentsData);
+        if (response.ok) {
+          const paymentsData = await response.json();
+          setPayments(paymentsData);
+        }
+      } catch (error) {
+        console.error(error);
       }
-    } catch (error) {
-      console.error(error);
     }
-  }, [idcashpoint, token]);
+  });
 
   // Función para ordenar los pagos
   const sortPayments = useCallback(() => {
@@ -63,8 +101,10 @@ function ReversePayment(props) {
   }, [payments, sortBy, sortDirection]);
 
   useEffect(() => {
-    fetchPayments();
-  }, [fetchPayments]);
+    if (token) {
+      fetchPayments();
+    }
+  }, [token, user.idcashpoint]);
 
   useEffect(() => {
     sortPayments();

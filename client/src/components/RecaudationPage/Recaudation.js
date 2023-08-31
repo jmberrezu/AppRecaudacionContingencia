@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Container, Col, Row } from "react-bootstrap";
+import { Container } from "react-bootstrap";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import Payment from "./Payment";
@@ -11,41 +11,51 @@ import PaymentHistory from "./PaymentHistory";
 
 function Recaudation() {
   const navigate = useNavigate();
-  const [token, setToken] = useState("");
   const [user, setUser] = useState(null);
   const [activeComponent, setActiveComponent] = useState("payment"); // Inicialmente muestra el componente Payment
   const [currentDateTime, setCurrentDateTime] = useState(new Date());
 
+  // Para mostrar la fecha y hora actual
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentDateTime(new Date());
-    }, 1000); // Actualiza cada segundo
+    }, 1000);
 
     return () => clearInterval(interval);
   }, []);
 
+  // Verificar el token
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      // If no token, redirect to login
-      navigate("/");
-    } else {
-      // If token exists, verify its validity
+    const storedToken = localStorage.getItem("token");
+    if (storedToken) {
       axios
-        .get("/api/login/protected", {
-          headers: { Authorization: `Bearer ${token}` },
+        .get("/api/login/verify", {
+          headers: { Authorization: `Bearer ${storedToken}` },
         })
         .then((response) => {
-          setToken(token);
-          setUser(response.data.user); // Save user data
+          // Verificar el rol ya sea cajero o gerente
+          if (
+            response.data.role !== "cajero" &&
+            response.data.role !== "gerente"
+          ) {
+            navigate("/");
+          } else {
+            // Guardar el usuario
+            setUser(response.data);
+          }
         })
         .catch((error) => {
-          console.error(error);
+          // Si el token no es válido, redirigir al inicio de sesión
+          console.error("Error verifying token: ", error);
           navigate("/");
         });
+    } else {
+      // Si no hay token, redirigir al inicio de sesión
+      navigate("/");
     }
-  }, [navigate, setToken]); // Include setToken as a dependency
+  }, [navigate]);
 
+  // Cerrar sesión
   const handleLogout = () => {
     // Limpiar el token y redirigir al inicio de sesión
     localStorage.removeItem("token");
@@ -83,27 +93,15 @@ function Recaudation() {
         </Container>
 
         <hr />
-        {activeComponent === "payment" && <Payment user={user} token={token} />}
-        {activeComponent === "cashClose" && (
-          <CashClose user={user} token={token} />
-        )}
+        {activeComponent === "payment" && <Payment user={user} />}
+        {activeComponent === "cashClose" && <CashClose user={user} />}
         {activeComponent === "reversePayment" && (
-          <ReversePayment
-            token={token}
-            idcashpoint={user.idcashpoint}
-            user={user}
-          />
+          <ReversePayment idcashpoint={user?.idcashpoint} user={user} />
         )}
         {activeComponent === "reverseCashClose" && (
-          <ReverseCashClose
-            token={token}
-            idcashpoint={user.idcashpoint}
-            user={user}
-          />
+          <ReverseCashClose idcashpoint={user?.idcashpoint} user={user} />
         )}
-        {activeComponent === "history" && (
-          <PaymentHistory token={token} idcashpoint={user.idcashpoint} />
-        )}
+        {activeComponent === "history" && <PaymentHistory user={user} />}
       </Container>
     </div>
   );

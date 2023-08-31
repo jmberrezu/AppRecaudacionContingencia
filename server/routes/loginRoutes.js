@@ -4,9 +4,16 @@ const db = require("../db");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 const verifyToken = require("../services/verifyToken");
+const { checkPassword } = require("../services/hashpassword");
 
+// Ruta para iniciar sesión
 router.post("/", async (req, res) => {
   const { username, password } = req.body;
+
+  // Si no se ha proporcionado usuario o contraseña
+  if (!username || !password) {
+    return res.status(400).json({ message: "Usuario y Contraseña Requeridos" });
+  }
 
   try {
     // Buscar usuario en la base de datos
@@ -20,11 +27,12 @@ router.post("/", async (req, res) => {
 
     if (!user) {
       // Si el usuario no existe
-      return res.status(401).json({ message: "Usuario no Encontrado." });
+      return res.status(401).json({ message: "User Not Found." });
     } else {
-      if (!(await bcrypt.compare(password, user.password))) {
+      // Si el usuario existe
+      if (!(await checkPassword(password, user.password))) {
         // Si la contraseña es incorrecta
-        return res.status(401).json({ message: "Contraseña Incorrecta" });
+        return res.status(401).json({ message: "Incorrect Password" });
       }
 
       const token = jwt.sign(
@@ -38,8 +46,8 @@ router.post("/", async (req, res) => {
           idvirtualcashpoint: user.idvirtualcashpoint, // Agregar idVirtualCashPoint al token
           virtualcashpointname: user.virtualcashpointname, // Agregar virtualCashPointName al token
         },
-        "secret-key",
-        { expiresIn: "3h" }
+        "admin_CTIC_2023!",
+        { expiresIn: "3h" } // El token expira en 3 horas
       );
 
       res.json({ token });
@@ -49,11 +57,18 @@ router.post("/", async (req, res) => {
   }
 });
 
-// Ruta protegida que solo puede ser accedida por usuarios autenticados
-router.get("/protected", verifyToken, (req, res) => {
-  // El middleware verifyToken verifica el token antes de llegar aquí
-  const decoded = req.user; // Esta información se guarda en el objeto de solicitud por el middleware
-  res.json({ message: "Ruta protegida accesible", user: decoded });
+// Verificar si el token es válido y devuelve el rol del usuario
+router.get("/verify", verifyToken, (req, res) => {
+  res.json({
+    id: req.user.id,
+    role: req.user.role,
+    username: req.user.username,
+    virtualcashpointname: req.user.virtualcashpointname,
+    idvirtualcashpoint: req.user.idvirtualcashpoint,
+    idcashpoint: req.user.idcashpoint,
+    idglobaluser: req.user.idglobaluser,
+    idglobalvirtualcashpoint: req.user.idglobalvirtualcashpoint,
+  });
 });
 
 module.exports = router;
