@@ -107,7 +107,12 @@ function UserCrud(idcashpoint) {
     let response = null;
     try {
       response = await axios.get(
-        `/api/virtualcashpoints/${idcashpoint.idcashpoint}`
+        `/api/virtualcashpoints/${idcashpoint.idcashpoint}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
       );
       setVirtualCashPoints(response.data);
     } catch (error) {

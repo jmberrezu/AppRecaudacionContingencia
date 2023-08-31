@@ -14,6 +14,10 @@ const verifyToken = (req, res, next) => {
     req.user = decoded; // Guardar la información del usuario en el objeto de solicitud
     next(); // Continuar con la siguiente función (manejador de la ruta)
   } catch (error) {
+    // Si el token ha expirado
+    if (error.name === "TokenExpiredError") {
+      return res.status(401).json({ message: "Token Expired" });
+    }
     res.status(401).json({ message: "Invalid Token" });
   }
 };
