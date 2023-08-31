@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 const db = require("../db");
 const jwt = require("jsonwebtoken");
-const verifyToken = require("./verifyToken");
+const verifyToken = require("../services/verifyToken");
 const { hashPassword, checkPassword } = require("../services/hashpassword");
 
 // Ruta para iniciar sesión

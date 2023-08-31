@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const db = require("../db");
-const verifyToken = require("./verifyToken");
+const verifyToken = require("../services/verifyToken");
 
 // Obtener todos los cajeros virtuales de una caja en específico
 router.get("/:idcashPoint", verifyToken, async (req, res) => {

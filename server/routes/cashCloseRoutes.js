@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const verifyToken = require("./verifyToken");
+const verifyToken = require("../services/verifyToken");
 const db = require("../db");
 
 // Obtengo los grupos de pago de la caja ordenados por fecha

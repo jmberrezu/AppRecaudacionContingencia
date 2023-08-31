@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const db = require("../db");
-const verifyToken = require("./verifyToken");
+const verifyToken = require("../services/verifyToken");
 
 // Función para generar un ID único de transacción de pago
 function generatePaymentTransactionID(

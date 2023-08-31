@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const db = require("../db");
-const verifyToken = require("./verifyToken");
+const verifyToken = require("../services/verifyToken");
 const { hashPassword } = require("../services/hashpassword");
 
 // Obtener todos los usuarios de una caja en específico

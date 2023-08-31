@@ -3,7 +3,7 @@ const router = express.Router();
 const db = require("../db");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
-const verifyToken = require("./verifyToken");
+const verifyToken = require("../services/verifyToken");
 
 router.post("/", async (req, res) => {
   const { username, password } = req.body;
