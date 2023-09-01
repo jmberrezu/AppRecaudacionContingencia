@@ -10,6 +10,7 @@ import {
   ArrowCounterclockwise,
   ArrowLeftRight,
   ClockHistory,
+  HourglassSplit,
 } from "react-bootstrap-icons";
 
 function Sidebar({ user, handleLogout, setActiveComponent, activeComponent }) {
@@ -18,7 +19,7 @@ function Sidebar({ user, handleLogout, setActiveComponent, activeComponent }) {
   return (
     <div
       className="d-flex flex-column flex-shrink-0 p-3 bg-body-tertiary"
-      style={{ width: "280px", height: "100vh" }}
+      style={{ width: "282px", height: "100vh" }}
     >
       <span className="fs-4">App Recaudación</span>
       <hr />
@@ -94,6 +95,18 @@ function Sidebar({ user, handleLogout, setActiveComponent, activeComponent }) {
           >
             <ClockHistory size={16} className="align-middle mb-1 me-2" />{" "}
             Historial de Pagos
+          </Link>
+        </Nav.Item>
+        <Nav.Item>
+          <Link
+            to="#"
+            className={`nav-link ${
+              activeComponent === "history-closed" ? "active" : "text-black"
+            } `}
+            onClick={() => setActiveComponent("history-closed")}
+          >
+            <HourglassSplit size={16} className="align-middle mb-1 me-2" />{" "}
+            Historial de Cajas Cerradas
           </Link>
         </Nav.Item>
       </Nav>

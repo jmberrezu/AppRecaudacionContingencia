@@ -236,15 +236,38 @@ router.get("/closedcash/:idcashpoint", verifyToken, async (req, res) => {
     return res.status(400).json({ message: "idcashPoint is required" });
   }
 
-  try {
-    const query = `SELECT CashClosing.*,
-    VirtualCashPoint.idVirtualCashPoint,
-        VirtualCashPoint.name AS virtualCashPointName
-    FROM CashClosing
-    INNER JOIN VirtualCashPoint ON CashClosing.idGlobalVirtualCashPoint = VirtualCashPoint.idGlobalVirtualCashPoint
-    WHERE CashClosing.idCashPoint = $1`;
+  // Si el idglobalvirtualcashpoint no se ha ingresado y no es un numero
+  if (!req.user.idglobalvirtualcashpoint) {
+    return res
+      .status(400)
+      .json({ message: "idglobalvirtualcashpoint is required" });
+  }
 
-    const results = await db.query(query, [idcashpoint]);
+  try {
+    //Si es cajero solo puede ver las cajas cerradas de su caja
+    if (req.user.role === "cajero") {
+      const results = await db.query(
+        `SELECT CashClosing.*,
+        VirtualCashPoint.idVirtualCashPoint,
+            VirtualCashPoint.name AS virtualCashPointName
+        FROM CashClosing
+        INNER JOIN VirtualCashPoint ON CashClosing.idGlobalVirtualCashPoint = VirtualCashPoint.idGlobalVirtualCashPoint
+        WHERE CashClosing.idCashPoint = $1 AND CashClosing.idGlobalVirtualCashPoint = $2`,
+        [idcashpoint, req.user.idglobalvirtualcashpoint]
+      );
+
+      return res.json(results);
+    }
+
+    const results = await db.query(
+      `SELECT CashClosing.*,
+        VirtualCashPoint.idVirtualCashPoint,
+            VirtualCashPoint.name AS virtualCashPointName
+        FROM CashClosing
+        INNER JOIN VirtualCashPoint ON CashClosing.idGlobalVirtualCashPoint = VirtualCashPoint.idGlobalVirtualCashPoint
+        WHERE CashClosing.idCashPoint = $1`,
+      [idcashpoint]
+    );
 
     res.json(results);
   } catch (error) {
@@ -252,6 +275,102 @@ router.get("/closedcash/:idcashpoint", verifyToken, async (req, res) => {
     res.status(500).json({ error: "Error retrieving data" });
   }
 });
+
+// Obtengo las cajas cerradas con pagos
+router.get(
+  "/closedcashwithpayments/:idcashpoint",
+  verifyToken,
+  async (req, res) => {
+    // Si el rol no es cajero o gerente no puede acceder a esta ruta
+    if (req.user.role !== "cajero" && req.user.role !== "gerente") {
+      return res.status(401).json({ message: "Unauthorized User" });
+    }
+
+    const { idcashpoint } = req.params;
+
+    // Si el idcashPoint no se ha ingresado
+    if (!idcashpoint) {
+      return res.status(400).json({ message: "idcashPoint is required" });
+    }
+
+    // Si el idglobalvirtualcashpoint no se ha ingresado y no es un numero
+    if (!req.user.idglobalvirtualcashpoint) {
+      return res
+        .status(400)
+        .json({ message: "idglobalvirtualcashpoint is required" });
+    }
+
+    try {
+      //Si es cajero solo puede ver las cajas cerradas de su caja
+      if (req.user.role === "cajero") {
+        const results = await db.query(
+          `SELECT CashClosing.*,
+        VirtualCashPoint.idVirtualCashPoint,
+            VirtualCashPoint.name AS virtualCashPointName
+        FROM CashClosing
+        INNER JOIN VirtualCashPoint ON CashClosing.idGlobalVirtualCashPoint = VirtualCashPoint.idGlobalVirtualCashPoint
+        WHERE CashClosing.idCashPoint = $1 AND CashClosing.idGlobalVirtualCashPoint = $2`,
+          [idcashpoint, req.user.idglobalvirtualcashpoint]
+        );
+
+        // Obtengo los pagos de cada caja cerrada
+        for (let i = 0; i < results.length; i++) {
+          const pagos = await db.query(
+            `SELECT
+            Payment.*,
+            VirtualCashPoint.idVirtualCashPoint,
+            VirtualCashPoint.name AS virtualCashPointName,
+            "User".username
+          FROM Payment
+          INNER JOIN VirtualCashPoint ON Payment.idGlobalVirtualCashPoint = VirtualCashPoint.idGlobalVirtualCashPoint
+          INNER JOIN "User" ON Payment.idGlobalUser = "User".idGlobalUser
+          WHERE CashPointPaymentGroupReferenceID=$1`,
+            [results[i].cashpointpaymentgroupreferenceid]
+          );
+
+          results[i].pagos = pagos;
+        }
+
+        return res.json(results);
+      }
+
+      const results = await db.query(
+        `SELECT CashClosing.*,
+        VirtualCashPoint.idVirtualCashPoint,
+            VirtualCashPoint.name AS virtualCashPointName
+        FROM CashClosing
+        INNER JOIN VirtualCashPoint ON CashClosing.idGlobalVirtualCashPoint = VirtualCashPoint.idGlobalVirtualCashPoint
+        WHERE CashClosing.idCashPoint = $1`,
+        [idcashpoint]
+      );
+
+      // Obtengo los pagos de cada caja cerrada
+      for (let i = 0; i < results.length; i++) {
+        const pagos = await db.query(
+          `SELECT
+          Payment.*,
+          VirtualCashPoint.idVirtualCashPoint,
+          VirtualCashPoint.name AS virtualCashPointName,
+          "User".username
+        FROM Payment
+        INNER JOIN VirtualCashPoint ON Payment.idGlobalVirtualCashPoint = VirtualCashPoint.idGlobalVirtualCashPoint
+        INNER JOIN "User" ON Payment.idGlobalUser = "User".idGlobalUser
+        WHERE CashPointPaymentGroupReferenceID = $1;
+      `,
+
+          [results[i].cashpointpaymentgroupreferenceid]
+        );
+
+        results[i].pagos = pagos;
+      }
+
+      res.json(results);
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ error: "Error retrieving data" });
+    }
+  }
+);
 
 // Anulo el cierre de caja
 router.put(
