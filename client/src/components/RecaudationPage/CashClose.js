@@ -6,14 +6,16 @@ import {
   Button,
   InputGroup,
   Modal,
-  Row,
-  Col,
   Table,
 } from "react-bootstrap";
 import { Cash } from "react-bootstrap-icons";
+import { useNavigate } from "react-router-dom";
+import axios from "axios";
 
-function CashClose(props) {
-  const { user, token } = props;
+function CashClose({ user }) {
+  const navigate = useNavigate();
+  const [token, setToken] = useState("");
+
   const [dolares, setDolares] = useState(""); // Initialize with a default value
   const [centavos, setCentavos] = useState(""); // Initialize with a default value
   // Estado para mostrar alertas
@@ -26,10 +28,44 @@ function CashClose(props) {
   const [totalMonto, setTotalMonto] = useState("");
   const [noPagos, setNoPagos] = useState("");
 
+  // Obtengo el token del local storage
   useEffect(() => {
-    getGrupo();
-  }, [setGrupo]);
+    const storedToken = localStorage.getItem("token");
+    if (storedToken) {
+      axios
+        .get("/api/login/verify", {
+          headers: {
+            Authorization: `Bearer ${storedToken}`,
+          },
+        })
+        .then((response) => {
+          // Verificar el rol del usuario
+          if (
+            response.data.role !== "cajero" &&
+            response.data.role !== "gerente"
+          ) {
+            navigate("/");
+          } else {
+            setToken(storedToken);
+          }
+        })
+        .catch((error) => {
+          console.error("Error verifying token: ", error);
+          navigate("/");
+        });
+    } else {
+      navigate("/");
+    }
+  }, [navigate]);
 
+  // Obtengo el grupo de pago
+  useEffect(() => {
+    if (token) {
+      getGrupo();
+    }
+  }, [token, user.idcashpoint]);
+
+  // Función para obtener el grupo de pago
   const getGrupo = async () => {
     setAlertInfo(null);
     setNoPagos(false);
@@ -48,34 +84,49 @@ function CashClose(props) {
 
       const data = await response.json();
 
-      if (data.error) {
-        setAlertInfo({ variant: "danger", message: data.error });
+      // Si se trata de cerrar caja y todavia no se ha recibido ningun pago, se muestra una alerta de que no se puede cerrar caja
+      if (
+        response.status === 404 &&
+        data.error ===
+          "It is not possible to close the cash register if no payment has been made."
+      ) {
+        setAlertInfo({
+          variant: "danger",
+          message: "No se puede cerrar caja si no se ha recibido ningun pago.",
+        });
         //Desactivar el boton de cerrar caja
         setNoPagos(true);
-      } else {
-        setGrupo(data);
+        return;
+      }
 
-        // Si la fecha recibida de data es menor a la fecha actual, se muestra una alerta de que se esta cerrando caja de un dia previo
-        let fechaActual = new Date();
-        let fechaGrupo = new Date(data.valuedate);
+      // Si el grupo de pago tiene fecha del dia siguiente
+      if (response.status === 400) {
+        setAlertInfo({
+          variant: "danger",
+          message: data.error,
+        });
+        //Desactivar el boton de cerrar caja
+        setNoPagos(true);
+        return;
+      }
 
-        if (
-          fechaActual.toISOString().slice(0, 10) !==
-          fechaGrupo.toISOString().slice(0, 10)
-        ) {
-          setAlertInfo({
-            variant: "warning",
-            message:
-              "Se está cerrando la caja de el dia: " +
-              fechaGrupo.toISOString().slice(0, 10),
-          });
-        }
+      setGrupo(data);
+
+      // Si se ha recibido alerta como true, se muestra una alerta de que se esta cerrando caja de un dia previo
+      if (data.alerta) {
+        setAlertInfo({
+          variant: "warning",
+          message:
+            "Se esta cerrando caja de un dia previo: " +
+            new Date(data.valuedate).toISOString().slice(0, 10),
+        });
       }
     } catch (error) {
       setAlertInfo({ variant: "danger", message: error.message });
     }
   };
 
+  // Función para cerrar la caja
   const cerrarCaja = async () => {
     // Validar que se haya ingresado un monto
     if (dolares === "" && centavos === "") {

@@ -1,31 +1,71 @@
 import React, { useState, useCallback, useEffect } from "react";
 import { Table, Button } from "react-bootstrap";
+import { useNavigate } from "react-router-dom";
+import axios from "axios";
 
-function ReverseCashClose(props) {
-  const { token, idcashpoint, user } = props;
+function ReverseCashClose({ user }) {
   const [closedCash, setClosedCash] = useState([]);
+  const [token, setToken] = useState(null);
+  const navigate = useNavigate();
+
+  // Obtengo el token del local storage
+  useEffect(() => {
+    const storedToken = localStorage.getItem("token");
+    if (storedToken) {
+      axios
+        .get("/api/login/verify", {
+          headers: {
+            Authorization: `Bearer ${storedToken}`,
+          },
+        })
+        .then((response) => {
+          // Verificar el rol del usuario
+          if (
+            response.data.role !== "cajero" &&
+            response.data.role !== "gerente"
+          ) {
+            navigate("/");
+          } else {
+            setToken(storedToken);
+          }
+        })
+        .catch((error) => {
+          console.error("Error verifying token: ", error);
+          navigate("/");
+        });
+    } else {
+      navigate("/");
+    }
+  }, [navigate]);
+
+  useEffect(() => {
+    if (token) {
+      fetchClosedCash();
+    }
+  }, [token, user.idcashpoint]);
 
   // Función para obtener la lista cajas cerradas
   const fetchClosedCash = useCallback(async () => {
-    try {
-      const response = await fetch(`/api/cashClose/closedcash/${idcashpoint}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+    if (user.idcashpoint) {
+      try {
+        const response = await fetch(
+          `/api/cashClose/closedcash/${user.idcashpoint}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
 
-      if (response.ok) {
-        const closedCashData = await response.json();
-        setClosedCash(closedCashData);
+        if (response.ok) {
+          const closedCashData = await response.json();
+          setClosedCash(closedCashData);
+        }
+      } catch (error) {
+        console.error(error);
       }
-    } catch (error) {
-      console.error(error);
     }
-  }, [token, idcashpoint]);
-
-  useEffect(() => {
-    fetchClosedCash();
-  }, [fetchClosedCash]);
+  });
 
   const formatDate = (dateString) => {
     const options = { year: "numeric", month: "numeric", day: "numeric" };
@@ -44,7 +84,6 @@ function ReverseCashClose(props) {
           },
           body: JSON.stringify({
             user,
-            cash,
           }),
         }
       );

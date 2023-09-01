@@ -112,12 +112,15 @@ router.post("/agregar", verifyToken, async (req, res) => {
   }
 
   try {
-    // Agrego el supervisor a la base de datos
-    const newUser = await db.one(
-      `INSERT INTO Supervisor (idCashPoint, "user", password)
+    await db.tx(async (transaction) => {
+      let newUser = null;
+      // Agrego el supervisor a la base de datos
+      newUser = await transaction.one(
+        `INSERT INTO Supervisor (idCashPoint, "user", password)
               VALUES ($1, $2, $3) RETURNING idCashPoint, "user"`,
-      [idCashPoint, username, password]
-    );
+        [idCashPoint, username, password]
+      );
+    });
 
     res.json(newUser); // Devuelvo el usuario creado
   } catch (error) {
@@ -180,38 +183,39 @@ router.put("/:idCashPoint", verifyToken, async (req, res) => {
   }
 
   try {
-    // Busca el supervisor a actualizar
-    const supervisorToUpdate = await db.oneOrNone(
-      `SELECT * FROM Supervisor WHERE idCashPoint = $1`,
-      [idCashPoint]
-    );
-
-    if (!supervisorToUpdate) {
-      return res.status(404).json({ message: "Supervisor not found" });
-    }
-
-    // Si no hay contraseña
-    if (!password) {
-      // Actualiza el supervisor sin contraseña
-      const updatedUser = await db.one(
-        `UPDATE Supervisor SET "user"=$1
-          WHERE idCashPoint=$2 RETURNING idCashPoint, "user"`,
-        [username, idCashPoint]
+    await db.tx(async (transaction) => {
+      // Busca el supervisor a actualizar
+      const supervisorToUpdate = await transaction.oneOrNone(
+        `SELECT * FROM Supervisor WHERE idCashPoint = $1`,
+        [idCashPoint]
       );
 
-      // Devuelve la respuesta exitosa
-      return res.json(updatedUser);
-    }
+      if (!supervisorToUpdate) {
+        return res.status(404).json({ message: "Supervisor not found" });
+      }
 
-    // Realiza la actualización solo si el supervisor existe y hay contraseña
-    const updatedUser = await db.one(
-      `UPDATE Supervisor SET "user"=$1, password=$2
+      // Si no hay contraseña
+      if (!password) {
+        // Actualiza el supervisor sin contraseña
+        const updatedUser = await transaction.one(
+          `UPDATE Supervisor SET "user"=$1
+          WHERE idCashPoint=$2 RETURNING idCashPoint, "user"`,
+          [username, idCashPoint]
+        );
+
+        // Devuelve la respuesta exitosa
+        return res.json(updatedUser);
+      }
+
+      // Realiza la actualización solo si el supervisor existe y hay contraseña
+      const updatedUser = await transaction.one(
+        `UPDATE Supervisor SET "user"=$1, password=$2
        WHERE idCashPoint=$3 RETURNING idCashPoint, "user"`,
-      [username, password, idCashPoint]
-    );
-
-    // Devuelve la respuesta exitosa
-    res.json(updatedUser);
+        [username, password, idCashPoint]
+      );
+      // Devuelve la respuesta exitosa
+      res.json(updatedUser);
+    });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -239,19 +243,20 @@ router.delete("/:idCashPoint", verifyToken, async (req, res) => {
   }
 
   try {
-    // Busca el supervisor a eliminar
-    const supervisorToDelete = await db.oneOrNone(
-      `SELECT * FROM Supervisor WHERE idCashPoint = $1`,
-      [idCashPoint]
-    );
+    await db.tx(async (transaction) => {
+      // Busca el supervisor a eliminar
+      const supervisorToDelete = await transaction.oneOrNone(
+        `SELECT * FROM Supervisor WHERE idCashPoint = $1`,
+        [idCashPoint]
+      );
 
-    if (!supervisorToDelete) {
-      return res.status(404).json({ message: "Supervisor not found" });
-    }
+      if (!supervisorToDelete) {
+        return res.status(404).json({ message: "Supervisor not found" });
+      }
 
-    // Verificar si se puede eliminar el supervisor
-    const counts = await db.one(
-      `
+      // Verificar si se puede eliminar el supervisor
+      const counts = await transaction.one(
+        `
       SELECT
         (SELECT COUNT(*) FROM "User" WHERE idCashPoint = $1) AS user_count,
         (SELECT COUNT(*) FROM CashClosing WHERE idCashPoint = $1) AS cash_closing_count,
@@ -260,42 +265,45 @@ router.delete("/:idCashPoint", verifyToken, async (req, res) => {
         (SELECT COUNT(*) FROM ReversePayment WHERE idCashPoint = $1) AS reverse_payment_count,
         (SELECT COUNT(*) FROM PaymentGroup WHERE idCashPoint = $1) AS payment_group_count
     `,
-      [idCashPoint]
-    );
+        [idCashPoint]
+      );
 
-    switch (true) {
-      case counts.user_count > 0:
-        return res.status(400).json({
-          message: "Supervisor cannot be deleted because it has users",
-        });
-      case counts.cash_closing_count > 0:
-        return res.status(400).json({
-          message: "Supervisor cannot be deleted because it has cash closings",
-        });
-      case counts.virtual_cash_point_count > 0:
-        return res.status(400).json({
-          message:
-            "Supervisor cannot be deleted because it has virtual cash points",
-        });
-      case counts.payment_count > 0:
-        return res.status(400).json({
-          message: "Supervisor cannot be deleted because it has payments",
-        });
-      case counts.reverse_payment_count > 0:
-        return res.status(400).json({
-          message:
-            "Supervisor cannot be deleted because it has reverse payments",
-        });
-      case counts.payment_group_count > 0:
-        return res.status(400).json({
-          message: "Supervisor cannot be deleted because it has payment groups",
-        });
-      default:
-        await db.none("DELETE FROM Supervisor WHERE idCashPoint=$1", [
-          idCashPoint,
-        ]);
-        res.json({ message: "Supervisor eliminado exitosamente" });
-    }
+      switch (true) {
+        case counts.user_count > 0:
+          return res.status(400).json({
+            message: "Supervisor cannot be deleted because it has users",
+          });
+        case counts.cash_closing_count > 0:
+          return res.status(400).json({
+            message:
+              "Supervisor cannot be deleted because it has cash closings",
+          });
+        case counts.virtual_cash_point_count > 0:
+          return res.status(400).json({
+            message:
+              "Supervisor cannot be deleted because it has virtual cash points",
+          });
+        case counts.payment_count > 0:
+          return res.status(400).json({
+            message: "Supervisor cannot be deleted because it has payments",
+          });
+        case counts.reverse_payment_count > 0:
+          return res.status(400).json({
+            message:
+              "Supervisor cannot be deleted because it has reverse payments",
+          });
+        case counts.payment_group_count > 0:
+          return res.status(400).json({
+            message:
+              "Supervisor cannot be deleted because it has payment groups",
+          });
+        default:
+          await db.none("DELETE FROM Supervisor WHERE idCashPoint=$1", [
+            idCashPoint,
+          ]);
+          res.json({ message: "Supervisor eliminado exitosamente" });
+      }
+    });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

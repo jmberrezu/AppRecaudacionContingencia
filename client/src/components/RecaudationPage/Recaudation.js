@@ -95,11 +95,9 @@ function Recaudation() {
         <hr />
         {activeComponent === "payment" && <Payment user={user} />}
         {activeComponent === "cashClose" && <CashClose user={user} />}
-        {activeComponent === "reversePayment" && (
-          <ReversePayment idcashpoint={user?.idcashpoint} user={user} />
-        )}
+        {activeComponent === "reversePayment" && <ReversePayment user={user} />}
         {activeComponent === "reverseCashClose" && (
-          <ReverseCashClose idcashpoint={user?.idcashpoint} user={user} />
+          <ReverseCashClose user={user} />
         )}
         {activeComponent === "history" && <PaymentHistory user={user} />}
       </Container>

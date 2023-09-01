@@ -3,19 +3,53 @@ const router = express.Router();
 const verifyToken = require("../services/verifyToken");
 const db = require("../db");
 
-// Obtengo los grupos de pago de la caja ordenados por fecha
+// Obtengo el primer grupo de pago de la caja
 router.post("/", verifyToken, async (req, res) => {
+  // Si el rol no es cajero o gerente no puede acceder a esta ruta
+  if (req.user.role !== "cajero" && req.user.role !== "gerente") {
+    return res.status(401).json({ message: "Unauthorized User" });
+  }
+
   let { idcashpoint, idvirtualcashpoint } = req.body;
+
+  // Si el idcashPoint no se ha ingresado
+  if (!idcashpoint) {
+    return res.status(400).json({ message: "idcashPoint is required" });
+  }
+
+  // Si el idcashPoint no es de 16 o 21 caracteres
+  if (idcashpoint.length !== 16 && idcashpoint.length !== 21) {
+    return res
+      .status(400)
+      .json({ message: "idcashPoint must be 16 or 21 characters" });
+  }
+
+  // Si no existe el idcashPoint
+  const idCashPointResult = await db.oneOrNone(
+    "SELECT idCashPoint FROM Supervisor WHERE idCashPoint = $1",
+    [idcashpoint]
+  );
+
+  if (!idCashPointResult) {
+    return res.status(400).json({ message: "idcashPoint does not exist" });
+  }
+
+  // Si el idvirtualcashpoint no se ha ingresado y no es un numero
+  if (!idvirtualcashpoint || isNaN(idvirtualcashpoint)) {
+    return res.status(400).json({ message: "idvirtualcashpoint is required" });
+  }
 
   try {
     //Obtengo los pagos de la caja ordenados por fecha
-    const query = `SELECT * FROM PaymentGroup WHERE idCashPoint = $1 AND idVirtualCashPoint = $2 ORDER BY valueDate`;
-
-    let results = await db.query(query, [idcashpoint, idvirtualcashpoint]);
+    let results = await db.query(
+      `SELECT * FROM PaymentGroup WHERE idCashPoint = $1 AND idVirtualCashPoint = $2 ORDER BY valueDate`,
+      [idcashpoint, idvirtualcashpoint]
+    );
 
     if (results.length === 0) {
       return res.status(404).json({
-        error: "No se puede cerrar caja si no se ha realizado ningún pago",
+        error:
+          "It is not possible to close the cash register if no payment has been made.",
       });
     }
 
@@ -44,6 +78,14 @@ router.post("/", verifyToken, async (req, res) => {
 
     results[0].total_sumado = total_sumado.total_sumado;
 
+    // Si la fecha es menor a la fecha actual, se adjunta una alerta de que se esta cerrando caja de un dia previo
+    if (
+      fechaGrupo.toISOString().slice(0, 10) <
+      new Date().toISOString().slice(0, 10)
+    ) {
+      results[0].alerta = true;
+    }
+
     res.json(results[0]);
   } catch (error) {
     console.error(error);
@@ -53,34 +95,110 @@ router.post("/", verifyToken, async (req, res) => {
 
 // Cierro la caja
 router.post("/close", verifyToken, async (req, res) => {
+  // Si el rol no es cajero o gerente no puede acceder a esta ruta
+  if (req.user.role !== "cajero" && req.user.role !== "gerente") {
+    return res.status(401).json({ message: "Unauthorized User" });
+  }
+
   const { grupo, dolares, centavos, idglobalvirtualcashpoint } = req.body;
 
+  // Si el idglobalvirtualcashpoint no se ha ingresado y no es un numero
+  if (!idglobalvirtualcashpoint || isNaN(idglobalvirtualcashpoint)) {
+    return res
+      .status(400)
+      .json({ message: "idglobalvirtualcashpoint is required" });
+  }
+
+  // Si el idglobalvirtualcashpoint no existe
+  const idGlobalVirtualCashPointResult = await db.oneOrNone(
+    "SELECT idGlobalVirtualCashPoint FROM VirtualCashPoint WHERE idGlobalVirtualCashPoint = $1",
+    [idglobalvirtualcashpoint]
+  );
+
+  if (!idGlobalVirtualCashPointResult) {
+    return res
+      .status(400)
+      .json({ message: "idglobalvirtualcashpoint does not exist" });
+  }
+
+  // Si el grupo de pago no se ha ingresado
+  if (!grupo) {
+    return res.status(400).json({ message: "grupo is required" });
+  }
+
+  // Si el grupo no contiene cashpointpaymentgroupreferenceid, idcashpoint, idvirtualcashpoint, valuedate
+  if (
+    !grupo.cashpointpaymentgroupreferenceid ||
+    !grupo.idcashpoint ||
+    !grupo.idvirtualcashpoint ||
+    !grupo.valuedate
+  ) {
+    return res.status(400).json({
+      message:
+        "grupo must contain cashpointpaymentgroupreferenceid, idcashpoint, idvirtualcashpoint, valuedate",
+    });
+  }
+
+  // Si el grupo de pago no existe
+  const grupoResult = await db.oneOrNone(
+    "SELECT * FROM PaymentGroup WHERE CashPointPaymentGroupReferenceID = $1",
+    [grupo.cashpointpaymentgroupreferenceid]
+  );
+
+  if (!grupoResult) {
+    return res.status(400).json({ message: "grupo does not exist" });
+  }
+
+  // Si el grupo de pago no pertenece a la caja del usuario si es cajero
+  if (
+    req.user.role === "cajero" &&
+    grupoResult.idcashpoint !== req.user.idcashpoint
+  ) {
+    return res.status(401).json({
+      message: "Unauthorized User",
+    });
+  }
+
+  // Si no se ha recibido el monto en dolares y centavos
+  if (!dolares || !centavos) {
+    return res
+      .status(400)
+      .json({ message: "dolares and centavos are required" });
+  }
+
+  let result = {};
+
   try {
-    const query = `INSERT INTO CashClosing (valueDate, closingdoccumentamount, idCashPoint, CashPointPaymentGroupReferenceID, idGlobalVirtualCashPoint, isSent) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`;
+    await db.tx(async (transaction) => {
+      await transaction.manyOrNone(
+        `INSERT INTO CashClosing (valueDate, closingdoccumentamount, idCashPoint, CashPointPaymentGroupReferenceID, idGlobalVirtualCashPoint, isSent) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
+        [
+          grupo.valuedate,
+          dolares + "." + centavos,
+          grupo.idcashpoint,
+          grupo.cashpointpaymentgroupreferenceid,
+          idglobalvirtualcashpoint.toString(),
+          false,
+        ]
+      );
 
-    await db.manyOrNone(query, [
-      grupo.valuedate,
-      dolares + "." + centavos,
-      grupo.idcashpoint,
-      grupo.cashpointpaymentgroupreferenceid,
-      idglobalvirtualcashpoint.toString(),
-      false,
-    ]);
+      // Elimino el grupo de pago de la caja
+      await transaction.manyOrNone(
+        `DELETE FROM PaymentGroup WHERE CashPointPaymentGroupReferenceID = $1`,
+        [grupo.cashpointpaymentgroupreferenceid]
+      );
 
-    // Elimino el grupo de pago de la caja
-    const query2 = `DELETE FROM PaymentGroup WHERE CashPointPaymentGroupReferenceID = $1`;
-
-    await db.manyOrNone(query2, [grupo.cashpointpaymentgroupreferenceid]);
-
-    // Obtengo todos los pagos del grupo y los sumo
-    const query3 = `
+      // Obtengo todos los pagos del grupo y los sumo
+      result = await transaction.one(
+        `
     SELECT 
         COUNT(*) AS total_pagos,
         SUM(CAST(paymentAmountCurrencyCode AS NUMERIC)) AS total_sumado
     FROM Payment
-    WHERE CashPointPaymentGroupReferenceID = $1;`;
-
-    let result = await db.one(query3, [grupo.cashpointpaymentgroupreferenceid]);
+    WHERE CashPointPaymentGroupReferenceID = $1;`,
+        [grupo.cashpointpaymentgroupreferenceid]
+      );
+    });
 
     if (
       parseFloat(result.total_sumado) !== parseFloat(dolares + "." + centavos)
@@ -106,7 +224,17 @@ router.post("/close", verifyToken, async (req, res) => {
 
 // Obtengo las cajas cerradas
 router.get("/closedcash/:idcashpoint", verifyToken, async (req, res) => {
+  // Si el rol no es cajero o gerente no puede acceder a esta ruta
+  if (req.user.role !== "cajero" && req.user.role !== "gerente") {
+    return res.status(401).json({ message: "Unauthorized User" });
+  }
+
   const { idcashpoint } = req.params;
+
+  // Si el idcashPoint no se ha ingresado
+  if (!idcashpoint) {
+    return res.status(400).json({ message: "idcashPoint is required" });
+  }
 
   try {
     const query = `SELECT CashClosing.*,
@@ -130,26 +258,45 @@ router.put(
   "/anular-cierre-caja/:cashpointpaymentgroupreferenceid",
   verifyToken,
   async (req, res) => {
+    // Si el rol no es gerente no puede acceder a esta ruta
+    if (req.user.role !== "gerente") {
+      return res.status(401).json({ message: "Unauthorized User" });
+    }
+
     const { cashpointpaymentgroupreferenceid } = req.params;
     const { user } = req.body;
 
+    // Si el user no se ha ingresado
+    if (!user) {
+      return res.status(400).json({ message: "user is required" });
+    }
+
+    // Si el user no contiene idcashpoint
+    if (!user.idcashpoint) {
+      return res.status(400).json({ message: "user must contain idcashpoint" });
+    }
+
     try {
-      // Abro el grupo de pago
-      const query = `INSERT INTO PaymentGroup (CashPointPaymentGroupReferenceID, valueDate, idCashPoint, idVirtualCashPoint)
-      VALUES ($1, $2, $3, $4);`;
+      await db.tx(async (transaction) => {
+        // Abro el grupo de pago
+        await transaction.none(
+          `INSERT INTO PaymentGroup (CashPointPaymentGroupReferenceID, valueDate, idCashPoint, idVirtualCashPoint)
+      VALUES ($1, $2, $3, $4);`,
+          [
+            cashpointpaymentgroupreferenceid,
+            cashpointpaymentgroupreferenceid.split("-")[1].substring(0, 8),
+            user.idcashpoint,
+            cashpointpaymentgroupreferenceid.split("-")[1].substring(8, 12),
+          ]
+        );
 
-      await db.none(query, [
-        cashpointpaymentgroupreferenceid,
-        cashpointpaymentgroupreferenceid.split("-")[1].substring(0, 8),
-        user.idcashpoint,
-        cashpointpaymentgroupreferenceid.split("-")[1].substring(8, 12),
-      ]);
+        // Elimino el cierre de caja
 
-      // Elimino el cierre de caja
-
-      const query2 = `DELETE FROM CashClosing WHERE CashPointPaymentGroupReferenceID = $1`;
-
-      await db.none(query2, [cashpointpaymentgroupreferenceid]);
+        await transaction.none(
+          `DELETE FROM CashClosing WHERE CashPointPaymentGroupReferenceID = $1`,
+          [cashpointpaymentgroupreferenceid]
+        );
+      });
 
       res.status(200).json({ message: "Cierre de caja anulado correctamente" });
     } catch (error) {

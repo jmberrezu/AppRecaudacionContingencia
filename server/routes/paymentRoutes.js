@@ -455,14 +455,29 @@ router.get("/pagos/:idcashPoint", verifyToken, async (req, res) => {
       );
     }
 
-    // A todos los pagos, se les coloca con formato de 2 decimales
-    payments.forEach((payment) => {
-      payment.paymentamountcurrencycode = parseFloat(
-        payment.paymentamountcurrencycode
-      ).toFixed(2);
-    });
+    // Obtener los grupos de pago de la caja
+    const paymentgroup = await db.any(
+      `SELECT CashPointPaymentGroupReferenceID FROM PaymentGroup WHERE idCashPoint=$1;`,
+      [idcashPoint]
+    );
 
-    res.json(payments);
+    // Filtrar los pagos que pertenecen a los grupos de pago de la caja
+    const payments2 = payments
+      .filter((payment) =>
+        paymentgroup.some(
+          (group) =>
+            payment.cashpointpaymentgroupreferenceid ===
+            group.cashpointpaymentgroupreferenceid
+        )
+      )
+      .map((payment) => ({
+        ...payment,
+        paymentamountcurrencycode: parseFloat(
+          payment.paymentamountcurrencycode
+        ).toFixed(2),
+      }));
+
+    res.json(payments2);
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Error en el servidor" });
@@ -471,8 +486,8 @@ router.get("/pagos/:idcashPoint", verifyToken, async (req, res) => {
 
 // Ruta protegida: Obtener lista de pagos anulados
 router.get("/pagosAnulados/:idcashPoint", verifyToken, async (req, res) => {
-  // Si el usuario no es gerente no puede ver los pagos anulados
-  if (req.user.role !== "gerente") {
+  // Si el usuario no es cajero o gerente no puede ver los pagos
+  if (req.user.role !== "cajero" && req.user.role !== "gerente") {
     return res.status(401).json({ message: "Unauthorized" });
   }
 
@@ -494,14 +509,17 @@ router.get("/pagosAnulados/:idcashPoint", verifyToken, async (req, res) => {
     if (req.user.role === "cajero") {
       reversePayments = await db.any(
         `
-      SELECT
+        SELECT
         ReversePayment.*,
-        "User".username
-      FROM ReversePayment
-      INNER JOIN "User" ON ReversePayment.idGlobalUser = "User".idGlobalUser
-      WHERE ReversePayment.idCashPoint=$1 AND ReversePayment.idglobalvirtualcashpoint=$2;
+           "User".username
+         FROM ReversePayment
+             INNER JOIN "User" ON ReversePayment.idGlobalUser = "User".idGlobalUser
+       WHERE ReversePayment.idCashPoint = $1 AND SUBSTRING(ReversePayment.PaymentTransactionID, 24, 2) = $2
     `,
-        [idcashPoint, req.user.idglobalvirtualcashpoint]
+        [
+          idcashPoint,
+          req.user.idvirtualcashpoint.toString().slice(-2).padStart(2, "0"),
+        ]
       );
     } else if (req.user.role === "gerente") {
       reversePayments = await db.any(
