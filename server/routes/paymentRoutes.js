@@ -290,79 +290,103 @@ router.put("/anular-pago/:PID", verifyToken, async (req, res) => {
   const { PID } = req.params;
   const { user, ammount, contractaccount } = req.body;
 
-  // Si no se ha proporcionado un PID
-  if (!PID) {
-    return res.status(400).json({ message: "No PaymentTransactionID entered" });
-  } else {
-    //Si el PID no existe
-    const query = await db.oneOrNone(
-      `
+  try {
+    await db.tx(async (transaction) => {
+      // Si no se ha proporcionado un PID
+      if (!PID) {
+        return res
+          .status(400)
+          .json({ message: "No PaymentTransactionID entered" });
+      } else {
+        //Si el PID no existe
+        const query = await transaction.oneOrNone(
+          `
       SELECT PaymentTransactionID
       FROM Payment
       WHERE PaymentTransactionID = $1;
     `,
-      [PID]
-    );
+          [PID]
+        );
 
-    if (!query) {
-      return res.status(400).json({ message: "Invalid PaymentTransactionID" });
-    }
-  }
+        if (!query) {
+          return res
+            .status(400)
+            .json({ message: "Invalid PaymentTransactionID" });
+        }
+      }
 
-  // Si la cuenta contrato no se ha proporcionado
-  if (!contractaccount) {
-    return res
-      .status(400)
-      .json({ message: "No contract account or CUEN entered" });
-  } else {
-    // Si la cuenta contrato o CUEN no es un número de 10 o 12 dígitos
-    if (
-      isNaN(contractaccount) ||
-      (contractaccount.length !== 10 && contractaccount.length !== 12)
-    ) {
-      return res
-        .status(400)
-        .json({ message: "Invalid contract account or CUEN" });
-    }
-  }
+      // Si la cuenta contrato no se ha proporcionado
+      if (!contractaccount) {
+        return res
+          .status(400)
+          .json({ message: "No contract account or CUEN entered" });
+      } else {
+        // Si la cuenta contrato o CUEN no es un número de 10 o 12 dígitos
+        if (
+          isNaN(contractaccount) ||
+          (contractaccount.length !== 10 && contractaccount.length !== 12)
+        ) {
+          return res
+            .status(400)
+            .json({ message: "Invalid contract account or CUEN" });
+        }
+      }
 
-  // Si no se ha proporcionado un usuario
-  if (!user) {
-    return res.status(400).json({ message: "No user entered" });
-  } else {
-    // Si el usuario no tiene un idcashpoint  idglobaluser
-    if (!user.idglobaluser || !user.idcashpoint) {
-      return res.status(400).json({ message: "Invalid user" });
-    }
-  }
+      // Si no se ha proporcionado un usuario
+      if (!user) {
+        return res.status(400).json({ message: "No user entered" });
+      } else {
+        // Si el usuario no tiene un idcashpoint  idglobaluser
+        if (!user.idglobaluser || !user.idcashpoint) {
+          return res.status(400).json({ message: "Invalid user" });
+        }
+      }
 
-  // Si no se ha proporcionado un monto
-  if (!ammount) {
-    return res.status(400).json({ message: "No amount entered" });
-  } else {
-    if (isNaN(ammount)) {
-      return res.status(400).json({ message: "Invalid amount" });
-    }
-  }
+      // Si no se ha proporcionado un monto
+      if (!ammount) {
+        return res.status(400).json({ message: "No amount entered" });
+      } else {
+        if (isNaN(ammount)) {
+          return res.status(400).json({ message: "Invalid amount" });
+        }
+      }
 
-  //Si el monto no es igual al del pago
-  const query = await db.oneOrNone(
-    `
+      //Si el monto no es igual al del pago
+      const query = await transaction.oneOrNone(
+        `
     SELECT PaymentAmountCurrencyCode
     FROM Payment
     WHERE PaymentTransactionID = $1;
   `,
-    [PID]
-  );
+        [PID]
+      );
 
-  if (query.paymentamountcurrencycode != ammount) {
-    return res
-      .status(400)
-      .json({ message: "Invalid amount, is diferent from the payment" });
-  }
+      if (query.paymentamountcurrencycode != ammount) {
+        return res
+          .status(400)
+          .json({ message: "Invalid amount, is diferent from the payment" });
+      }
 
-  try {
-    await db.tx(async (transaction) => {
+      // Si se trata de anular un pago que se encuentra en una caja ya cerrada
+
+      // Obtengo el cashclosing del PID
+      const cashClosing = await transaction.oneOrNone(
+        `SELECT * FROM Payment WHERE PaymentTransactionID = $1;`,
+        [PID]
+      );
+
+      const cashClosingExists = await transaction.oneOrNone(
+        `SELECT CashPointPaymentGroupReferenceID FROM CashClosing WHERE CashPointPaymentGroupReferenceID = $1;`,
+        [cashClosing.cashpointpaymentgroupreferenceid]
+      );
+
+      if (cashClosingExists) {
+        return res.status(400).json({
+          error:
+            "No se puede anular el pago porque ya se cerró la caja del día ",
+        });
+      }
+
       //Quito de la tabla de pagos
       await transaction.none(
         `
@@ -392,9 +416,8 @@ router.put("/anular-pago/:PID", verifyToken, async (req, res) => {
     `,
         [ammount, contractaccount]
       );
+      res.status(200).json({ message: "Payment reversed successfully." });
     });
-
-    res.status(200).json({ message: "Payment reversed successfully." });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Error en el servidor" });
