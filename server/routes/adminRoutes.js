@@ -4,6 +4,12 @@ const db = require("../db");
 const jwt = require("jsonwebtoken");
 const verifyToken = require("../services/verifyToken");
 const { hashPassword, checkPassword } = require("../services/hashpassword");
+const multer = require("multer");
+const parse = require("csv-parse");
+
+// Configura el almacenamiento para los archivos CSV
+const storage = multer.memoryStorage();
+const upload = multer({ storage: storage });
 
 // Ruta para iniciar sesión
 router.post("/", async (req, res) => {
@@ -308,5 +314,88 @@ router.delete("/:idCashPoint", verifyToken, async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
+
+// Ruta para cargar el archivo CSV
+router.post(
+  "/upload-csv",
+  upload.single("csvFile"),
+  verifyToken,
+  async (req, res) => {
+    // Si el rol del usuario no es admin
+    if (req.user.role !== "admin") {
+      return res.status(401).json({ message: "Unauthorized User" });
+    }
+
+    // Si no se recibe el archivo CSV
+    if (!req.file) {
+      return res.status(400).json({ error: "Ingrese un archivo CSV" });
+    }
+
+    try {
+      // Accede al archivo CSV cargado desde req.file.buffer
+      const csvData = req.file.buffer.toString(); // Convierte el buffer a una cadena
+
+      // Divide las líneas del CSV usando el punto y coma como separador
+      const lines = csvData.split("\n");
+
+      // Suponemos que la primera línea contiene nombres de columnas
+      const columns = lines[0].split(";");
+
+      let flag = false;
+
+      await db.tx(async (transaction) => {
+        // Limpio la tabla Client
+        await transaction.none("DELETE FROM Client");
+
+        // Itera a través de las líneas y procesa los registros
+        for (let i = 1; i < lines.length; i++) {
+          const values = lines[i].split(";");
+          if (values.length === columns.length) {
+            // Construye un objeto con los valores del registro
+            const record = {};
+            for (let j = 0; j < columns.length; j++) {
+              record[columns[j]] = values[j];
+            }
+
+            try {
+              // Inserta el registro en la tabla Client
+              await transaction.query(
+                `
+            INSERT INTO Client (PayerContractAccountID, CUEN, name, address, debt)
+            VALUES ($1, $2, $3, $4, $5)
+            `,
+                [
+                  record.CUENTACONTRATO,
+                  record.CUEN.substring(0, 10),
+                  record.NOMBRE,
+                  record.DIRECCION,
+                  parseFloat(record.DEUDA.replace(",", ".")),
+                ]
+              );
+            } catch (error) {
+              flag = i + 1;
+              console.error("Error al cargar el archivo CSV:", error);
+              return;
+            }
+          }
+        }
+      });
+
+      // Después de salir del bucle, verifica la bandera
+      if (flag) {
+        // Hubo errores en el proceso, envía una respuesta de error
+        res
+          .status(500)
+          .json({ error: "Error del CSV en la linea: " + flag + "." });
+      } else {
+        // No hubo errores, envía una respuesta de éxito
+        res.status(200).json({ message: "Archivo CSV cargado exitosamente." });
+      }
+    } catch (error) {
+      console.error("Error al cargar el archivo CSV:", error);
+      res.status(500).json({ error: "Error al cargar el archivo CSV." });
+    }
+  }
+);
 
 module.exports = router;

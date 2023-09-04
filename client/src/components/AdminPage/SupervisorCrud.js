@@ -29,6 +29,13 @@ function SupervisorCrud() {
   // Para mostrar alertas
   const [alertInfo, setAlertInfo] = useState(null);
 
+  const [showUploadModal, setShowUploadModal] = useState(false);
+
+  const [csvFile, setCsvFile] = useState(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadSuccess, setUploadSuccess] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+
   // Obtener token de local stroage
   useEffect(() => {
     const storedToken = localStorage.getItem("token");
@@ -237,6 +244,68 @@ function SupervisorCrud() {
     navigate("/admin");
   };
 
+  // Función para manejar la carga de un archivo CSV
+  const handleUpload = async (file) => {
+    setCsvFile(file);
+  };
+
+  const uploadFile = async () => {
+    setAlertInfo(null);
+    setUploadSuccess(false);
+
+    if (csvFile !== null) {
+      setIsUploading(true); // Indicar que se está procesando la carga
+      try {
+        const formData = new FormData();
+        formData.append("csvFile", csvFile);
+
+        const response = await axios.post("/api/admin/upload-csv", formData, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "multipart/form-data",
+          },
+          onUploadProgress: (progressEvent) => {
+            // Calcular el progreso y actualizar el estado
+            const progress = (progressEvent.loaded / progressEvent.total) * 100;
+            setUploadProgress(progress);
+          },
+        });
+
+        // Manejar la respuesta del servidor (por ejemplo, mostrar una alerta)
+        if (response.status === 200) {
+          // Mostrar mensaje de éxito y mantener el modal abierto
+          setUploadSuccess(true);
+        }
+      } catch (error) {
+        if (error.response && error.response.status === 400) {
+          setAlertInfo({
+            variant: "danger",
+            message: error.response.data.error,
+          });
+        } else if (error.response && error.response.status === 500) {
+          setAlertInfo({
+            variant: "danger",
+            message: "No se pudo cargar el CSV. " + error.response.data.error,
+          });
+        } else {
+          setAlertInfo({
+            variant: "danger",
+            message: error.message, // Mostrar el mensaje de error general
+          });
+        }
+      } finally {
+        setIsUploading(false); // Indicar que la carga ha terminado
+        setCsvFile(null); // Limpiar el archivo
+        document.getElementById("csvFile").value = "";
+      }
+    } else {
+      setAlertInfo({
+        variant: "danger",
+        message: "Por favor, seleccione un archivo CSV.",
+      });
+    }
+  };
+
   return (
     <div>
       <Navbar className="bg-body-tertiary stick" expand="sm" sticky="top">
@@ -247,6 +316,18 @@ function SupervisorCrud() {
           </Nav>
           <Navbar.Collapse id="basic-navbar-nav">
             <Nav className="me-auto"></Nav>
+            <Nav>
+              <Nav.Item className="me-3">
+                <Button
+                  variant="outline-success"
+                  onClick={() => {
+                    setShowUploadModal(true);
+                  }}
+                >
+                  Cargar Clientes
+                </Button>
+              </Nav.Item>
+            </Nav>
             <Nav>
               <Nav.Item className="">
                 <Button variant="outline-warning" onClick={handleLogout}>
@@ -391,6 +472,55 @@ function SupervisorCrud() {
             </Button>
             <Button variant="primary" onClick={updateSupervisor}>
               Guardar
+            </Button>
+          </Modal.Footer>
+        </Modal>
+        <Modal show={showUploadModal} onHide={() => setShowUploadModal(false)}>
+          <Modal.Header closeButton>
+            <Modal.Title>Cargar Clientes Mediante Archivo CSV</Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+            {isUploading ? (
+              <Alert variant="info">
+                <p>Procesando la carga del archivo CSV...</p>
+                <div className="progress">
+                  <div
+                    className="progress-bar progress-bar-striped progress-bar-animated"
+                    role="progressbar"
+                    style={{ width: `${uploadProgress}%` }}
+                    aria-valuenow={uploadProgress}
+                    aria-valuemin="0"
+                    aria-valuemax="100"
+                  ></div>
+                </div>
+              </Alert>
+            ) : uploadSuccess ? (
+              <Alert variant="success">Archivo CSV cargado exitosamente.</Alert>
+            ) : (
+              alertInfo && (
+                <Alert variant={alertInfo.variant}>{alertInfo.message}</Alert>
+              )
+            )}
+            <Form>
+              <Form.Group controlId="csvFile">
+                <Form.Label>Selecciona un archivo CSV</Form.Label>
+                <Form.Control
+                  type="file"
+                  accept=".csv"
+                  onChange={(e) => handleUpload(e.target.files[0])}
+                />
+              </Form.Group>
+            </Form>
+          </Modal.Body>
+          <Modal.Footer>
+            <Button
+              variant="secondary"
+              onClick={() => setShowUploadModal(false)}
+            >
+              Volver
+            </Button>
+            <Button variant="primary" onClick={uploadFile}>
+              Subir
             </Button>
           </Modal.Footer>
         </Modal>
