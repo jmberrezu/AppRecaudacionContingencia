@@ -76,9 +76,9 @@ function CashCloseHistory({ user }) {
     <div>
       <h3 className="mb-3">Historial de Cierres de Caja</h3>
       <div className="p-4" style={{ height: "80vh", overflowY: "auto" }}>
-        {cashClose.map((cashClose) => (
-          <div key={cashClose.cashpointpaymentgroupreferenceid}>
-            <h5>Grupo: {cashClose.cashpointpaymentgroupreferenceid}</h5>
+        {cashClose.map((cashCloseItem) => (
+          <div key={cashCloseItem.cashpointpaymentgroupreferenceid}>
+            <h5>Grupo: {cashCloseItem.cashpointpaymentgroupreferenceid}</h5>
             <Table bordered responsive>
               <thead>
                 <tr>
@@ -89,32 +89,34 @@ function CashCloseHistory({ user }) {
               </thead>
               <tbody>
                 <tr>
-                  <td>{formatDate(cashClose.valuedate)}</td>
+                  <td>{formatDate(cashCloseItem.valuedate)}</td>
                   <td
                     className={
-                      parseFloat(cashClose.closingdoccumentamount) ===
-                      parseFloat(cashClose.realclosingdoccumentamount)
+                      parseFloat(cashCloseItem.closingdoccumentamount) ===
+                      parseFloat(cashCloseItem.realclosingdoccumentamount)
                         ? "text-success"
                         : "text-danger"
                     }
                   >
                     {"$" +
-                      parseFloat(cashClose.closingdoccumentamount).toFixed(2)}
-                    {parseFloat(cashClose.closingdoccumentamount) !==
-                      parseFloat(cashClose.realclosingdoccumentamount) &&
+                      parseFloat(cashCloseItem.closingdoccumentamount).toFixed(
+                        2
+                      )}
+                    {parseFloat(cashCloseItem.closingdoccumentamount) !==
+                      parseFloat(cashCloseItem.realclosingdoccumentamount) &&
                       ` (Existe diferencia: ${
-                        (parseFloat(cashClose.closingdoccumentamount) -
-                          parseFloat(cashClose.realclosingdoccumentamount) >
+                        (parseFloat(cashCloseItem.closingdoccumentamount) -
+                          parseFloat(cashCloseItem.realclosingdoccumentamount) >
                         0
                           ? "+"
                           : "") +
                         (
-                          parseFloat(cashClose.closingdoccumentamount) -
-                          parseFloat(cashClose.realclosingdoccumentamount)
+                          parseFloat(cashCloseItem.closingdoccumentamount) -
+                          parseFloat(cashCloseItem.realclosingdoccumentamount)
                         ).toFixed(2)
                       }$ )`}
                   </td>
-                  <td>{cashClose.virtualcashpointname}</td>
+                  <td>{cashCloseItem.virtualcashpointname}</td>
                 </tr>
                 <tr>
                   <td colSpan={3}>
@@ -133,8 +135,8 @@ function CashCloseHistory({ user }) {
                         </tr>
                       </thead>
                       <tbody>
-                        {cashClose.pagos.map((cashpointpayment) => (
-                          <tr>
+                        {cashCloseItem.pagos.map((cashpointpayment) => (
+                          <tr key={cashpointpayment.paymenttransactionid}>
                             <td>{cashpointpayment.paymenttransactionid}</td>
                             <td>{formatDate(cashpointpayment.valuedate)}</td>
                             <td>

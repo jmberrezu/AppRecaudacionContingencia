@@ -215,6 +215,11 @@ router.post("/sendprincipal", verifyToken, async (req, res) => {
     return res.status(400).json({ message: "idcashPoint is required" });
   }
 
+  // Si el idcashPoint no coincide con el idcashPoint del usuario
+  if (idcashpoint !== req.user.idcashpoint) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+
   // Si el cash no se ha ingresado
   if (!cash) {
     return res.status(400).json({ message: "cash is required" });

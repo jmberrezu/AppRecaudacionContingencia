@@ -340,6 +340,26 @@ router.post(
       }
     }
 
+    // Si existen grupos sin cerrar o cajas cerradas sin enviar no se puede cargar el archivo CSV
+    const counts = await db.one(
+      `
+      SELECT
+        (SELECT COUNT(*) FROM PaymentGroup WHERE idCashPoint = $1) AS open_payment_group_count,
+        (SELECT COUNT(*) FROM CashClosing WHERE idCashPoint = $1) AS closed_cash_closing_count
+    `,
+      [idcashpoint]
+    );
+
+    if (
+      counts.open_payment_group_count > 0 ||
+      counts.closed_cash_closing_count > 0
+    ) {
+      return res.status(400).json({
+        error:
+          "No se puede cargar el archivo CSV porque existen grupos sin cerrar o cajas cerradas sin enviar.",
+      });
+    }
+
     // Si no se recibe el archivo CSV
     if (!req.file) {
       return res.status(400).json({ error: "Ingrese un archivo CSV" });

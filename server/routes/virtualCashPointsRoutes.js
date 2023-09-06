@@ -97,6 +97,14 @@ router.post("/", verifyToken, async (req, res) => {
           maxIdVirtualCashPointResult.maxidvirtualcashpoint + 1;
       }
 
+      // Si el valor máximo de idVirtualCashPoint supera el límite de 99 cajas, se ha superado el límite de cajas virtuales para este idCashPoint
+      if (nextIdVirtualCashPoint > 99) {
+        return res.status(400).json({
+          message:
+            "Max number of virtual cashpoints reached for this cashpoint",
+        });
+      }
+
       // Insertar el nuevo cajero virtual
       const newVirtualCashPoint = await transaction.one(
         "INSERT INTO VirtualCashPoint (idVirtualCashPoint, name, idCashPoint) VALUES ($1, $2, $3) RETURNING *",

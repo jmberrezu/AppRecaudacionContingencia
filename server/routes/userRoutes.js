@@ -153,6 +153,13 @@ router.post("/", verifyToken, async (req, res) => {
         nextIdUser = maxIdUserResult.maxiduser + 1;
       }
 
+      // Si el idUser es mayor a 999 no se puede crear el usuario
+      if (nextIdUser > 999) {
+        return res
+          .status(400)
+          .json({ message: "Max users reached for this cashpoint" });
+      }
+
       // Insertar el nuevo usuario
       const newUser = await transaction.one(
         'INSERT INTO "User" (idUser, username, password, role, idCashPoint, idGlobalVirtualCashPoint) ' +
