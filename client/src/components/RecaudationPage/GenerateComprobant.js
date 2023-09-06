@@ -13,7 +13,7 @@ function GenerateComprobant({
 
   const generatePDF = useReactToPrint({
     content: () => conponentPDF.current,
-    documentTitle: "Comprobante",
+    documentTitle: "Comprobante_Pago_" + paymentData.pid,
   });
 
   return (

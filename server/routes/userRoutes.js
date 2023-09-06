@@ -357,6 +357,8 @@ router.delete("/:id", verifyToken, async (req, res) => {
         [id]
       );
 
+      console.log(counts);
+
       if (
         counts.payment_count !== "0" ||
         counts.reverse_payment_count !== "0"

@@ -191,11 +191,15 @@ function VirtualCashPointCrud(idcashpoint) {
       setShowEditModal(false);
     } catch (error) {
       // Si el error es 400 es que el cajero virtual puede ser eliminado ya que tiene pagos
-      if (error.response.status === 400) {
+      if (
+        error.response.status === 400 &&
+        error.response.data.message ===
+          "No se puede eliminar este cajero virtual porque tiene usuarios asignados"
+      ) {
         setAlertInfo({
           variant: "danger",
           message:
-            "No se puede eliminar este cajero virtual porque tiene pagos asignados",
+            "No se puede eliminar este cajero virtual porque tiene usuarios asignados",
         });
       } else {
         setAlertInfo({

@@ -372,7 +372,10 @@ router.put("/anular-pago/:PID", verifyToken, async (req, res) => {
         [PID]
       );
 
-      if (query.paymentamountcurrencycode != ammount) {
+      if (
+        parseFloat(query.paymentamountcurrencycode).toFixed(2) !=
+        parseFloat(ammount).toFixed(2)
+      ) {
         return res
           .status(400)
           .json({ message: "Invalid amount, is diferent from the payment" });
@@ -406,6 +409,27 @@ router.put("/anular-pago/:PID", verifyToken, async (req, res) => {
     `,
         [PID]
       );
+
+      // Si se eliminaron todos los pagos, se tiene que eliminar de la tabla paymentgroup
+      const query2 = await transaction.oneOrNone(
+        `
+      SELECT CashPointPaymentGroupReferenceID
+      FROM Payment
+      WHERE CashPointPaymentGroupReferenceID = $1;
+    `,
+
+        [cashClosing.cashpointpaymentgroupreferenceid]
+      );
+
+      if (!query2) {
+        await transaction.none(
+          `
+        DELETE FROM PaymentGroup
+        WHERE CashPointPaymentGroupReferenceID = $1;
+      `,
+          [cashClosing.cashpointpaymentgroupreferenceid]
+        );
+      }
 
       //Agrego a la tabla de anulaciones, incluyendo la fecha y hora actual
       const insertQuery = await transaction.none(
