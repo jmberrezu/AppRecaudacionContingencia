@@ -122,6 +122,7 @@ router.post("/realizar-pago", verifyToken, async (req, res) => {
       return res.status(400).json({ message: "Invalid user" });
     }
   }
+  let PID = "";
 
   try {
     await db.tx(async (transaction) => {
@@ -249,6 +250,8 @@ router.post("/realizar-pago", verifyToken, async (req, res) => {
         ]
       );
 
+      PID = paymentTransactionID;
+
       await transaction.none(
         `
       INSERT INTO LastPaymentSeq (SeqDate, UserId, VirtualCashPointId, LastSeq)
@@ -278,6 +281,7 @@ router.post("/realizar-pago", verifyToken, async (req, res) => {
       message: "Pago realizado con éxito.",
       date: fecha.toISOString().slice(0, 10),
       amount: cantidadTotal,
+      pid: PID,
     });
   } catch (error) {
     console.error(error);

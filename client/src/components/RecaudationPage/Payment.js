@@ -4,6 +4,7 @@ import { Alert, Container, Form, Button, InputGroup } from "react-bootstrap";
 import { Cash, Search } from "react-bootstrap-icons";
 import Modal from "react-bootstrap/Modal";
 import { useNavigate } from "react-router-dom";
+import GenerateComprobant from "./GenerateComprobant";
 
 function Payment({ user }) {
   const navigate = useNavigate();
@@ -18,6 +19,7 @@ function Payment({ user }) {
   const [direccion, setDireccion] = useState("");
   const [dolares, setDolares] = useState("");
   const [centavos, setCentavos] = useState("");
+
   // Estado para mostrar alertas
   const [alertInfo, setAlertInfo] = useState(null);
 
@@ -92,7 +94,6 @@ function Payment({ user }) {
   };
 
   const realizarPago = async () => {
-    console.log(user);
     //Comprobar que todos los campos esten llenos
     if (dolares === "" || centavos === "") {
       setAlertInfo({
@@ -166,44 +167,6 @@ function Payment({ user }) {
     // Asegurarse de que solo se ingresen números y máximo 2 dígitos
     const inputValue = e.target.value.replace(/[^\d]/g, "").slice(0, 2);
     setCentavos(inputValue);
-  };
-
-  const handlePrint = () => {
-    const printContent = `
-    Cuenta Contrato: ${cuentaContrato}
-    Nombre del Cliente: ${cliente.name}
-    Dirección: ${direccion}
-    Cantidad Pagada: ${paymentData.amount} $
-  `;
-
-    const printWindow = window.open("", "_blank");
-    printWindow.document.open();
-    printWindow.document.write(`
-    <pre>${printContent}</pre>
-    <style>
-      @media print {
-        body {
-          margin: 0;
-          padding: 0;
-        }
-        
-        pre {
-          margin-left: 24%;
-          font-size: 12px;
-          white-space: pre-wrap;
-        }
-      }
-    </style>
-    <script>
-      window.onload = function() {
-        window.print();
-        window.onafterprint = function() {
-          window.close();
-        };
-      };
-    </script>
-  `);
-    printWindow.document.close();
   };
 
   return (
@@ -320,9 +283,14 @@ function Payment({ user }) {
           </>
         )}
         <Modal.Footer>
-          <Button variant="outline-success" onClick={handlePrint}>
-            Imprimir Comprobante
-          </Button>
+          <GenerateComprobant
+            user={user}
+            paymentData={paymentData}
+            direccion={direccion}
+            cuentaContrato={cuentaContrato}
+            cliente={cliente}
+          />
+
           <Button
             variant="primary"
             onClick={() => {
