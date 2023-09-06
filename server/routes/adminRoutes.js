@@ -383,6 +383,36 @@ router.post(
       let flag = false;
 
       await db.tx(async (transaction) => {
+        // Limpio la tabla de reversePayment agregandolas en la tabla de PaymentSent
+        const reversepayments = await db.manyOrNone(
+          `
+          SELECT * FROM ReversePayment WHERE idCashPoint = $1
+          `,
+          [idcashpoint]
+        );
+
+        for (const reverse of reversepayments) {
+          await transaction.none(
+            `
+            INSERT INTO reversepaymentsent(PaymentTransactionID, idcashpoint, fecha_hora, paymentamountcurrencycode)
+            VALUES ($1, $2, $3, $4)
+            `,
+            [
+              reverse.paymenttransactionid,
+              reverse.idcashpoint,
+              reverse.fecha_hora,
+              reverse.paymentamountcurrencycode,
+            ]
+          );
+
+          await transaction.none(
+            `
+            DELETE FROM ReversePayment WHERE PaymentTransactionID = $1
+            `,
+            [reverse.paymenttransactionid]
+          );
+        }
+
         // Limpio la tabla Client
         await transaction.none("DELETE FROM Client where idcashpoint=$1", [
           idcashpoint,
