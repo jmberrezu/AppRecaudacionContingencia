@@ -114,7 +114,29 @@ function ReverseCashClose({ user }) {
             <tr key={cash.cashpointpaymentgroupreferenceid}>
               <td>{cash.cashpointpaymentgroupreferenceid}</td>
               <td>{formatDate(cash.valuedate)}</td>
-              <td>{"$" + cash.closingdoccumentamount}</td>
+              <td
+                className={
+                  parseFloat(cash.closingdoccumentamount) ===
+                  parseFloat(cash.realclosingdoccumentamount)
+                    ? "text-success"
+                    : "text-danger"
+                }
+              >
+                {"$" + parseFloat(cash.closingdoccumentamount).toFixed(2)}
+                {parseFloat(cash.closingdoccumentamount) !==
+                  parseFloat(cash.realclosingdoccumentamount) &&
+                  ` (Existe diferencia: ${
+                    (parseFloat(cash.closingdoccumentamount) -
+                      parseFloat(cash.realclosingdoccumentamount) >
+                    0
+                      ? "+"
+                      : "") +
+                    (
+                      parseFloat(cash.closingdoccumentamount) -
+                      parseFloat(cash.realclosingdoccumentamount)
+                    ).toFixed(2)
+                  }$ )`}
+              </td>
               <td>{cash.virtualcashpointname}</td>
               <td>
                 <Button variant="danger" onClick={() => anularCierreCaja(cash)}>

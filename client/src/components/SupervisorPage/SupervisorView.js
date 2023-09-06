@@ -6,6 +6,7 @@ import { Container } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 import SendPrincipalService from "./SendPrincipalService";
 import Sidebar from "./Sidebar";
+import SentHistory from "./SentHistory";
 
 function SupervisorView() {
   // Para el token y la navegación
@@ -71,6 +72,9 @@ function SupervisorView() {
         )}
         {activeComponent === "envio" && (
           <SendPrincipalService idcashpoint={user?.idcashpoint} />
+        )}
+        {activeComponent === "historialenvios" && (
+          <SentHistory idcashpoint={user?.idcashpoint} />
         )}
       </Container>
     </div>

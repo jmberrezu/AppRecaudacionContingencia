@@ -171,14 +171,14 @@ router.post("/close", verifyToken, async (req, res) => {
   try {
     await db.tx(async (transaction) => {
       await transaction.manyOrNone(
-        `INSERT INTO CashClosing (valueDate, closingdoccumentamount, idCashPoint, CashPointPaymentGroupReferenceID, idGlobalVirtualCashPoint, isSent) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
+        `INSERT INTO CashClosing (valueDate, closingdoccumentamount, idCashPoint, CashPointPaymentGroupReferenceID, idGlobalVirtualCashPoint, realclosingdoccumentamount) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
         [
           grupo.valuedate,
           dolares + "." + centavos,
           grupo.idcashpoint,
           grupo.cashpointpaymentgroupreferenceid,
           idglobalvirtualcashpoint.toString(),
-          false,
+          grupo.total_sumado,
         ]
       );
 

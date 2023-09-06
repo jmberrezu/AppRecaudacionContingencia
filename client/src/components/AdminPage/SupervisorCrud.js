@@ -11,6 +11,7 @@ import {
   Nav,
   Navbar,
 } from "react-bootstrap";
+import { InfoCircle } from "react-bootstrap-icons";
 
 function SupervisorCrud() {
   // Para el token y la navegación
@@ -32,6 +33,7 @@ function SupervisorCrud() {
   const [showUploadModal, setShowUploadModal] = useState(false);
 
   const [csvFile, setCsvFile] = useState(null);
+  const [csvIDCashPoint, setCsvIDCashPoint] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadSuccess, setUploadSuccess] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -258,6 +260,7 @@ function SupervisorCrud() {
       try {
         const formData = new FormData();
         formData.append("csvFile", csvFile);
+        formData.append("idcashpoint", csvIDCashPoint); // Agregar idcashpoint como parte del FormData
 
         const response = await axios.post("/api/admin/upload-csv", formData, {
           headers: {
@@ -316,18 +319,7 @@ function SupervisorCrud() {
           </Nav>
           <Navbar.Collapse id="basic-navbar-nav">
             <Nav className="me-auto"></Nav>
-            <Nav>
-              <Nav.Item className="me-3">
-                <Button
-                  variant="outline-success"
-                  onClick={() => {
-                    setShowUploadModal(true);
-                  }}
-                >
-                  Cargar Clientes
-                </Button>
-              </Nav.Item>
-            </Nav>
+
             <Nav>
               <Nav.Item className="">
                 <Button variant="outline-warning" onClick={handleLogout}>
@@ -364,13 +356,24 @@ function SupervisorCrud() {
                 <td>{supervisor.user}</td>
                 <td>
                   <Button
+                    className="me-1"
                     variant="success"
                     onClick={() => {
                       editSupervisor(supervisor);
                     }}
                   >
                     Editar
-                  </Button>{" "}
+                  </Button>
+                  <Button
+                    className="ms-1"
+                    variant="outline-primary"
+                    onClick={() => {
+                      setCsvIDCashPoint(supervisor.idcashpoint);
+                      setShowUploadModal(true);
+                    }}
+                  >
+                    Cargar Clientes
+                  </Button>
                 </td>
               </tr>
             ))}
@@ -480,6 +483,10 @@ function SupervisorCrud() {
             <Modal.Title>Cargar Clientes Mediante Archivo CSV</Modal.Title>
           </Modal.Header>
           <Modal.Body>
+            <p>
+              {" "}
+              Caja: <strong>{csvIDCashPoint}</strong>
+            </p>
             {isUploading ? (
               <Alert variant="info">
                 <p>Procesando la carga del archivo CSV...</p>
@@ -511,6 +518,14 @@ function SupervisorCrud() {
                 />
               </Form.Group>
             </Form>
+            <Alert variant="primary" className="mt-3">
+              <strong>
+                <InfoCircle className="me-1 mb-1" />{" "}
+              </strong>
+              Al cargar un archivo CSV de clientes se eliminarán todos los
+              clientes y los pagos realizados por estos. ¿Está seguro que desea
+              continuar?
+            </Alert>
           </Modal.Body>
           <Modal.Footer>
             <Button

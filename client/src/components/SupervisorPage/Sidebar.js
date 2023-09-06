@@ -6,6 +6,7 @@ import {
   SendFill,
   PersonCircle,
   BoxSeam,
+  HourglassBottom,
 } from "react-bootstrap-icons";
 
 function Sidebar({ user, handleLogout, setActiveComponent, activeComponent }) {
@@ -55,6 +56,20 @@ function Sidebar({ user, handleLogout, setActiveComponent, activeComponent }) {
           >
             <SendFill size={16} className="align-middle mb-1 me-2" /> Enviar al
             Servicio Principal
+          </Link>
+        </Nav.Item>
+        <hr />
+        <strong className="mb-2">Historial</strong>
+        <Nav.Item>
+          <Link
+            to="#"
+            className={`nav-link ${
+              activeComponent === "historialenvios" ? "active" : "text-black"
+            } `}
+            onClick={() => setActiveComponent("historialenvios")}
+          >
+            <HourglassBottom size={16} className="align-middle mb-1 me-2" />{" "}
+            Historial de Envíos
           </Link>
         </Nav.Item>
       </Nav>

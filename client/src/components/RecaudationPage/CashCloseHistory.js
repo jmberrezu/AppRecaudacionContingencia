@@ -1,7 +1,7 @@
 import axios from "axios";
 import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Container, Table } from "react-bootstrap";
+import { Table } from "react-bootstrap";
 
 function CashCloseHistory({ user }) {
   const navigate = useNavigate();
@@ -90,7 +90,30 @@ function CashCloseHistory({ user }) {
               <tbody>
                 <tr>
                   <td>{formatDate(cashClose.valuedate)}</td>
-                  <td>{"$" + cashClose.closingdoccumentamount}</td>
+                  <td
+                    className={
+                      parseFloat(cashClose.closingdoccumentamount) ===
+                      parseFloat(cashClose.realclosingdoccumentamount)
+                        ? "text-success"
+                        : "text-danger"
+                    }
+                  >
+                    {"$" +
+                      parseFloat(cashClose.closingdoccumentamount).toFixed(2)}
+                    {parseFloat(cashClose.closingdoccumentamount) !==
+                      parseFloat(cashClose.realclosingdoccumentamount) &&
+                      ` (Existe diferencia: ${
+                        (parseFloat(cashClose.closingdoccumentamount) -
+                          parseFloat(cashClose.realclosingdoccumentamount) >
+                        0
+                          ? "+"
+                          : "") +
+                        (
+                          parseFloat(cashClose.closingdoccumentamount) -
+                          parseFloat(cashClose.realclosingdoccumentamount)
+                        ).toFixed(2)
+                      }$ )`}
+                  </td>
                   <td>{cashClose.virtualcashpointname}</td>
                 </tr>
                 <tr>

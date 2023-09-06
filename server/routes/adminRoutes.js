@@ -326,6 +326,20 @@ router.post(
       return res.status(401).json({ message: "Unauthorized User" });
     }
 
+    const idcashpoint = req.body.idcashpoint;
+
+    // Si no se recibe el idCashPoint
+    if (!idcashpoint) {
+      return res.status(400).json({ error: "idCashPoint required" });
+    } else {
+      // Si el idCashPoint no es de 16 o 21 caracteres
+      if (idcashpoint.length !== 16 && idcashpoint.length !== 21) {
+        return res
+          .status(400)
+          .json({ error: "idCashPoint must be 16 or 21 characters" });
+      }
+    }
+
     // Si no se recibe el archivo CSV
     if (!req.file) {
       return res.status(400).json({ error: "Ingrese un archivo CSV" });
@@ -338,14 +352,21 @@ router.post(
       // Divide las líneas del CSV usando el punto y coma como separador
       const lines = csvData.split("\n");
 
-      // Suponemos que la primera línea contiene nombres de columnas
+      // La primera línea contiene nombres de columnas
       const columns = lines[0].split(";");
+
+      // Elimina las comillas simples de la cabecera y trim() los nombres de columna
+      for (let i = 0; i < columns.length; i++) {
+        columns[i] = columns[i].replace(/'/g, "").trim();
+      }
 
       let flag = false;
 
       await db.tx(async (transaction) => {
         // Limpio la tabla Client
-        await transaction.none("DELETE FROM Client");
+        await transaction.none("DELETE FROM Client where idcashpoint=$1", [
+          idcashpoint,
+        ]);
 
         // Itera a través de las líneas y procesa los registros
         for (let i = 1; i < lines.length; i++) {
@@ -354,15 +375,15 @@ router.post(
             // Construye un objeto con los valores del registro
             const record = {};
             for (let j = 0; j < columns.length; j++) {
-              record[columns[j]] = values[j];
+              record[columns[j]] = values[j].replace(/\r/g, "");
             }
 
             try {
               // Inserta el registro en la tabla Client
               await transaction.query(
                 `
-            INSERT INTO Client (PayerContractAccountID, CUEN, name, address, debt)
-            VALUES ($1, $2, $3, $4, $5)
+            INSERT INTO Client (PayerContractAccountID, CUEN, name, address, debt, idcashpoint)
+            VALUES ($1, $2, $3, $4, $5, $6)
             `,
                 [
                   record.CUENTACONTRATO,
@@ -370,6 +391,7 @@ router.post(
                   record.NOMBRE,
                   record.DIRECCION,
                   parseFloat(record.DEUDA.replace(",", ".")),
+                  idcashpoint,
                 ]
               );
             } catch (error) {

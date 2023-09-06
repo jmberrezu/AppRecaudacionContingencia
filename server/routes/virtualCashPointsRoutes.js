@@ -78,10 +78,10 @@ router.post("/", verifyToken, async (req, res) => {
         return res.status(400).json({ message: "name required" });
       } else {
         // Si el nombre no es de 2 a 50 caracteres
-        if (name.length < 2 || name.length > 50) {
+        if (name.length < 1 || name.length > 50) {
           return res
             .status(400)
-            .json({ message: "name must be 2 to 50 characters" });
+            .json({ message: "name must be 1 to 50 characters" });
         }
       }
 
@@ -169,10 +169,10 @@ router.put("/:id", verifyToken, async (req, res) => {
         return res.status(400).json({ message: "name required" });
       } else {
         // Si el nombre no es de 2 a 50 caracteres
-        if (name.length < 2 || name.length > 50) {
+        if (name.length < 1 || name.length > 50) {
           return res
             .status(400)
-            .json({ message: "name must be 2 to 50 characters" });
+            .json({ message: "name must be 1 to 50 characters" });
         }
       }
 

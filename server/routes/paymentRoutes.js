@@ -28,6 +28,7 @@ router.get("/buscar-cliente/:cuentaContrato", verifyToken, async (req, res) => {
   }
 
   const { cuentaContrato } = req.params;
+  const idcashpoint = req.user.idcashpoint;
 
   // Si no se ha proporcionado una cuenta contrato o CUEN
   if (!cuentaContrato) {
@@ -42,13 +43,19 @@ router.get("/buscar-cliente/:cuentaContrato", verifyToken, async (req, res) => {
     return res.status(400).json({ message: "Cuenta contrato o CUEN inválida" });
   }
 
+  // Si no se ha proporcionado un idcashpoint
+  if (!idcashpoint) {
+    return res.status(400).json({ message: "No idcashpoint entered" });
+  }
+
   try {
+    // Buscar el cliente por idcashpoint y (cuenta contrato o CUEN)
     const client = await db.oneOrNone(
       `
       SELECT * FROM Client
-      WHERE PayerContractAccountID = $1 OR CUEN = $1;
+      WHERE idCashPoint = $1 AND (PayerContractAccountID = $2 OR CUEN = $2);
     `,
-      [cuentaContrato]
+      [idcashpoint, cuentaContrato]
     );
 
     // Si el cliente existe
