@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { Container, Table, Button, Modal, Form, Alert } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
+import { PencilSquare, PlusCircle } from "react-bootstrap-icons";
 
 function VirtualCashPointCrud(idcashpoint) {
   // Para el token y la navegación
@@ -212,8 +213,9 @@ function VirtualCashPointCrud(idcashpoint) {
 
   return (
     <Container>
-      <h1>CRUD de Cajeros Virtuales</h1>
+      <h1>Administración de Cajeros Virtuales</h1>
       <Button variant="primary" onClick={() => setShowModal(true)}>
+        <PlusCircle className="me-2 mb-1" />
         Agregar Cajero Virtual
       </Button>
       <div style={{ height: "70vh", overflowY: "auto" }}>
@@ -235,6 +237,10 @@ function VirtualCashPointCrud(idcashpoint) {
                     variant="success"
                     onClick={() => editVirtualCashPoint(virtualCashPoint)}
                   >
+                    <PencilSquare
+                      size={16}
+                      className="align-middle mb-1 me-2"
+                    />
                     Editar
                   </Button>{" "}
                 </td>

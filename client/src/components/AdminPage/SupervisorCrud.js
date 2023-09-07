@@ -11,7 +11,12 @@ import {
   Nav,
   Navbar,
 } from "react-bootstrap";
-import { InfoCircle } from "react-bootstrap-icons";
+import {
+  InfoCircle,
+  PencilSquare,
+  PersonFillAdd,
+  PlusCircle,
+} from "react-bootstrap-icons";
 
 function SupervisorCrud() {
   // Para el token y la navegación
@@ -336,7 +341,7 @@ function SupervisorCrud() {
             <Nav className="me-auto"></Nav>
 
             <Nav>
-              <Nav.Item className="">
+              <Nav.Item className="mt-2 mt-sm-0">
                 <Button variant="outline-warning" onClick={handleLogout}>
                   Cerrar Sesión
                 </Button>
@@ -346,7 +351,7 @@ function SupervisorCrud() {
         </Container>
       </Navbar>
       <Container className="mt-4 ">
-        <h1>CRUD de Supervisores</h1>
+        <h1>Administración de Supervisores</h1>
 
         <Button
           variant="warning"
@@ -354,6 +359,7 @@ function SupervisorCrud() {
             setShowModal(true);
           }}
         >
+          <PlusCircle className="me-2 mb-1" />
           Agregar Supervisor
         </Button>
         <Table striped bordered hover className="mt-3">
@@ -371,26 +377,38 @@ function SupervisorCrud() {
                 <td>{supervisor.idcashpoint}</td>
                 <td>{supervisor.user}</td>
                 <td>{supervisor.office}</td>
-                <td>
-                  <Button
-                    className="me-1"
-                    variant="success"
-                    onClick={() => {
-                      editSupervisor(supervisor);
-                    }}
-                  >
-                    Editar
-                  </Button>
-                  <Button
-                    className="ms-1"
-                    variant="outline-primary"
-                    onClick={() => {
-                      setCsvIDCashPoint(supervisor.idcashpoint);
-                      setShowUploadModal(true);
-                    }}
-                  >
-                    Cargar Clientes
-                  </Button>
+                <td className="d-flex justify-content-between">
+                  <div>
+                    <Button
+                      className="me-1"
+                      variant="success"
+                      onClick={() => {
+                        editSupervisor(supervisor);
+                      }}
+                    >
+                      <PencilSquare
+                        size={16}
+                        className="align-middle mb-1 me-2"
+                      />
+                      Editar
+                    </Button>
+                  </div>
+                  <div>
+                    <Button
+                      className="ms-1"
+                      variant="primary"
+                      onClick={() => {
+                        setCsvIDCashPoint(supervisor.idcashpoint);
+                        setShowUploadModal(true);
+                      }}
+                    >
+                      <PersonFillAdd
+                        size={16}
+                        className="align-middle mb-1 me-2"
+                      />
+                      Cargar Clientes
+                    </Button>
+                  </div>
                 </td>
               </tr>
             ))}

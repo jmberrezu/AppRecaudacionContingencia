@@ -13,7 +13,7 @@ function Sidebar({ user, handleLogout, setActiveComponent, activeComponent }) {
   return (
     <div
       className="d-flex flex-column flex-shrink-0 p-3 bg-body-tertiary"
-      style={{ width: "280px", height: "100vh" }}
+      style={{ width: "281px", height: "100vh" }}
     >
       <span className="fs-4">App Recaudación</span>
       <hr />
@@ -27,8 +27,8 @@ function Sidebar({ user, handleLogout, setActiveComponent, activeComponent }) {
             }`}
             onClick={() => setActiveComponent("crudusuarios")}
           >
-            <PersonFill size={16} className="align-middle mb-1 me-2" /> Crud
-            Usuarios
+            <PersonFill size={16} className="align-middle mb-1 me-2" />{" "}
+            Administrar Usuarios
           </Link>
         </Nav.Item>
 
@@ -40,8 +40,8 @@ function Sidebar({ user, handleLogout, setActiveComponent, activeComponent }) {
             } `}
             onClick={() => setActiveComponent("crudcajasvirtuales")}
           >
-            <BoxSeam size={16} className="align-middle mb-1 me-2" /> Crud Cajas
-            Virtuales
+            <BoxSeam size={16} className="align-middle mb-1 me-2" /> Administrar
+            Cajas Virtuales
           </Link>
         </Nav.Item>
         <hr />

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { Table, Button, Modal, Form, Alert } from "react-bootstrap";
+import { SendFill } from "react-bootstrap-icons";
 
 function SendPrincipalService({ idcashpoint, office }) {
   const [token, setToken] = useState("");
@@ -191,6 +192,7 @@ function SendPrincipalService({ idcashpoint, office }) {
                       parseFloat(cash.realclosingdoccumentamount)
                     }
                   >
+                    <SendFill size={16} className="align-middle mb-1 me-2" />
                     Enviar Servicio Principal
                   </Button>
                 </td>

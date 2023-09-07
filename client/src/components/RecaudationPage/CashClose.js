@@ -8,7 +8,7 @@ import {
   Modal,
   Table,
 } from "react-bootstrap";
-import { Cash } from "react-bootstrap-icons";
+import { Cash, WalletFill } from "react-bootstrap-icons";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
@@ -266,7 +266,7 @@ function CashClose({ user }) {
           onClick={cerrarCaja}
           disabled={noPagos ? true : false}
         >
-          Cerrar Caja <Cash className="ms-2" />
+          Cerrar Caja <WalletFill className="ms-2" />
         </Button>
       </Container>
       <Modal

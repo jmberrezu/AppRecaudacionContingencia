@@ -7,6 +7,7 @@ import { useNavigate } from "react-router-dom";
 import SendPrincipalService from "./SendPrincipalService";
 import Sidebar from "./Sidebar";
 import SentHistory from "./SentHistory";
+import { PersonGear } from "react-bootstrap-icons";
 
 function SupervisorView() {
   // Para el token y la navegación
@@ -62,7 +63,10 @@ function SupervisorView() {
         activeComponent={activeComponent}
       />
       <Container fluid className="my-3">
-        <h1>Página de Supervisor</h1>
+        <h1 className="text-primary">
+          <PersonGear className="align-middle mb-1 me-1"> </PersonGear> Página
+          de Supervisor
+        </h1>
         <hr />
         {activeComponent === "crudusuarios" && (
           <UserCrud idcashpoint={user?.idcashpoint} />

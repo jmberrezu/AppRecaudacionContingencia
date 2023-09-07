@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { Container, Table, Button, Modal, Form, Alert } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
+import { PencilSquare, PlusCircle } from "react-bootstrap-icons";
 
 function UserCrud(idcashpoint) {
   // Para el token y la navegación
@@ -264,7 +265,7 @@ function UserCrud(idcashpoint) {
 
   return (
     <Container>
-      <h1>CRUD de Usuarios</h1>
+      <h1>Administración de Usuarios</h1>
       <Button
         variant="primary"
         onClick={() => {
@@ -272,6 +273,7 @@ function UserCrud(idcashpoint) {
           fetchVirtualCashPoints();
         }}
       >
+        <PlusCircle className="me-2 mb-1" />
         Agregar Usuario
       </Button>
       <div style={{ height: "70vh", overflowY: "auto" }}>
@@ -300,8 +302,12 @@ function UserCrud(idcashpoint) {
                       fetchVirtualCashPoints();
                     }}
                   >
+                    <PencilSquare
+                      size={16}
+                      className="align-middle mb-1 me-2"
+                    />
                     Editar
-                  </Button>{" "}
+                  </Button>
                 </td>
               </tr>
             ))}
