@@ -39,6 +39,7 @@ router.post("/", async (req, res) => {
         role: "supervisor",
         idcashpoint: user.idcashpoint,
         username: user.user,
+        office: user.office,
       },
       "admin_CTIC_2023!",
       { expiresIn: "3h" } // El token expira en 3 horas
@@ -48,12 +49,13 @@ router.post("/", async (req, res) => {
   }
 });
 
-// Verificar si el token es válido y devuelve el rol del usuario, el username y la caja
+// Verificar si el token es válido y devuelve el rol del usuario, el username, la caja y la oficina
 router.get("/verify", verifyToken, (req, res) => {
   res.json({
     role: req.user.role,
     idcashpoint: req.user.idcashpoint,
     username: req.user.username,
+    office: req.user.office,
   });
 });
 
@@ -90,12 +92,12 @@ router.get("/closedcash/:idcashpoint", verifyToken, async (req, res) => {
 });
 
 // Función para enviar pagos
-async function sendPayment(payment, username, password) {
+async function sendPayment(payment, username, password, office) {
   // Definir los valores para las variables en el XML
   const ID = "ID-Ejemplo-CONTINGENCIA";
   const CreationDateTime = new Date().toISOString();
   const CashPointReferenceID = payment.idcashpoint;
-  const CashPointOfficeReferenceID = "OFEX-CON";
+  const CashPointOfficeReferenceID = office;
   const CashPointPaymentGroupReferenceID =
     payment.cashpointpaymentgroupreferenceid;
   const PaymentTransactionID = payment.paymenttransactionid;
@@ -208,7 +210,7 @@ router.post("/sendprincipal", verifyToken, async (req, res) => {
     return res.status(401).json({ message: "Unauthorized" });
   }
 
-  const { idcashpoint, cash, username, password } = req.body;
+  const { idcashpoint, cash, username, office, password } = req.body;
 
   // Si el idcashPoint no se ha ingresado
   if (!idcashpoint) {
@@ -218,6 +220,11 @@ router.post("/sendprincipal", verifyToken, async (req, res) => {
   // Si el idcashPoint no coincide con el idcashPoint del usuario
   if (idcashpoint !== req.user.idcashpoint) {
     return res.status(401).json({ message: "Unauthorized" });
+  }
+
+  // Si el office no se ha ingresado
+  if (!office) {
+    return res.status(400).json({ message: "office is required" });
   }
 
   // Si el cash no se ha ingresado
@@ -261,7 +268,7 @@ router.post("/sendprincipal", verifyToken, async (req, res) => {
     // Envio el pago, agrego el registro Payment a la tabla PaymentSent y elimino el registro de la tabla Payment
     for (const payment of payments) {
       try {
-        await sendPayment(payment, username, password);
+        await sendPayment(payment, username, password, office);
 
         await db.tx(async (transaction) => {
           await transaction.none(
@@ -307,7 +314,7 @@ router.post("/sendprincipal", verifyToken, async (req, res) => {
   const ID = "ID-Ejemplo";
   const CreationDateTime = new Date().toISOString();
   const CashPointReferenceID = idcashpoint;
-  const CashPointOfficeReferenceID = "OFEX-CON";
+  const CashPointOfficeReferenceID = office;
   const CashPointPaymentGroupReferenceID =
     cash.cashpointpaymentgroupreferenceid;
   const ClosingDocumentAmount = cash.closingdoccumentamount;

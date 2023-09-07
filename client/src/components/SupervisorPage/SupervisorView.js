@@ -71,7 +71,10 @@ function SupervisorView() {
           <VirtualCashPointCrud idcashpoint={user?.idcashpoint} />
         )}
         {activeComponent === "envio" && (
-          <SendPrincipalService idcashpoint={user?.idcashpoint} />
+          <SendPrincipalService
+            idcashpoint={user?.idcashpoint}
+            office={user?.office}
+          />
         )}
         {activeComponent === "historialenvios" && (
           <SentHistory idcashpoint={user?.idcashpoint} />

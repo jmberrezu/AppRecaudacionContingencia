@@ -23,6 +23,7 @@ function SupervisorCrud() {
   // Para el CRUD
   const [supervisors, setSupervisors] = useState([]);
   const [username, setUsername] = useState("");
+  const [office, setOffice] = useState("");
   const [password, setPassword] = useState("");
   const [idCashPoint, setIdCashPoint] = useState("");
   // Para editar un supervisor
@@ -76,6 +77,7 @@ function SupervisorCrud() {
   useEffect(() => {
     if (!showModal) {
       setUsername("");
+      setOffice("");
       setPassword("");
       setIdCashPoint("");
       setAlertInfo(null);
@@ -85,6 +87,7 @@ function SupervisorCrud() {
   useEffect(() => {
     if (!showEditModal) {
       setUsername("");
+      setOffice("");
       setPassword("");
       setIdCashPoint("");
       setAlertInfo(null);
@@ -106,11 +109,12 @@ function SupervisorCrud() {
   // Agregar un nuevo supervisor
   const createSupervisor = async () => {
     try {
-      if (username && password && idCashPoint) {
+      if (username && office && password && idCashPoint) {
         await axios.post(
           "/api/admin/agregar",
           {
             username: username,
+            office: office,
             password: password,
             idCashPoint: idCashPoint,
           },
@@ -119,6 +123,7 @@ function SupervisorCrud() {
           }
         );
         setUsername("");
+        setOffice("");
         setPassword("");
         setIdCashPoint("");
         setAlertInfo({
@@ -150,6 +155,13 @@ function SupervisorCrud() {
           message: "El usuario debe ser de 2 a 50 caracteres.",
         });
       } else if (
+        error.response.data.message === "office must be 2 to 50 characters"
+      ) {
+        setAlertInfo({
+          variant: "danger",
+          message: "La oficina debe ser de 2 a 50 caracteres.",
+        });
+      } else if (
         error.response.data.message === "password must be 2 to 60 characters"
       ) {
         setAlertInfo({
@@ -175,6 +187,7 @@ function SupervisorCrud() {
   const editSupervisor = (supervisor) => {
     setEditingSupervisor(supervisor);
     setUsername(supervisor.user);
+    setOffice(supervisor.office);
     setIdCashPoint(supervisor.idcashpoint);
     setShowEditModal(true);
   };
@@ -185,6 +198,7 @@ function SupervisorCrud() {
       let updateSupervisor = {
         ...editingSupervisor,
         username,
+        office,
         password,
         idCashPoint,
       };
@@ -198,6 +212,7 @@ function SupervisorCrud() {
       setEditingSupervisor(null);
       setShowEditModal(false);
       setUsername("");
+      setOffice("");
       setPassword("");
       setIdCashPoint("");
       setAlertInfo({
@@ -346,6 +361,7 @@ function SupervisorCrud() {
             <tr>
               <th>ID de Caja</th>
               <th>Usuario</th>
+              <th>Oficina</th>
               <th>Acciones</th>
             </tr>
           </thead>
@@ -354,6 +370,7 @@ function SupervisorCrud() {
               <tr key={supervisor.idcashpoint}>
                 <td>{supervisor.idcashpoint}</td>
                 <td>{supervisor.user}</td>
+                <td>{supervisor.office}</td>
                 <td>
                   <Button
                     className="me-1"
@@ -407,6 +424,14 @@ function SupervisorCrud() {
                 />
               </Form.Group>
               <Form.Group>
+                <Form.Label>Oficina</Form.Label>
+                <Form.Control
+                  type="text"
+                  value={office}
+                  onChange={(e) => setOffice(e.target.value)}
+                />
+              </Form.Group>
+              <Form.Group>
                 <Form.Label>Contraseña</Form.Label>
                 <Form.Control
                   type="password"
@@ -451,6 +476,14 @@ function SupervisorCrud() {
                   type="text"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
+                />
+              </Form.Group>
+              <Form.Group>
+                <Form.Label>Oficina</Form.Label>
+                <Form.Control
+                  type="text"
+                  value={office}
+                  onChange={(e) => setOffice(e.target.value)}
                 />
               </Form.Group>
               <Form.Group>

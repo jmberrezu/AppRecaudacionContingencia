@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { Table, Button, Modal, Form, Alert } from "react-bootstrap";
 
-function SendPrincipalService({ idcashpoint }) {
+function SendPrincipalService({ idcashpoint, office }) {
   const [token, setToken] = useState("");
   const [closedCash, setClosedCash] = useState([]);
   const navigate = useNavigate();
@@ -94,6 +94,7 @@ function SendPrincipalService({ idcashpoint }) {
           cash: cash,
           username,
           password,
+          office,
         },
         {
           headers: { Authorization: `Bearer ${token}` },

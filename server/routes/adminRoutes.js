@@ -75,7 +75,7 @@ router.post("/agregar", verifyToken, async (req, res) => {
     return res.status(401).json({ message: "Unauthorized User" });
   }
 
-  const { username, idCashPoint } = req.body;
+  const { username, idCashPoint, office } = req.body;
   let { password } = req.body;
 
   // Si no se recibe el idCashPoint
@@ -99,6 +99,18 @@ router.post("/agregar", verifyToken, async (req, res) => {
       return res
         .status(400)
         .json({ message: "username must be 2 to 50 characters" });
+    }
+  }
+
+  // Si no se recibe la oficina
+  if (!office) {
+    return res.status(400).json({ message: "office required" });
+  } else {
+    // Si la oficina no es de 2 a 50 caracteres
+    if (office.length < 2 || office.length > 50) {
+      return res
+        .status(400)
+        .json({ message: "office must be 2 to 50 characters" });
     }
   }
 
@@ -122,13 +134,12 @@ router.post("/agregar", verifyToken, async (req, res) => {
       let newUser = null;
       // Agrego el supervisor a la base de datos
       newUser = await transaction.one(
-        `INSERT INTO Supervisor (idCashPoint, "user", password)
-              VALUES ($1, $2, $3) RETURNING idCashPoint, "user"`,
-        [idCashPoint, username, password]
+        `INSERT INTO Supervisor (idCashPoint, "user", office, password)
+              VALUES ($1, $2, $3, $4) RETURNING idCashPoint, "user"`,
+        [idCashPoint, username, office, password]
       );
+      res.json(newUser); // Devuelvo el usuario creado
     });
-
-    res.json(newUser); // Devuelvo el usuario creado
   } catch (error) {
     // Si el idCashPoint ya existe
     if (error.code === "23505") {
@@ -147,7 +158,7 @@ router.put("/:idCashPoint", verifyToken, async (req, res) => {
   }
 
   const idCashPoint = req.params.idCashPoint;
-  const { username } = req.body;
+  const { username, office } = req.body;
   let { password } = req.body;
 
   // Si no se recibe el idCashPoint
@@ -172,6 +183,18 @@ router.put("/:idCashPoint", verifyToken, async (req, res) => {
 
         .status(400)
         .json({ message: "username must be 2 to 50 characters" });
+    }
+  }
+
+  // Si no se recibe la oficina
+  if (!office) {
+    return res.status(400).json({ message: "office required" });
+  } else {
+    // Si la oficina no es de 2 a 50 caracteres
+    if (office.length < 2 || office.length > 50) {
+      return res
+        .status(400)
+        .json({ message: "office must be 2 to 50 characters" });
     }
   }
 
@@ -204,9 +227,9 @@ router.put("/:idCashPoint", verifyToken, async (req, res) => {
       if (!password) {
         // Actualiza el supervisor sin contraseña
         const updatedUser = await transaction.one(
-          `UPDATE Supervisor SET "user"=$1
-          WHERE idCashPoint=$2 RETURNING idCashPoint, "user"`,
-          [username, idCashPoint]
+          `UPDATE Supervisor SET "user"=$1, office=$3
+          WHERE idCashPoint=$2 RETURNING idCashPoint, "user", office`,
+          [username, idCashPoint, office]
         );
 
         // Devuelve la respuesta exitosa
@@ -215,9 +238,9 @@ router.put("/:idCashPoint", verifyToken, async (req, res) => {
 
       // Realiza la actualización solo si el supervisor existe y hay contraseña
       const updatedUser = await transaction.one(
-        `UPDATE Supervisor SET "user"=$1, password=$2
-       WHERE idCashPoint=$3 RETURNING idCashPoint, "user"`,
-        [username, password, idCashPoint]
+        `UPDATE Supervisor SET "user"=$1, password=$2, office=$4
+       WHERE idCashPoint=$3 RETURNING idCashPoint, "user", office`,
+        [username, password, idCashPoint, office]
       );
       // Devuelve la respuesta exitosa
       res.json(updatedUser);
