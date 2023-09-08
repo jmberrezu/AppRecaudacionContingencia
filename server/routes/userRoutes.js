@@ -3,6 +3,7 @@ const router = express.Router();
 const db = require("../db");
 const verifyToken = require("../services/verifyToken");
 const { hashPassword } = require("../services/hashpassword");
+const jwt = require("jsonwebtoken");
 
 // Obtener todos los usuarios de una caja en específico
 router.get("/:idcashPoint", verifyToken, async (req, res) => {
@@ -317,6 +318,110 @@ router.put("/:id", verifyToken, async (req, res) => {
         res.json(updatedUser);
       }
     });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Gerente puede cambiarse de caja virtual
+router.put("/changeVirtualCashPoint/:id", verifyToken, async (req, res) => {
+  // Si el rol del usuario no es gerente
+  if (req.user.role !== "gerente") {
+    return res.status(401).json({ message: "Unauthorized User" });
+  }
+
+  const id = req.params.id;
+  const { newidglobalvirtualcashpoint, idcashpoint } = req.body;
+
+  // Si el id no es un numero
+  if (isNaN(id)) {
+    return res.status(400).json({ message: "id must be a number" });
+  }
+  // Si el id no existe
+  const idResult = await db.oneOrNone(
+    'SELECT idGlobalUser FROM "User" WHERE idGlobalUser=$1',
+    [id]
+  );
+
+  if (!idResult) {
+    return res.status(400).json({ message: "id does not exist" });
+  }
+
+  // Si no se recibe el idcashPoint
+  if (!idcashpoint) {
+    return res.status(400).json({ message: "idcashPoint required" });
+  } else {
+    // Si el idcashPoint no es de 16 o 21 caracteres
+    if (idcashpoint.length !== 16 && idcashpoint.length !== 21) {
+      return res
+        .status(400)
+        .json({ message: "idcashPoint must be 16 or 21 characters" });
+    }
+    // Si el idcashPoint no existe
+    const idCashPointResult = await db.oneOrNone(
+      "SELECT idCashPoint FROM Supervisor WHERE idCashPoint = $1",
+      [idcashpoint]
+    );
+
+    if (!idCashPointResult) {
+      return res.status(400).json({ message: "idcashPoint does not exist" });
+    }
+  }
+
+  // Si no se recibe el newidglobalvirtualcashpoint
+  if (!newidglobalvirtualcashpoint) {
+    return res
+      .status(400)
+      .json({ message: "newidglobalvirtualcashpoint required" });
+  } else {
+    // Si el newidglobalvirtualcashpoint no es un numero
+    if (isNaN(newidglobalvirtualcashpoint)) {
+      return res
+        .status(400)
+        .json({ message: "newidglobalvirtualcashpoint must be a number" });
+    }
+
+    // Si el newidglobalvirtualcashpoint no existe o no pertenece al idcashpoint
+    const idGlobalVirtualCashPointResult = await db.oneOrNone(
+      "SELECT idGlobalVirtualCashPoint FROM VirtualCashPoint WHERE idGlobalVirtualCashPoint = $1 AND idCashPoint = $2",
+      [newidglobalvirtualcashpoint, idcashpoint]
+    );
+
+    if (!idGlobalVirtualCashPointResult) {
+      return res
+        .status(400)
+        .json({ message: "newidglobalvirtualcashpoint does not exist" });
+    }
+  }
+
+  try {
+    // Actualiza el usuario con la nueva caja virtual, haciedno join con virtualcashpoitn para obtener el nombre
+    const updatedUser = await db.one(
+      `UPDATE "User" AS u
+   SET idGlobalVirtualCashPoint = $1
+   FROM VirtualCashPoint AS vc
+   WHERE u.idGlobalUser = $2 AND u.idGlobalVirtualCashPoint = vc.idGlobalVirtualCashPoint
+   RETURNING u.idGlobalUser, u.idUser, u.username, u.role, u.idCashPoint, u.idGlobalVirtualCashPoint, vc.idVirtualCashPoint, vc.name AS virtualCashPointName`,
+      [newidglobalvirtualcashpoint, id]
+    );
+
+    // Actualiza el token
+    const token = jwt.sign(
+      {
+        id: updatedUser.iduser,
+        idglobaluser: updatedUser.idglobaluser,
+        username: updatedUser.username,
+        role: updatedUser.role,
+        idglobalvirtualcashpoint: updatedUser.idglobalvirtualcashpoint,
+        idcashpoint: updatedUser.idcashpoint,
+        idvirtualcashpoint: updatedUser.idvirtualcashpoint,
+        virtualcashpointname: updatedUser.virtualcashpointname,
+      },
+      "admin_CTIC_2023!",
+      { expiresIn: "1h" }
+    );
+
+    res.json(token);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

@@ -5,8 +5,8 @@ const verifyToken = require("../services/verifyToken");
 
 // Obtener todos los cajeros virtuales de una caja en específico
 router.get("/:idcashPoint", verifyToken, async (req, res) => {
-  // Si el usuario no es supervisor, no puede ver los cajeros virtuales
-  if (req.user.role !== "supervisor") {
+  // Si el usuario no es supervisor o gerente, no puede ver los cajeros virtuales
+  if (req.user.role !== "supervisor" && req.user.role !== "gerente") {
     return res.status(401).json({ message: "Unauthorized User" });
   }
 
