@@ -25,7 +25,7 @@ function ReversePayment({ user }) {
     const storedToken = localStorage.getItem("token");
     if (storedToken) {
       axios
-        .get("/api/login/verify", {
+        .get("http://localhost:5000/api/login/verify", {
           headers: { Authorization: `Bearer ${storedToken}` },
         })
         .then((response) => {
@@ -55,7 +55,7 @@ function ReversePayment({ user }) {
     if (user.idcashpoint) {
       try {
         const response = await fetch(
-          `/api/paymentRoutes/pagos/${user.idcashpoint}`,
+          `http://localhost:5000/api/paymentRoutes/pagos/${user.idcashpoint}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -118,18 +118,21 @@ function ReversePayment({ user }) {
 
   const anularPago = async (pid, ammount, contractaccount) => {
     try {
-      const response = await fetch(`/api/paymentRoutes/anular-pago/${pid}`, {
-        method: "PUT",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          user,
-          ammount,
-          contractaccount,
-        }),
-      });
+      const response = await fetch(
+        `http://localhost:5000/api/paymentRoutes/anular-pago/${pid}`,
+        {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            user,
+            ammount,
+            contractaccount,
+          }),
+        }
+      );
 
       if (response.ok) {
         fetchPayments();

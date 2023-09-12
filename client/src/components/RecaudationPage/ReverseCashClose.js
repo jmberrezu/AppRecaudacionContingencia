@@ -13,7 +13,7 @@ function ReverseCashClose({ user }) {
     const storedToken = localStorage.getItem("token");
     if (storedToken) {
       axios
-        .get("/api/login/verify", {
+        .get("http://localhost:5000/api/login/verify", {
           headers: {
             Authorization: `Bearer ${storedToken}`,
           },
@@ -49,7 +49,7 @@ function ReverseCashClose({ user }) {
     if (user.idcashpoint) {
       try {
         const response = await fetch(
-          `/api/cashClose/closedcash/${user.idcashpoint}`,
+          `http://localhost:5000/api/cashClose/closedcash/${user.idcashpoint}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -75,7 +75,7 @@ function ReverseCashClose({ user }) {
   const anularCierreCaja = async (cash) => {
     try {
       const response = await fetch(
-        `/api/cashClose/anular-cierre-caja/${cash.cashpointpaymentgroupreferenceid}`,
+        `http://localhost:5000/api/cashClose/anular-cierre-caja/${cash.cashpointpaymentgroupreferenceid}`,
         {
           method: "PUT",
           headers: {

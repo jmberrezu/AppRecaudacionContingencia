@@ -22,7 +22,7 @@ function SupervisorView() {
     const storedToken = localStorage.getItem("token");
     if (storedToken) {
       axios
-        .get("/api/supervisor/verify", {
+        .get("http://localhost:5000/api/supervisor/verify", {
           headers: {
             Authorization: `Bearer ${storedToken}`,
           },

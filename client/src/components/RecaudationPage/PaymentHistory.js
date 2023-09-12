@@ -29,7 +29,7 @@ function PaymentHistory({ user }) {
     const storedToken = localStorage.getItem("token");
     if (storedToken) {
       axios
-        .get("/api/login/verify", {
+        .get("http://localhost:5000/api/login/verify", {
           headers: { Authorization: `Bearer ${storedToken}` },
         })
         .then((response) => {
@@ -60,7 +60,7 @@ function PaymentHistory({ user }) {
     if (user.idcashpoint) {
       try {
         const response = await fetch(
-          `/api/paymentRoutes/pagos/${user.idcashpoint}`,
+          `http://localhost:5000/api/paymentRoutes/pagos/${user.idcashpoint}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -82,7 +82,7 @@ function PaymentHistory({ user }) {
     if (user.idcashpoint) {
       try {
         const response = await fetch(
-          `/api/paymentRoutes/pagosAnulados/${user.idcashpoint}`,
+          `http://localhost:5000/api/paymentRoutes/pagosAnulados/${user.idcashpoint}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,

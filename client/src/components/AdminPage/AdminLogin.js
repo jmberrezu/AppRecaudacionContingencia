@@ -3,6 +3,7 @@ import { Container, Alert, Form, InputGroup, Button } from "react-bootstrap";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { PersonGear } from "react-bootstrap-icons";
+import sparkPayLogo from "../../images/logoCh.svg"; // Ruta a tu imagen
 
 function AdminLogin() {
   const navigate = useNavigate();
@@ -26,7 +27,7 @@ function AdminLogin() {
         message: "Login correcto.",
       });
 
-      navigate("/supervisorcrud"); // Redirigir a la página de SupervisorCrud
+      navigate("http://localhost:5000/supervisorcrud"); // Redirigir a la página de SupervisorCrud
     } catch (error) {
       // Si el error es por usuario o contraseña incorrectos
       if (error.response.status === 400) {
@@ -60,7 +61,22 @@ function AdminLogin() {
       }}
     >
       <div className="p-4 card shadow">
-        <h1 className="text-center mb-2">App de Recaudación</h1>
+        <Container style={{ maxWidth: "200px" }} className="g-0">
+          <img
+            src={sparkPayLogo}
+            alt="SparkPay Logo"
+            className="img-fluid rounded mb-4 p-3 shadow"
+          />
+        </Container>
+        <h1 className="text-center mb-2">
+          <strong>Spark-Pay</strong>
+        </h1>
+        <h3
+          className="text-center mb-2 text-secondary"
+          style={{ minWidth: "350px" }}
+        >
+          - App de Recaudación -
+        </h3>
         <hr />
         <h2 className="text-center mt-2 mb-3">Inicio de Sesión</h2>
         <h2 className="text-center mb-4">

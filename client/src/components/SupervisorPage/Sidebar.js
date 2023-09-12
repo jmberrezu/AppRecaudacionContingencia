@@ -1,5 +1,5 @@
 import React from "react";
-import { Nav, Button } from "react-bootstrap";
+import { Nav, Button, Col, Row } from "react-bootstrap";
 import { Link } from "react-router-dom";
 import {
   PersonFill,
@@ -8,6 +8,7 @@ import {
   BoxSeam,
   HourglassBottom,
 } from "react-bootstrap-icons";
+import sparkPayLogo from "../../images/logoM.svg";
 
 function Sidebar({ user, handleLogout, setActiveComponent, activeComponent }) {
   return (
@@ -15,7 +16,18 @@ function Sidebar({ user, handleLogout, setActiveComponent, activeComponent }) {
       className="d-flex flex-column flex-shrink-0 p-3 bg-body-tertiary"
       style={{ width: "281px", height: "100vh" }}
     >
-      <span className="fs-4">App Recaudación</span>
+      <Row>
+        <Col xs={3}>
+          <img
+            src={sparkPayLogo}
+            alt="SparkPay Logo"
+            className="img-fluid  mt-1 "
+          />
+        </Col>
+        <Col xs={9}>
+          <span className="fs-3 ">Spark-Pay</span>
+        </Col>
+      </Row>
       <hr />
       <Nav className="nav nav-pills flex-column mb-auto">
         <strong className="mb-2">Administración</strong>

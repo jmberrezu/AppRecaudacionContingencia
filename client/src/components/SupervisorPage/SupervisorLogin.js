@@ -3,6 +3,7 @@ import { Container, Alert, InputGroup, Form, Button } from "react-bootstrap";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { PersonGear } from "react-bootstrap-icons";
+import sparkPayLogo from "../../images/logoCh.svg";
 
 function SupervisorLogin() {
   const navigate = useNavigate();
@@ -12,10 +13,14 @@ function SupervisorLogin() {
 
   const handleLogin = async () => {
     try {
-      const response = await axios.post("/api/supervisor/", {
-        username,
-        password,
-      });
+      const response = await axios.post(
+        "http://localhost:5000/api/supervisor/",
+        {
+          username,
+          password,
+        }
+      );
+
       const token = response.data.token;
 
       // Guardar el token en localStorage
@@ -60,7 +65,22 @@ function SupervisorLogin() {
       }}
     >
       <div className="p-4 card shadow">
-        <h1 className="text-center mb-2">App de Recaudación</h1>
+        <Container style={{ maxWidth: "200px" }} className="g-0">
+          <img
+            src={sparkPayLogo}
+            alt="SparkPay Logo"
+            className="img-fluid rounded mb-4 p-3 shadow"
+          />
+        </Container>
+        <h1 className="text-center mb-2">
+          <strong>Spark-Pay</strong>
+        </h1>
+        <h3
+          className="text-center mb-2 text-secondary"
+          style={{ minWidth: "350px" }}
+        >
+          - App de Recaudación -
+        </h3>
         <hr />
         <h2 className="text-center mt-2 mb-3">Inicio de Sesión</h2>
         <h2 className="text-center mb-4">

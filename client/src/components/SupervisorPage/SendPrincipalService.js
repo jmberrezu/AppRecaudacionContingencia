@@ -20,7 +20,7 @@ function SendPrincipalService({ idcashpoint, office }) {
     const storedToken = localStorage.getItem("token");
     if (storedToken) {
       axios
-        .get("/api/supervisor/verify", {
+        .get("http://localhost:5000/api/supervisor/verify", {
           headers: { Authorization: `Bearer ${storedToken}` },
         })
         .then((response) => {
@@ -55,7 +55,7 @@ function SendPrincipalService({ idcashpoint, office }) {
     if (idcashpoint) {
       try {
         const response = await fetch(
-          `/api/supervisor/closedcash/${idcashpoint}`,
+          `http://localhost:5000/api/supervisor/closedcash/${idcashpoint}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -89,7 +89,7 @@ function SendPrincipalService({ idcashpoint, office }) {
   const enviar = (cash) => {
     axios
       .post(
-        "/api/supervisor/sendprincipal",
+        "http://localhost:5000/api/supervisor/sendprincipal",
         {
           idcashpoint: cash.idcashpoint,
           cash: cash,

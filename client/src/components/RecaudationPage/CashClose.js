@@ -33,7 +33,7 @@ function CashClose({ user }) {
     const storedToken = localStorage.getItem("token");
     if (storedToken) {
       axios
-        .get("/api/login/verify", {
+        .get("http://localhost:5000/api/login/verify", {
           headers: {
             Authorization: `Bearer ${storedToken}`,
           },
@@ -70,7 +70,7 @@ function CashClose({ user }) {
     setAlertInfo(null);
     setNoPagos(false);
     try {
-      const response = await fetch("/api/cashClose", {
+      const response = await fetch("http://localhost:5000/api/cashClose", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -139,20 +139,23 @@ function CashClose({ user }) {
 
     // Llamar a la API para cerrar la caja
     try {
-      const response = await fetch("/api/cashClose/close", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        // Envío el grupo de pago y el monto ingresado
-        body: JSON.stringify({
-          grupo: grupo,
-          dolares: dolares,
-          centavos: centavos,
-          idglobalvirtualcashpoint: user.idglobalvirtualcashpoint,
-        }),
-      });
+      const response = await fetch(
+        "http://localhost:5000/api/cashClose/close",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          // Envío el grupo de pago y el monto ingresado
+          body: JSON.stringify({
+            grupo: grupo,
+            dolares: dolares,
+            centavos: centavos,
+            idglobalvirtualcashpoint: user.idglobalvirtualcashpoint,
+          }),
+        }
+      );
 
       const data = await response.json();
 
@@ -184,7 +187,7 @@ function CashClose({ user }) {
   const anularcierre = async () => {
     try {
       const response = await fetch(
-        `/api/cashClose/anular-cierre-caja/${grupo.cashpointpaymentgroupreferenceid}`,
+        `http://localhost:5000/api/cashClose/anular-cierre-caja/${grupo.cashpointpaymentgroupreferenceid}`,
         {
           method: "PUT",
           headers: {

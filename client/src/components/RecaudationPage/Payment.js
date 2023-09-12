@@ -28,7 +28,7 @@ function Payment({ user }) {
     const storedToken = localStorage.getItem("token");
     if (storedToken) {
       axios
-        .get("/api/login/verify", {
+        .get("http://localhost:5000/api/login/verify", {
           headers: {
             Authorization: `Bearer ${storedToken}`,
           },

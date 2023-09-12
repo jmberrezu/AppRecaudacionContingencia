@@ -1,0 +1,142 @@
+Informe de resultados de las pruebas de carga:
+
+CPU: 2 cores
+RAM: 2 GB
+
+Cada usuario realiza solicitudes cada segundo, en un total de 9 solicitudes por usuario. Entre las solicitudes se encuentran las siguientes:
+
+- Solicitud de la pagina web
+- Solicitud de buscar un cliente (2 solicitudes)
+- Solicitud de la pagina web
+- Solicitud de realizar un pago
+- Solicitud de la pagina web
+- Solicitud de obtencion de lista de pagos
+- Solicitud de la pagina web
+- Solicitud de obtencion de lista de pagos anulados
+
+---------------------------------------------------------------------------
+
+Soak Test:
+
+Prueba con mil usuarios.
+
+Etapas:
+
+- Carga de mil usuarios en 1 minuto
+- Mantenimiento de mil usuarios por 10 minutos
+- Descarga de usuarios a 0 por 1 minuto
+
+Maximo %CPU: 59
+Promedio %CPU: 40
+Maximo %Memoria: 82.57
+Promedio %Memoria: 40
+
+
+==========
+RESULTADOS
+==========
+
+     data_received..................: 18 GB  24 MB/s
+     data_sent......................: 41 MB  55 kB/s
+     http_req_blocked...............: avg=11.87ms  min=0s      med=711.3µs max=2.14s  p(90)=3.79ms p(95)=10.09ms
+     http_req_connecting............: avg=6.19ms   min=0s      med=667.2µs max=1.04s  p(90)=3.35ms p(95)=8.33ms
+     http_req_duration..............: avg=2.92s    min=502.1µs med=48.5ms  max=1m0s   p(90)=12.48s p(95)=19.79s
+       { expected_response:true }...: avg=2.45s    min=502.1µs med=42.54ms max=59.94s p(90)=11.17s p(95)=18.36s
+     http_req_failed................: 3.32%  ✓ 7090       ✗ 206323
+     http_req_receiving.............: avg=15.2ms   min=0s      med=0s      max=8.17s  p(90)=1.26ms p(95)=4.94ms
+     http_req_sending...............: avg=142.21ms min=0s      med=0s      max=45.58s p(90)=0s     p(95)=0s
+     http_req_tls_handshaking.......: avg=0s       min=0s      med=0s      max=0s     p(90)=0s     p(95)=0s
+     http_req_waiting...............: avg=2.77s    min=0s      med=47.92ms max=1m0s   p(90)=12.24s p(95)=19.25s
+     http_reqs......................: 213413 285.422495/s
+     iteration_duration.............: avg=1m31s    min=9.94s   med=1m40s   max=2m49s  p(90)=1m50s  p(95)=2m5s
+     iterations.....................: 6865   9.181378/s
+     vus............................: 5      min=5        max=1000
+     vus_max........................: 1000   min=1000     max=1000
+
+---------------------------------------------------------------------------
+
+Spike Test:
+
+Prueba con 3 mil usuarios.
+
+Etapas:
+
+
+- Carga de usuarios a mil por 30 segundos
+- Carga a 3000 usuarios por 15 segundos
+- Descarga a 2000 usuarios en 15 segundos
+- Descarga de usuarios a 0 por 1 minuto
+
+
+
+Maximo %CPU: 67.1
+Promedio %CPU: 40
+Maximo %Memoria: 92
+Promedio %Memoria: 64
+
+
+==========
+RESULTADOS
+==========
+
+     data_received..................: 1.1 GB 7.4 MB/s
+     data_sent......................: 9.7 MB 65 kB/s
+     http_req_blocked...............: avg=677.2ms  min=0s      med=723.9µs  max=15.02s p(90)=1s     p(95)=3.02s
+     http_req_connecting............: avg=637.56ms min=0s      med=678.15µs max=15.02s p(90)=1s     p(95)=3.01s
+     http_req_duration..............: avg=4.94s    min=0s      med=961.46ms max=1m0s   p(90)=7.18s  p(95)=34.67s
+       { expected_response:true }...: avg=4.57s    min=503.6µs med=1.31s    max=59.97s p(90)=7.09s  p(95)=30.03s
+     http_req_failed................: 7.58%  ✓ 3674       ✗ 44772
+     http_req_receiving.............: avg=18.32ms  min=0s      med=0s       max=9.86s  p(90)=1.08ms p(95)=2.52ms
+     http_req_sending...............: avg=68.36ms  min=0s      med=0s       max=38.58s p(90)=0s     p(95)=113.32µs
+     http_req_tls_handshaking.......: avg=0s       min=0s      med=0s       max=0s     p(90)=0s     p(95)=0s
+     http_req_waiting...............: avg=4.86s    min=0s      med=942.03ms max=1m0s   p(90)=7.13s  p(95)=33.42s
+     http_reqs......................: 48446  323.418207/s
+     iteration_duration.............: avg=2m13s    min=1m35s   med=2m14s    max=2m28s  p(90)=2m24s  p(95)=2m26s
+     iterations.....................: 265    1.7691/s
+     vus............................: 1      min=1        max=3000
+     vus_max........................: 3000   min=3000     max=3000
+
+
+---------------------------------------------------------------------------
+
+Stress Test:
+
+Prueba con 1500 mil usuarios.
+
+Etapas:
+
+
+- Carga de usuarios a 1500 por 30 segundos
+- Mantenimiento en 1500 usuarios por 1.5 minutos
+- Descarga de usuarios a 0 por 30 segundos
+
+
+
+Maximo %CPU: 46.1
+Promedio %CPU: 42
+Maximo %Memoria: 89.9
+Promedio %Memoria: 60
+
+
+==========
+RESULTADOS
+==========
+
+     data_received..................: 3.6 GB 20 MB/s
+     data_sent......................: 11 MB  62 kB/s
+     http_req_blocked...............: avg=128.44ms min=0s      med=686.7µs max=4.28s  p(90)=112.22ms p(95)=289.94ms
+     http_req_connecting............: avg=74.13ms  min=0s      med=601.4µs max=4.1s   p(90)=33.16ms  p(95)=221.03ms
+     http_req_duration..............: avg=3.26s    min=412.5µs med=33.12ms max=1m0s   p(90)=8.82s    p(95)=22.83s
+       { expected_response:true }...: avg=1.99s    min=412.5µs med=26.15ms max=59.99s p(90)=2.71s    p(95)=12.12s
+     http_req_failed................: 5.44%  ✓ 2912       ✗ 50610
+     http_req_receiving.............: avg=17.47ms  min=0s      med=0s      max=10s    p(90)=1.14ms   p(95)=3.32ms
+     http_req_sending...............: avg=613.29ms min=0s      med=0s      max=47.36s p(90)=0s       p(95)=506.49µs
+     http_req_tls_handshaking.......: avg=0s       min=0s      med=0s      max=0s     p(90)=0s       p(95)=0s
+     http_req_waiting...............: avg=2.63s    min=412.5µs med=32.62ms max=1m0s   p(90)=6.08s    p(95)=15.14s
+     http_reqs......................: 53522  297.371634/s
+     iteration_duration.............: avg=1m8s     min=13.13s  med=1m4s    max=2m38s  p(90)=2m13s    p(95)=2m37s
+     iterations.....................: 986    5.478279/s
+     vus............................: 4      min=4        max=1500
+     vus_max........................: 1500   min=1500     max=1500
+
+1963 - 

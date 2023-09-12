@@ -30,7 +30,7 @@ function UserCrud(idcashpoint) {
     const storedToken = localStorage.getItem("token");
     if (storedToken) {
       axios
-        .get("/api/supervisor/verify", {
+        .get("http://localhost:5000/api/supervisor/verify", {
           headers: {
             Authorization: `Bearer ${storedToken}`,
           },
@@ -89,7 +89,7 @@ function UserCrud(idcashpoint) {
     if (idcashpoint.idcashpoint) {
       try {
         const response = await axios.get(
-          `/api/users/${idcashpoint.idcashpoint}`,
+          `http://localhost:5000/api/users/${idcashpoint.idcashpoint}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -108,7 +108,7 @@ function UserCrud(idcashpoint) {
     let response = null;
     try {
       response = await axios.get(
-        `/api/virtualcashpoints/${idcashpoint.idcashpoint}`,
+        `http://localhost:5000/api/virtualcashpoints/${idcashpoint.idcashpoint}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -138,7 +138,7 @@ function UserCrud(idcashpoint) {
     try {
       if (username && password && role && idGlobalVirtualCashPoint) {
         await axios.post(
-          "/api/users",
+          "http://localhost:5000/api/users",
           {
             username,
             password,
@@ -211,11 +211,15 @@ function UserCrud(idcashpoint) {
         idCashPoint: idcashpoint.idcashpoint,
         idGlobalVirtualCashPoint,
       };
-      await axios.put(`/api/users/${editingUser.idglobaluser}`, updatedUser, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      await axios.put(
+        `http://localhost:5000/api/users/${editingUser.idglobaluser}`,
+        updatedUser,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
       setEditingUser(null);
       setShowEditModal(false);
       setUsername("");
@@ -239,7 +243,7 @@ function UserCrud(idcashpoint) {
   // Función para eliminar un usuario
   const deleteUser = async (id) => {
     try {
-      await axios.delete(`/api/users/${id}`, {
+      await axios.delete(`http://localhost:5000/api/users/${id}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },

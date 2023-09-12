@@ -14,7 +14,7 @@ function SentHistory({ idcashpoint }) {
     const storedToken = localStorage.getItem("token");
     if (storedToken) {
       axios
-        .get("/api/supervisor/verify", {
+        .get("http://localhost:5000/api/supervisor/verify", {
           headers: { Authorization: `Bearer ${storedToken}` },
         })
         .then((response) => {
@@ -49,7 +49,7 @@ function SentHistory({ idcashpoint }) {
     if (idcashpoint)
       try {
         const response = await fetch(
-          `/api/supervisor/cashclosehistorywithpayments/${idcashpoint}`,
+          `http://localhost:5000/api/supervisor/cashclosehistorywithpayments/${idcashpoint}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,

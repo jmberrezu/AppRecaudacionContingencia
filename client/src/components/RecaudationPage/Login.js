@@ -3,6 +3,7 @@ import { Container, Alert, InputGroup, Form, Button } from "react-bootstrap";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { Person } from "react-bootstrap-icons";
+import sparkPayLogo from "../../images/logoCh.svg"; // Ruta a tu imagen
 
 function Login() {
   const navigate = useNavigate();
@@ -12,7 +13,7 @@ function Login() {
 
   const handleLogin = async () => {
     try {
-      const response = await axios.post("/api/login", {
+      const response = await axios.post("http://localhost:5000/api/login", {
         username,
         password,
       });
@@ -51,7 +52,6 @@ function Login() {
   return (
     <Container
       style={{
-        width: "900px",
         height: "100vh",
         display: "flex",
         justifyContent: "center",
@@ -59,12 +59,29 @@ function Login() {
       }}
     >
       <div className="p-4 card shadow">
-        <h1 className="text-center mb-2">App de Recaudación</h1>
+        <Container style={{ maxWidth: "200px" }} className="g-0">
+          <img
+            src={sparkPayLogo}
+            alt="SparkPay Logo"
+            className="img-fluid rounded mb-4 p-3 shadow"
+          />
+        </Container>
+        <h1 className="text-center mb-2">
+          <strong>Spark-Pay</strong>
+        </h1>
+        <h3
+          className="text-center mb-2 text-secondary"
+          style={{ minWidth: "350px" }}
+        >
+          - App de Recaudación -
+        </h3>
+
         <hr />
         <h2 className="text-center mt-2 mb-3">Inicio de Sesión</h2>
         <h2 className="text-center mb-4">
           <strong className="text-primary">
-            <Person className="align-middle mb-1 me-1"> </Person> Usuario
+            <Person className="align-middle mb-1 me-1"> </Person> Cajero o
+            Gerente
           </strong>
         </h2>
         {alertInfo && (

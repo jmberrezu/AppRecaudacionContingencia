@@ -49,7 +49,7 @@ function SupervisorCrud() {
     const storedToken = localStorage.getItem("token");
     if (storedToken) {
       axios
-        .get("/api/admin/verify", {
+        .get("http://localhost:5000/api/admin/verify", {
           headers: { Authorization: `Bearer ${storedToken}` },
         })
         .then((response) => {
@@ -102,7 +102,7 @@ function SupervisorCrud() {
   // Función para obtener la lista de usuarios
   const fetchSupervisors = async () => {
     try {
-      const response = await axios.get("/api/admin", {
+      const response = await axios.get("http://localhost:5000/api/admin", {
         headers: { Authorization: `Bearer ${token}` },
       });
       setSupervisors(response.data);
@@ -116,7 +116,7 @@ function SupervisorCrud() {
     try {
       if (username && office && password && idCashPoint) {
         await axios.post(
-          "/api/admin/agregar",
+          "http://localhost:5000/api/admin/agregar",
           {
             username: username,
             office: office,
@@ -208,7 +208,7 @@ function SupervisorCrud() {
         idCashPoint,
       };
       await axios.put(
-        `/api/admin/${editingSupervisor.idcashpoint}`,
+        `http://localhost:5000/api/admin/${editingSupervisor.idcashpoint}`,
         updateSupervisor,
         {
           headers: { Authorization: `Bearer ${token}` },
@@ -237,7 +237,7 @@ function SupervisorCrud() {
   // Eliminar un supervisor
   const deleteSupervisor = async (idcashpoint) => {
     try {
-      await axios.delete(`/api/admin/${idcashpoint}`, {
+      await axios.delete(`http://localhost:5000/api/admin/${idcashpoint}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       fetchSupervisors();
@@ -282,17 +282,22 @@ function SupervisorCrud() {
         formData.append("csvFile", csvFile);
         formData.append("idcashpoint", csvIDCashPoint); // Agregar idcashpoint como parte del FormData
 
-        const response = await axios.post("/api/admin/upload-csv", formData, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "multipart/form-data",
-          },
-          onUploadProgress: (progressEvent) => {
-            // Calcular el progreso y actualizar el estado
-            const progress = (progressEvent.loaded / progressEvent.total) * 100;
-            setUploadProgress(progress);
-          },
-        });
+        const response = await axios.post(
+          "http://localhost:5000/api/admin/upload-csv",
+          formData,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "multipart/form-data",
+            },
+            onUploadProgress: (progressEvent) => {
+              // Calcular el progreso y actualizar el estado
+              const progress =
+                (progressEvent.loaded / progressEvent.total) * 100;
+              setUploadProgress(progress);
+            },
+          }
+        );
 
         // Manejar la respuesta del servidor (por ejemplo, mostrar una alerta)
         if (response.status === 200) {

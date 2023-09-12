@@ -13,7 +13,7 @@ function CashCloseHistory({ user }) {
     const storedToken = localStorage.getItem("token");
     if (storedToken) {
       axios
-        .get("/api/login/verify", {
+        .get("http://localhost:5000/api/login/verify", {
           headers: { Authorization: `Bearer ${storedToken}` },
         })
         .then((response) => {
@@ -44,7 +44,7 @@ function CashCloseHistory({ user }) {
     if (user.idcashpoint)
       try {
         const response = await fetch(
-          `/api/cashClose/closedcashwithpayments/${user.idcashpoint}`,
+          `http://localhost:5000/api/cashClose/closedcashwithpayments/${user.idcashpoint}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,

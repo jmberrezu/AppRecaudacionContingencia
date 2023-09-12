@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Nav, Button, Form } from "react-bootstrap";
+import { Nav, Button, Form, Row, Col } from "react-bootstrap";
 import { Link } from "react-router-dom";
 import {
   CashStack,
@@ -14,6 +14,7 @@ import {
 } from "react-bootstrap-icons";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import sparkPayLogo from "../../images/logoM.svg"; // Ruta a tu imagen
 
 function Sidebar({ user, handleLogout, setActiveComponent, activeComponent }) {
   const isGerente = user && user.role === "gerente";
@@ -33,7 +34,7 @@ function Sidebar({ user, handleLogout, setActiveComponent, activeComponent }) {
   const fetchVirtualCashPoints = async () => {
     try {
       let response = await axios.get(
-        `/api/virtualcashpoints/${user.idcashpoint}`,
+        `http://localhost:5000/api/virtualcashpoints/${user.idcashpoint}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -50,7 +51,7 @@ function Sidebar({ user, handleLogout, setActiveComponent, activeComponent }) {
   const handleChangeVirtualCashPoint = async (idGlobalVirtualCashPoint) => {
     try {
       await axios.put(
-        `/api/users/changeVirtualCashPoint/${user.idglobaluser}`,
+        `http://localhost:5000/api/users/changeVirtualCashPoint/${user.idglobaluser}`,
         {
           newidglobalvirtualcashpoint: idGlobalVirtualCashPoint,
           idcashpoint: user.idcashpoint,
@@ -73,7 +74,19 @@ function Sidebar({ user, handleLogout, setActiveComponent, activeComponent }) {
       className="d-flex flex-column flex-shrink-0 p-3 bg-body-tertiary"
       style={{ width: "282px", height: "100vh" }}
     >
-      <span className="fs-4">App Recaudación</span>
+      <Row>
+        <Col xs={3}>
+          <img
+            src={sparkPayLogo}
+            alt="SparkPay Logo"
+            className="img-fluid  mt-1 "
+          />
+        </Col>
+        <Col xs={9}>
+          <span className="fs-3 ">Spark-Pay</span>
+        </Col>
+      </Row>
+
       <hr />
       <Nav className="nav nav-pills flex-column mb-auto">
         <strong className="mb-2">Pagos</strong>

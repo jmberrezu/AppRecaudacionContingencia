@@ -25,7 +25,7 @@ function VirtualCashPointCrud(idcashpoint) {
     const storedToken = localStorage.getItem("token");
     if (storedToken) {
       axios
-        .get("/api/supervisor/verify", {
+        .get("http://localhost:5000/api/supervisor/verify", {
           headers: {
             Authorization: `Bearer ${storedToken}`,
           },
@@ -79,7 +79,7 @@ function VirtualCashPointCrud(idcashpoint) {
     if (idcashpoint.idcashpoint) {
       try {
         const response = await axios.get(
-          `/api/virtualCashPoints/${idcashpoint.idcashpoint}`,
+          `http://localhost:5000/api/virtualCashPoints/${idcashpoint.idcashpoint}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -98,7 +98,7 @@ function VirtualCashPointCrud(idcashpoint) {
     try {
       if (name) {
         await axios.post(
-          "/api/virtualCashPoints",
+          "http://localhost:5000/api/virtualCashPoints",
           {
             name,
             idCashPoint: idcashpoint.idcashpoint,
@@ -153,7 +153,7 @@ function VirtualCashPointCrud(idcashpoint) {
       };
 
       await axios.put(
-        `/api/virtualCashPoints/${editingVirtualCashPoint.idglobalvirtualcashpoint}`,
+        `http://localhost:5000/api/virtualCashPoints/${editingVirtualCashPoint.idglobalvirtualcashpoint}`,
         updatedVirtualCashPoint,
         {
           headers: {
@@ -182,7 +182,7 @@ function VirtualCashPointCrud(idcashpoint) {
   // Función para eliminar un cajero virtual
   const deleteVirtualCashPoint = async (id) => {
     try {
-      await axios.delete(`/api/virtualCashPoints/${id}`, {
+      await axios.delete(`http://localhost:5000/api/virtualCashPoints/${id}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
