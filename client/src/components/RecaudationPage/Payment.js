@@ -58,7 +58,7 @@ function Payment({ user }) {
 
     try {
       const response = await fetch(
-        `api/paymentRoutes/buscar-cliente/${cuentaContrato}`,
+        `http://localhost:5000/api/paymentRoutes/buscar-cliente/${cuentaContrato}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -109,18 +109,21 @@ function Payment({ user }) {
       //Si todo esta bien se reestablecen los campos
       setAlertInfo(null);
 
-      const response = await fetch("api/paymentRoutes/realizar-pago", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          cantidadTotal,
-          cuentaContrato,
-          user: user,
-        }),
-      });
+      const response = await fetch(
+        "http://localhost:5000/api/paymentRoutes/realizar-pago",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            cantidadTotal,
+            cuentaContrato,
+            user: user,
+          }),
+        }
+      );
 
       if (response.ok) {
         const responseData = await response.json();

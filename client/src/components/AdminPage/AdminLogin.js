@@ -13,7 +13,7 @@ function AdminLogin() {
 
   const handleLogin = async () => {
     try {
-      const response = await axios.post("/api/admin", {
+      const response = await axios.post("http://localhost:5000/api/admin", {
         username,
         password,
       });
@@ -27,7 +27,7 @@ function AdminLogin() {
         message: "Login correcto.",
       });
 
-      navigate("http://localhost:5000/supervisorcrud"); // Redirigir a la página de SupervisorCrud
+      navigate("/supervisorcrud"); // Redirigir a la página de SupervisorCrud
     } catch (error) {
       // Si el error es por usuario o contraseña incorrectos
       if (error.response.status === 400) {
