@@ -58,14 +58,14 @@ function CashCloseHistory({ user }) {
       } catch (error) {
         console.error(error);
       }
-  });
+  }, [token, user.idcashpoint]);
 
   // Obtener la lista de cierres de caja
   useEffect(() => {
     if (token) {
       getCashCloseHistory();
     }
-  }, [token, user.idcashpoint]);
+  }, [token, user.idcashpoint, getCashCloseHistory]);
 
   const formatDate = (dateString) => {
     const options = { year: "numeric", month: "numeric", day: "numeric" };

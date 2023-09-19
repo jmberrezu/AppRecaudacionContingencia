@@ -38,12 +38,6 @@ function ReverseCashClose({ user }) {
     }
   }, [navigate]);
 
-  useEffect(() => {
-    if (token) {
-      fetchClosedCash();
-    }
-  }, [token, user.idcashpoint]);
-
   // Función para obtener la lista cajas cerradas
   const fetchClosedCash = useCallback(async () => {
     if (user.idcashpoint) {
@@ -65,7 +59,13 @@ function ReverseCashClose({ user }) {
         console.error(error);
       }
     }
-  });
+  }, [token, user.idcashpoint]);
+
+  useEffect(() => {
+    if (token) {
+      fetchClosedCash();
+    }
+  }, [token, user.idcashpoint, fetchClosedCash]);
 
   const formatDate = (dateString) => {
     const options = { year: "numeric", month: "numeric", day: "numeric" };

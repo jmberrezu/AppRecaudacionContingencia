@@ -3,6 +3,7 @@ import axios from "axios";
 import { Container, Table, Button, Modal, Form, Alert } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 import { PencilSquare, PlusCircle } from "react-bootstrap-icons";
+import { useCallback } from "react";
 
 function VirtualCashPointCrud(idcashpoint) {
   // Para el token y la navegación
@@ -50,13 +51,32 @@ function VirtualCashPointCrud(idcashpoint) {
     }
   }, [navigate]);
 
+  // Función para obtener la lista de cajeros virtuales
+  const fetchVirtualCashPoints = useCallback(async () => {
+    if (idcashpoint.idcashpoint) {
+      try {
+        const response = await axios.get(
+          `http://localhost:5000/api/virtualCashPoints/${idcashpoint.idcashpoint}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+        setVirtualCashPoints(response.data);
+      } catch (error) {
+        console.error(error);
+      }
+    }
+  }, [token, idcashpoint.idcashpoint]);
+
   // Cargo los cajeros virtuales al cargar el componente
   useEffect(() => {
     if (token) {
       // Verifica si idcashpoint existe antes de llamar a fetchVirtualCashPoints
       fetchVirtualCashPoints();
     }
-  }, [token, idcashpoint]);
+  }, [token, idcashpoint, fetchVirtualCashPoints]);
 
   // Limiar el formulario y alerta cuando se cierra el modal
   useEffect(() => {
@@ -73,25 +93,6 @@ function VirtualCashPointCrud(idcashpoint) {
       setAlertInfo(null);
     }
   }, [showEditModal]);
-
-  // Función para obtener la lista de cajeros virtuales
-  const fetchVirtualCashPoints = async () => {
-    if (idcashpoint.idcashpoint) {
-      try {
-        const response = await axios.get(
-          `http://localhost:5000/api/virtualCashPoints/${idcashpoint.idcashpoint}`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-        setVirtualCashPoints(response.data);
-      } catch (error) {
-        console.error(error);
-      }
-    }
-  };
 
   // Función para crear un nuevo cajero virtual
   const createVirtualCashPoint = async () => {

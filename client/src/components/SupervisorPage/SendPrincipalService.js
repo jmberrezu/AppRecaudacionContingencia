@@ -43,13 +43,6 @@ function SendPrincipalService({ idcashpoint, office }) {
     }
   }, [navigate]);
 
-  // Obtener la lista de cajas cerradas
-  useEffect(() => {
-    if (token) {
-      fetchClosedCash();
-    }
-  }, [token, idcashpoint]);
-
   // Función para obtener la lista cajas cerradas
   const fetchClosedCash = useCallback(async () => {
     if (idcashpoint) {
@@ -71,7 +64,14 @@ function SendPrincipalService({ idcashpoint, office }) {
         console.error(error);
       }
     }
-  });
+  }, [token, idcashpoint]);
+
+  // Obtener la lista de cajas cerradas
+  useEffect(() => {
+    if (token) {
+      fetchClosedCash();
+    }
+  }, [token, idcashpoint, fetchClosedCash]);
 
   const handleModalClose = () => {
     setShowModal(false);

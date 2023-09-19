@@ -37,13 +37,6 @@ function SentHistory({ idcashpoint }) {
     }
   }, [navigate]);
 
-  // Obtener la lista de cajas enviadas
-  useEffect(() => {
-    if (token) {
-      getCashCloseHistory();
-    }
-  }, [token, idcashpoint]);
-
   // Funcion para obtener la lista de cajas enviadas
   const getCashCloseHistory = useCallback(async () => {
     if (idcashpoint)
@@ -63,7 +56,14 @@ function SentHistory({ idcashpoint }) {
       } catch (error) {
         console.error(error);
       }
-  });
+  }, [token, idcashpoint]);
+
+  // Obtener la lista de cajas enviadas
+  useEffect(() => {
+    if (token) {
+      getCashCloseHistory();
+    }
+  }, [token, idcashpoint, getCashCloseHistory]);
 
   const formatDate = (dateString) => {
     const options = { year: "numeric", month: "numeric", day: "numeric" };

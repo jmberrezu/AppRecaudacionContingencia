@@ -75,7 +75,7 @@ function PaymentHistory({ user }) {
         console.error(error);
       }
     }
-  });
+  }, [token, user.idcashpoint]);
 
   // Funcion para obtener la lista de pagos anulados
   const fetchReversePayments = useCallback(async () => {
@@ -97,7 +97,7 @@ function PaymentHistory({ user }) {
         console.error(error);
       }
     }
-  });
+  }, [token, user.idcashpoint]);
 
   // Función para ordenar los pagos
   const sortPayments = useCallback(() => {
@@ -175,7 +175,7 @@ function PaymentHistory({ user }) {
     if (token) {
       fetchPayments();
     }
-  }, [token, user.idcashpoint]);
+  }, [token, user.idcashpoint, fetchPayments]);
 
   useEffect(() => {
     sortReversePayments();

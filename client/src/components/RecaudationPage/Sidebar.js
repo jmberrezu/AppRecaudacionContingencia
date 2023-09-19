@@ -15,23 +15,17 @@ import {
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import sparkPayLogo from "../../images/logoM.svg"; // Ruta a tu imagen
+import { useCallback } from "react";
 
 function Sidebar({ user, handleLogout, setActiveComponent, activeComponent }) {
   const isGerente = user && user.role === "gerente";
   const [virtualCashPoints, setVirtualCashPoints] = useState([]);
-  const [idGlobalVirtualCashPoint, setIdGlobalVirtualCashPoint] = useState("");
+  const [idGlobalVirtualCashPoint] = useState("");
   const navigate = useNavigate();
   const token = localStorage.getItem("token");
 
-  // Obtengo el grupo de pago
-  useEffect(() => {
-    if (token && user) {
-      fetchVirtualCashPoints();
-    }
-  }, [token, user]);
-
   // Función para obtener la lista de cajas virtuales
-  const fetchVirtualCashPoints = async () => {
+  const fetchVirtualCashPoints = useCallback(async () => {
     try {
       let response = await axios.get(
         `http://localhost:5000/api/virtualcashpoints/${user.idcashpoint}`,
@@ -45,7 +39,14 @@ function Sidebar({ user, handleLogout, setActiveComponent, activeComponent }) {
     } catch (error) {
       console.error(error);
     }
-  };
+  }, [token, user]);
+
+  // Obtengo el grupo de pago
+  useEffect(() => {
+    if (token && user) {
+      fetchVirtualCashPoints();
+    }
+  }, [token, user, fetchVirtualCashPoints]);
 
   // Función para cambiar la caja virtual
   const handleChangeVirtualCashPoint = async (idGlobalVirtualCashPoint) => {

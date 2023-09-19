@@ -3,6 +3,7 @@ import axios from "axios";
 import { Container, Table, Button, Modal, Form, Alert } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 import { PencilSquare, PlusCircle } from "react-bootstrap-icons";
+import { useCallback } from "react";
 
 function UserCrud(idcashpoint) {
   // Para el token y la navegación
@@ -55,12 +56,31 @@ function UserCrud(idcashpoint) {
     }
   }, [navigate]);
 
+  // Función para obtener la lista de usuarios de la caja en especifico
+  const fetchUsers = useCallback(async () => {
+    if (idcashpoint.idcashpoint) {
+      try {
+        const response = await axios.get(
+          `http://localhost:5000/api/users/${idcashpoint.idcashpoint}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+        setUsers(response.data);
+      } catch (error) {
+        console.error(error);
+      }
+    }
+  }, [token, idcashpoint.idcashpoint]);
+
   // Cargar datos iniciales
   useEffect(() => {
     if (token) {
       fetchUsers();
     }
-  }, [token, idcashpoint]); // Agrega idcashpoint como dependencia
+  }, [token, idcashpoint, fetchUsers]); // Agrega idcashpoint como dependencia
 
   // Limpiar formulario y alerta cuando se cierra el modal
   useEffect(() => {
@@ -83,25 +103,6 @@ function UserCrud(idcashpoint) {
       setAlertInfo(null);
     }
   }, [showEditModal]);
-
-  // Función para obtener la lista de usuarios de la caja en especifico
-  const fetchUsers = async () => {
-    if (idcashpoint.idcashpoint) {
-      try {
-        const response = await axios.get(
-          `http://localhost:5000/api/users/${idcashpoint.idcashpoint}`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-        setUsers(response.data);
-      } catch (error) {
-        console.error(error);
-      }
-    }
-  };
 
   // Función para obtener la lista de cajas virtuales
   const fetchVirtualCashPoints = async () => {

@@ -18,6 +18,7 @@ import {
   PlusCircle,
 } from "react-bootstrap-icons";
 import sparkPayLogo from "../../images/logoM.svg";
+import { useCallback } from "react";
 
 function SupervisorCrud() {
   // Para el token y la navegación
@@ -72,12 +73,24 @@ function SupervisorCrud() {
     }
   }, [navigate]);
 
+  // Función para obtener la lista de usuarios
+  const fetchSupervisors = useCallback(async () => {
+    try {
+      const response = await axios.get("http://localhost:5000/api/admin", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setSupervisors(response.data);
+    } catch (error) {
+      console.error(error);
+    }
+  }, [token]);
+
   // Cargar datos iniciales
   useEffect(() => {
     if (token) {
       fetchSupervisors();
     }
-  }, [token]);
+  }, [token, fetchSupervisors]);
 
   // Limpiar los campos de los modales
   useEffect(() => {
@@ -99,18 +112,6 @@ function SupervisorCrud() {
       setAlertInfo(null);
     }
   }, [showEditModal]);
-
-  // Función para obtener la lista de usuarios
-  const fetchSupervisors = async () => {
-    try {
-      const response = await axios.get("http://localhost:5000/api/admin", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setSupervisors(response.data);
-    } catch (error) {
-      console.error(error);
-    }
-  };
 
   // Agregar un nuevo supervisor
   const createSupervisor = async () => {

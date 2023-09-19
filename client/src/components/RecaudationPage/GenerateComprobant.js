@@ -48,25 +48,25 @@ function GenerateComprobant({
                 <p className="m-0 p-0">=======================</p>
                 <p className="m-0 p-0">
                   {" "}
-                  <a style={{ fontWeight: "bold" }}>Oficina: </a>
+                  <span style={{ fontWeight: "bold" }}>Oficina: </span>
                   {user.idcashpoint}
                 </p>
                 <p className="m-0 p-0">
-                  <a style={{ fontWeight: "bold" }}>Caja: </a>
+                  <span style={{ fontWeight: "bold" }}>Caja: </span>
                   {user.virtualcashpointname}
-                  <a style={{ fontWeight: "bold" }}> | ID Caja: </a>{" "}
+                  <span style={{ fontWeight: "bold" }}> | ID Caja: </span>{" "}
                   {user.idvirtualcashpoint}
                 </p>
                 <p className="m-0 p-0">
-                  <a style={{ fontWeight: "bold" }}>Cajero: </a>
+                  <span style={{ fontWeight: "bold" }}>Cajero: </span>
                   {user.username}
                 </p>
                 <p className="m-0 p-0">
-                  <a style={{ fontWeight: "bold" }}> ID Cajero: </a>
+                  <span style={{ fontWeight: "bold" }}> ID Cajero: </span>
                   {user.id}
                 </p>
                 <p className="m-0 p-0">
-                  <a style={{ fontWeight: "bold" }}>Fecha de pago: </a>
+                  <span style={{ fontWeight: "bold" }}>Fecha de pago: </span>
                   {paymentData.date} | {hour}
                 </p>
                 <p className="m-0 p-0">=======================</p>
@@ -78,15 +78,15 @@ function GenerateComprobant({
                 </p>
                 <p className="m-0 p-0">=======================</p>
                 <p className="m-0 p-0">
-                  <a style={{ fontWeight: "bold" }}>Cliente: </a>
+                  <span style={{ fontWeight: "bold" }}>Cliente: </span>
                   {cliente.name}
                 </p>
                 <p className="m-0 p-0">
-                  <a style={{ fontWeight: "bold" }}>Cuenta Contrato: </a>
+                  <span style={{ fontWeight: "bold" }}>Cuenta Contrato: </span>
                   {cuentaContrato}
                 </p>
                 <p className="m-0 p-0">
-                  <a style={{ fontWeight: "bold" }}>Dirección: </a>
+                  <span style={{ fontWeight: "bold" }}>Dirección: </span>
                   {direccion}
                 </p>
 
@@ -99,11 +99,11 @@ function GenerateComprobant({
                 </p>
                 <p className="m-0 p-0">=======================</p>
                 <p className="m-0 p-0">
-                  <a style={{ fontWeight: "bold" }}>Monto: </a>
+                  <span style={{ fontWeight: "bold" }}>Monto: </span>
                   {parseFloat(paymentData.amount).toFixed(2)}$ USD
                 </p>
                 <p className="m-0 p-0">
-                  <a style={{ fontWeight: "bold" }}>Id de Pago: </a>
+                  <span style={{ fontWeight: "bold" }}>Id de Pago: </span>
                   {paymentData.pid}
                 </p>
               </div>

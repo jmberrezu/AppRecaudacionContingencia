@@ -8,9 +8,10 @@ import {
   Modal,
   Table,
 } from "react-bootstrap";
-import { Cash, WalletFill } from "react-bootstrap-icons";
+import { WalletFill } from "react-bootstrap-icons";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import { useCallback } from "react";
 
 function CashClose({ user }) {
   const navigate = useNavigate();
@@ -58,15 +59,8 @@ function CashClose({ user }) {
     }
   }, [navigate]);
 
-  // Obtengo el grupo de pago
-  useEffect(() => {
-    if (token) {
-      getGrupo();
-    }
-  }, [token, user.idcashpoint]);
-
   // Función para obtener el grupo de pago
-  const getGrupo = async () => {
+  const getGrupo = useCallback(async () => {
     setAlertInfo(null);
     setNoPagos(false);
     try {
@@ -124,7 +118,14 @@ function CashClose({ user }) {
     } catch (error) {
       setAlertInfo({ variant: "danger", message: error.message });
     }
-  };
+  }, [token, user.idcashpoint, user.idvirtualcashpoint]);
+
+  // Obtengo el grupo de pago
+  useEffect(() => {
+    if (token) {
+      getGrupo();
+    }
+  }, [token, user.idcashpoint, getGrupo]);
 
   // Función para cerrar la caja
   const cerrarCaja = async () => {

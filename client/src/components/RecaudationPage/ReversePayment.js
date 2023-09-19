@@ -71,7 +71,7 @@ function ReversePayment({ user }) {
         console.error(error);
       }
     }
-  });
+  }, [token, user.idcashpoint]);
 
   // Función para ordenar los pagos
   const sortPayments = useCallback(() => {
@@ -104,7 +104,7 @@ function ReversePayment({ user }) {
     if (token) {
       fetchPayments();
     }
-  }, [token, user.idcashpoint]);
+  }, [token, user.idcashpoint, fetchPayments]);
 
   useEffect(() => {
     sortPayments();
