@@ -17,6 +17,7 @@ import {
   PersonFillAdd,
   PlusCircle,
 } from "react-bootstrap-icons";
+import sparkPayLogo from "../../images/logoM.svg";
 
 function SupervisorCrud() {
   // Para el token y la navegación
@@ -336,24 +337,28 @@ function SupervisorCrud() {
 
   return (
     <div>
-      <Navbar className="bg-body-tertiary stick" expand="sm" sticky="top">
-        <Container>
-          <Navbar.Toggle aria-controls="basic-navbar-nav" />
-          <Nav>
-            <Navbar.Brand>App Recaudación</Navbar.Brand>
-          </Nav>
-          <Navbar.Collapse id="basic-navbar-nav">
-            <Nav className="me-auto"></Nav>
+      <Navbar className="bg-body-tertiary stick px-5" expand="sm" sticky="top">
+        <Navbar.Toggle aria-controls="basic-navbar-nav" />
+        <Navbar.Brand>
+          <img
+            src={sparkPayLogo}
+            alt="SparkPay Logo"
+            className="img-fluid me-3 mb-1"
+            style={{ width: "45px" }}
+          />
+          <span className="fs-3 ">Spark-Pay</span>
+        </Navbar.Brand>
+        <Navbar.Collapse id="basic-navbar-nav">
+          <Nav className="me-auto"></Nav>
 
-            <Nav>
-              <Nav.Item className="mt-2 mt-sm-0">
-                <Button variant="outline-warning" onClick={handleLogout}>
-                  Cerrar Sesión
-                </Button>
-              </Nav.Item>
-            </Nav>
-          </Navbar.Collapse>
-        </Container>
+          <Nav>
+            <Nav.Item className="mt-2 mt-sm-0">
+              <Button variant="outline-warning" onClick={handleLogout}>
+                Cerrar Sesión
+              </Button>
+            </Nav.Item>
+          </Nav>
+        </Navbar.Collapse>
       </Navbar>
       <Container className="mt-4 ">
         <h1>Administración de Supervisores</h1>

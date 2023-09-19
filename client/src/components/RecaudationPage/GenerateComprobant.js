@@ -16,6 +16,9 @@ function GenerateComprobant({
     documentTitle: "Comprobante_Pago_" + paymentData.pid,
   });
 
+  // Obtener la hora y minutos de la fecha para el comprobante
+  const hour = new Date().getHours() + ":" + new Date().getMinutes();
+
   return (
     <React.Fragment>
       {cliente && (
@@ -26,46 +29,82 @@ function GenerateComprobant({
               style={{
                 width: "25%",
                 fontSize: "12px",
-                fontWeight: "bold",
               }}
             >
-              <div>
-                <p className="m-0 p-0" style={{ textAlign: "center" }}>
+              <div className="ps-1">
+                <p
+                  className="m-0 p-0"
+                  style={{ textAlign: "center", fontWeight: "bold" }}
+                >
                   COMPROBANTE DE PAGO
                 </p>
                 <p className="m-0 p-0">=======================</p>
-                <p style={{ textAlign: "center" }} className="m-0 p-0">
+                <p
+                  style={{ textAlign: "center", fontWeight: "bold" }}
+                  className="m-0 p-0"
+                >
                   ==== DATOS DEL CAJERO ====
                 </p>
                 <p className="m-0 p-0">=======================</p>
-                <p className="m-0 p-0">Oficina: {user.idcashpoint}</p>
                 <p className="m-0 p-0">
-                  Caja: {user.idglobalvirtualcashpoint} |{" "}
+                  {" "}
+                  <a style={{ fontWeight: "bold" }}>Oficina: </a>
+                  {user.idcashpoint}
+                </p>
+                <p className="m-0 p-0">
+                  <a style={{ fontWeight: "bold" }}>Caja: </a>
+                  {user.virtualcashpointname}
+                  <a style={{ fontWeight: "bold" }}> | ID Caja: </a>{" "}
                   {user.idvirtualcashpoint}
                 </p>
-                <p className="m-0 p-0">Cajero: {user.username}</p>
                 <p className="m-0 p-0">
-                  ID Cajero: {user.idglobaluser} | {user.id}
+                  <a style={{ fontWeight: "bold" }}>Cajero: </a>
+                  {user.username}
                 </p>
-                <p className="m-0 p-0">Fecha: {paymentData.date}</p>
+                <p className="m-0 p-0">
+                  <a style={{ fontWeight: "bold" }}> ID Cajero: </a>
+                  {user.id}
+                </p>
+                <p className="m-0 p-0">
+                  <a style={{ fontWeight: "bold" }}>Fecha de pago: </a>
+                  {paymentData.date} | {hour}
+                </p>
                 <p className="m-0 p-0">=======================</p>
-                <p style={{ textAlign: "center" }} className="m-0 p-0">
+                <p
+                  style={{ textAlign: "center", fontWeight: "bold" }}
+                  className="m-0 p-0"
+                >
                   ==== DATOS DEL CLIENTE ====
                 </p>
                 <p className="m-0 p-0">=======================</p>
-                <p className="m-0 p-0">Cliente: {cliente.name}</p>
-                <p className="m-0 p-0">Cuenta Contrato: {cuentaContrato}</p>
-                <p className="m-0 p-0">Dirección: {direccion}</p>
+                <p className="m-0 p-0">
+                  <a style={{ fontWeight: "bold" }}>Cliente: </a>
+                  {cliente.name}
+                </p>
+                <p className="m-0 p-0">
+                  <a style={{ fontWeight: "bold" }}>Cuenta Contrato: </a>
+                  {cuentaContrato}
+                </p>
+                <p className="m-0 p-0">
+                  <a style={{ fontWeight: "bold" }}>Dirección: </a>
+                  {direccion}
+                </p>
 
                 <p className="m-0 p-0">=======================</p>
-                <p style={{ textAlign: "center" }} className="m-0 p-0">
+                <p
+                  style={{ textAlign: "center", fontWeight: "bold" }}
+                  className="m-0 p-0"
+                >
                   ==== DETALLES DE PAGO ====
                 </p>
                 <p className="m-0 p-0">=======================</p>
-                <p className="m-0 p-0">Pago: Efectivo</p>
-                <p className="m-0 p-0">Id de Pago: {paymentData.pid}</p>
                 <p className="m-0 p-0">
-                  Monto: {parseFloat(paymentData.amount).toFixed(2)}$ USD
+                  <a style={{ fontWeight: "bold" }}>Monto: </a>
+                  {parseFloat(paymentData.amount).toFixed(2)}$ USD
+                </p>
+                <p className="m-0 p-0">
+                  <a style={{ fontWeight: "bold" }}>Id de Pago: </a>
+                  {paymentData.pid}
                 </p>
               </div>
             </div>
