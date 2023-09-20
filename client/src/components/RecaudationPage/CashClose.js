@@ -351,11 +351,11 @@ function CashClose({ user }) {
       {/* Modal de exito */}
       <Modal show={showSuccessModal} onHide={() => setShowSuccessModal(false)}>
         <Modal.Header closeButton className="bg-success text-white">
-          <Modal.Title>Modal de exito</Modal.Title>
+          <Modal.Title>Cerrado</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           <h5 className="mx-4 mb-4 mt-2 text-center">
-            Se ha cerrado la caja con exito.
+            Se ha cerrado la caja con éxito.
           </h5>
           <hr className="mb-5" />
           <Table striped bordered hover responsive>

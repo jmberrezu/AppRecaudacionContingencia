@@ -8,6 +8,8 @@ function GenerateComprobant({
   direccion,
   cuentaContrato,
   cliente,
+  esReimpresion,
+  onCloseModal,
 }) {
   const conponentPDF = useRef();
 
@@ -15,9 +17,6 @@ function GenerateComprobant({
     content: () => conponentPDF.current,
     documentTitle: "Comprobante_Pago_" + paymentData.pid,
   });
-
-  // Obtener la hora y minutos de la fecha para el comprobante
-  const hour = new Date().getHours() + ":" + new Date().getMinutes();
 
   return (
     <React.Fragment>
@@ -38,6 +37,34 @@ function GenerateComprobant({
                 >
                   COMPROBANTE DE PAGO
                 </p>
+                {/* Si es reimpresion se muestra un mensaje */}
+                {esReimpresion && (
+                  <p className="m-0 p-0" style={{ textAlign: "center" }}>
+                    <span
+                      style={{
+                        fontWeight: "bold",
+                        fontStyle: "italic",
+                      }}
+                    >
+                      {" "}
+                      ------ Copia ------
+                    </span>
+                  </p>
+                )}
+                {/* Si es original se muestra */}
+                {!esReimpresion && (
+                  <p className="m-0 p-0" style={{ textAlign: "center" }}>
+                    <span
+                      style={{
+                        fontWeight: "bold",
+                        fontStyle: "italic",
+                      }}
+                    >
+                      {" "}
+                      ------ Original ------
+                    </span>
+                  </p>
+                )}
                 <p className="m-0 p-0">=======================</p>
                 <p
                   style={{ textAlign: "center", fontWeight: "bold" }}
@@ -66,8 +93,8 @@ function GenerateComprobant({
                   {user.id}
                 </p>
                 <p className="m-0 p-0">
-                  <span style={{ fontWeight: "bold" }}>Fecha de pago: </span>
-                  {paymentData.date} | {hour}
+                  <span style={{ fontWeight: "bold" }}>Fecha Pago: </span>
+                  {paymentData.date} | {paymentData.time}
                 </p>
                 <p className="m-0 p-0">=======================</p>
                 <p
@@ -109,7 +136,13 @@ function GenerateComprobant({
               </div>
             </div>
           </div>
-          <Button variant="outline-success" onClick={generatePDF}>
+          <Button
+            variant="outline-success"
+            onClick={() => {
+              generatePDF();
+              onCloseModal();
+            }}
+          >
             Imprimir Comprobante
           </Button>
         </div>

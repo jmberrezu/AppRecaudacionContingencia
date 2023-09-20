@@ -12,6 +12,7 @@ import {
 } from "react-bootstrap";
 import { CaretUpFill, CaretDownFill } from "react-bootstrap-icons";
 import { useNavigate } from "react-router-dom";
+import GenerateComprobant from "./GenerateComprobant";
 
 function PaymentHistory({ user }) {
   const navigate = useNavigate();
@@ -69,6 +70,12 @@ function PaymentHistory({ user }) {
         );
         if (response.ok) {
           const paymentsData = await response.json();
+          // Agrega los datos del cliente a cada pago
+          for (const payment of paymentsData) {
+            payment.cliente = await buscarCliente(
+              payment.payercontractaccountid
+            );
+          }
           setPayments(paymentsData);
         }
       } catch (error) {
@@ -76,6 +83,25 @@ function PaymentHistory({ user }) {
       }
     }
   }, [token, user.idcashpoint]);
+
+  //Busca cliente por cuenta contrato
+  const buscarCliente = async (cuentaContrato) => {
+    try {
+      const response = await fetch(
+        `http://localhost:5000/api/paymentRoutes/buscar-cliente/${cuentaContrato}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      if (response.ok) {
+        return await response.json();
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  };
 
   // Funcion para obtener la lista de pagos anulados
   const fetchReversePayments = useCallback(async () => {
@@ -205,6 +231,16 @@ function PaymentHistory({ user }) {
     return new Date(dateString).toLocaleTimeString(undefined, options);
   };
 
+  const formatTime2 = (dateString) => {
+    const options = {
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: false,
+    };
+    return new Date(dateString).toLocaleTimeString(undefined, options);
+  };
+
   const handleSortBy = (sortType) => {
     setSortBy(sortType);
     toggleSortDirection();
@@ -294,10 +330,13 @@ function PaymentHistory({ user }) {
                       <thead>
                         <tr>
                           <th>PID</th>
+                          <th>Cuenta Contrato</th>
                           <th>Fecha</th>
+                          <th>Hora</th>
                           <th>Monto</th>
                           <th>Caja</th>
                           <th>Usuario</th>
+                          <th>Acciones</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -309,10 +348,30 @@ function PaymentHistory({ user }) {
                           .map((payment) => (
                             <tr key={payment.paymenttransactionid}>
                               <td>{payment.paymenttransactionid}</td>
+                              <td>{payment.payercontractaccountid}</td>
                               <td>{formatDate(payment.valuedate)}</td>
+                              <td>{formatTime(payment.valuedate)}</td>
                               <td>{"$" + payment.paymentamountcurrencycode}</td>
                               <td>{payment.virtualcashpointname}</td>
                               <td>{payment.username}</td>
+                              <td>
+                                <GenerateComprobant
+                                  user={user}
+                                  // Envio los datos del pago con diferentes nombres
+                                  paymentData={{
+                                    pid: payment.paymenttransactionid,
+                                    date: formatDate(payment.valuedate),
+                                    time: formatTime2(payment.valuedate),
+                                    amount: payment.paymentamountcurrencycode,
+                                  }}
+                                  direccion={payment.cliente.address}
+                                  cuentaContrato={
+                                    payment.payercontractaccountid
+                                  }
+                                  cliente={payment.cliente}
+                                  esReimpresion={true}
+                                />
+                              </td>
                             </tr>
                           ))}
                       </tbody>
@@ -367,9 +426,10 @@ function PaymentHistory({ user }) {
                   <thead>
                     <tr>
                       <th>PID</th>
-                      <th>Monto</th>
+                      <th>Cuenta Contrato</th>
                       <th>Fecha</th>
                       <th>Hora</th>
+                      <th>Monto</th>
                       <th>Usuario</th>
                     </tr>
                   </thead>
@@ -378,9 +438,10 @@ function PaymentHistory({ user }) {
                     {sortedReversePayments.map((payment) => (
                       <tr key={payment.paymenttransactionid}>
                         <td>{payment.paymenttransactionid}</td>
-                        <td>{"$" + payment.paymentamountcurrencycode}</td>
+                        <td>{payment.payercontractaccountid}</td>
                         <td>{formatDate(payment.fecha_hora)}</td>
                         <td>{formatTime(payment.fecha_hora)}</td>
+                        <td>{"$" + payment.paymentamountcurrencycode}</td>
                         <td>{payment.username}</td>
                       </tr>
                     ))}

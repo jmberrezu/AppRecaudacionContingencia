@@ -237,7 +237,7 @@ router.post("/realizar-pago", verifyToken, async (req, res) => {
         PaymentTransactionID, valueDate, paymentAmountCurrencyCode,
         PayerContractAccountID, idGlobalUser, CashPointPaymentGroupReferenceID, idGlobalVirtualCashPoint, idCashPoint
       )
-      VALUES ($1, CURRENT_DATE, $2, $3, $4, $5, $6, $7);
+      VALUES ($1, NOW(), $2, $3, $4, $5, $6, $7);
     `,
         [
           paymentTransactionID,
@@ -280,6 +280,7 @@ router.post("/realizar-pago", verifyToken, async (req, res) => {
     res.status(200).json({
       message: "Pago realizado con éxito.",
       date: fecha.toISOString().slice(0, 10),
+      time: fecha.toISOString().slice(11, 19),
       amount: cantidadTotal,
       pid: PID,
     });
@@ -411,7 +412,7 @@ router.put("/anular-pago/:PID", verifyToken, async (req, res) => {
       );
 
       // Si se eliminaron todos los pagos, se tiene que eliminar de la tabla paymentgroup
-      const query2 = await transaction.oneOrNone(
+      const query2 = await transaction.any(
         `
       SELECT CashPointPaymentGroupReferenceID
       FROM Payment
@@ -432,14 +433,14 @@ router.put("/anular-pago/:PID", verifyToken, async (req, res) => {
       }
 
       //Agrego a la tabla de anulaciones, incluyendo la fecha y hora actual
-      const insertQuery = await transaction.none(
+      await transaction.none(
         `
       INSERT INTO ReversePayment (
-        PaymentTransactionID, idGlobalUser, fecha_hora, idCashPoint, paymentAmountCurrencyCode
+        PaymentTransactionID, idGlobalUser, fecha_hora, idCashPoint, paymentAmountCurrencyCode, PayerContractAccountID
       )
-      VALUES ($1, $2, NOW(), $3, $4);
+      VALUES ($1, $2, NOW(), $3, $4, $5);
     `,
-        [PID, user.idglobaluser, user.idcashpoint, ammount]
+        [PID, user.idglobaluser, user.idcashpoint, ammount, contractaccount]
       );
 
       //Actualizo la deuda del cliente

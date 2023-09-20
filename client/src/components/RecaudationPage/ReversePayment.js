@@ -147,6 +147,11 @@ function ReversePayment({ user }) {
     return new Date(dateString).toLocaleDateString(undefined, options);
   };
 
+  const formatTime = (dateString) => {
+    const options = { hour: "numeric", minute: "numeric", second: "numeric" };
+    return new Date(dateString).toLocaleTimeString(undefined, options);
+  };
+
   return (
     <Container className="py-4">
       <h1>Anular Pago</h1>
@@ -190,7 +195,9 @@ function ReversePayment({ user }) {
             <tr>
               <th>PID</th>
               <th>Grupo</th>
+              <th>Cuenta Contrato</th>
               <th>Fecha</th>
+              <th>Hora</th>
               <th>Monto</th>
               <th>Caja</th>
               <th>Usuario</th>
@@ -203,7 +210,9 @@ function ReversePayment({ user }) {
               <tr key={payment.paymenttransactionid}>
                 <td>{payment.paymenttransactionid}</td>
                 <td>{payment.cashpointpaymentgroupreferenceid}</td>
+                <td>{payment.payercontractaccountid}</td>
                 <td>{formatDate(payment.valuedate)}</td>
+                <td>{formatTime(payment.valuedate)}</td>
                 <td>{payment.paymentamountcurrencycode}</td>
                 <td>{payment.virtualcashpointname}</td>
                 <td>{payment.username}</td>

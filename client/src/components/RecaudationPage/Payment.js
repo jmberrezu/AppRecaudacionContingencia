@@ -292,6 +292,16 @@ function Payment({ user }) {
             direccion={direccion}
             cuentaContrato={cuentaContrato}
             cliente={cliente}
+            esReimpresion={false}
+            onCloseModal={() => {
+              setShowModal(false);
+              setCliente(null);
+              setDireccion("");
+              setDolares("");
+              setCentavos("");
+              setCuentaContrato("");
+              setDeuda("");
+            }}
           />
 
           <Button
