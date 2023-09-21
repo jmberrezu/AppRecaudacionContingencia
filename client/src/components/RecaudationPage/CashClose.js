@@ -278,7 +278,17 @@ function CashClose({ user }) {
         onHide={() => setShowDifferenceModal(false)}
         size="lg"
       >
-        <Modal.Header closeButton className="bg-danger text-white">
+        <Modal.Header
+          closeButton
+          className="bg-danger text-white"
+          onClick={() => {
+            setDolares("");
+            setCentavos("");
+            setAlertInfo("");
+            setGrupo("");
+            getGrupo();
+          }}
+        >
           <Modal.Title>Error de Diferencia</Modal.Title>
         </Modal.Header>
         <Modal.Body>
@@ -350,7 +360,17 @@ function CashClose({ user }) {
 
       {/* Modal de exito */}
       <Modal show={showSuccessModal} onHide={() => setShowSuccessModal(false)}>
-        <Modal.Header closeButton className="bg-success text-white">
+        <Modal.Header
+          closeButton
+          className="bg-success text-white"
+          onClick={() => {
+            setDolares("");
+            setCentavos("");
+            setAlertInfo("");
+            setGrupo("");
+            getGrupo();
+          }}
+        >
           <Modal.Title>Cerrado</Modal.Title>
         </Modal.Header>
         <Modal.Body>

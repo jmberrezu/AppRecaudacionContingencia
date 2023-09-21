@@ -370,6 +370,7 @@ function PaymentHistory({ user }) {
                                   }
                                   cliente={payment.cliente}
                                   esReimpresion={true}
+                                  onCloseModal={fetchPayments}
                                 />
                               </td>
                             </tr>

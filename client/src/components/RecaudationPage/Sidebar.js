@@ -26,18 +26,21 @@ function Sidebar({ user, handleLogout, setActiveComponent, activeComponent }) {
 
   // Función para obtener la lista de cajas virtuales
   const fetchVirtualCashPoints = useCallback(async () => {
-    try {
-      let response = await axios.get(
-        `http://localhost:5000/api/virtualcashpoints/${user.idcashpoint}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-      setVirtualCashPoints(response.data);
-    } catch (error) {
-      console.error(error);
+    // si es gerente
+    if (isGerente) {
+      try {
+        let response = await axios.get(
+          `http://localhost:5000/api/virtualcashpoints/${user.idcashpoint}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+        setVirtualCashPoints(response.data);
+      } catch (error) {
+        console.error(error);
+      }
     }
   }, [token, user]);
 
