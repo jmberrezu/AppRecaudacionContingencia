@@ -19,6 +19,9 @@ function ReversePayment({ user }) {
   const [sortDirection, setSortDirection] = useState("asc");
   const navigate = useNavigate();
   const [token, setToken] = useState(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filteredPayments, setFilteredPayments] = useState([]);
+  const [isSearching, setIsSearching] = useState(false);
 
   // Verificar el token
   useEffect(() => {
@@ -49,6 +52,22 @@ function ReversePayment({ user }) {
       navigate("/");
     }
   }, [navigate]);
+
+  useEffect(() => {
+    const filtered = payments.filter((payment) => {
+      const searchValue = searchQuery.toLowerCase();
+      return (
+        payment.payercontractaccountid.toLowerCase().includes(searchValue) ||
+        payment.paymenttransactionid
+          .toString()
+          .toLowerCase()
+          .includes(searchValue)
+      );
+    });
+
+    setFilteredPayments(filtered);
+    setIsSearching(searchQuery.length > 0);
+  }, [searchQuery, payments]);
 
   // Función para obtener la lista de pagos
   const fetchPayments = useCallback(async () => {
@@ -96,6 +115,9 @@ function ReversePayment({ user }) {
         break;
       default:
         break;
+    }
+    if (sortDirection === "desc") {
+      sortedPaymentsCopy.reverse();
     }
     setSortedPayments(sortedPaymentsCopy);
   }, [payments, sortBy, sortDirection]);
@@ -152,88 +174,161 @@ function ReversePayment({ user }) {
     return new Date(dateString).toLocaleTimeString(undefined, options);
   };
 
+  const handleSortBy = (sortType) => {
+    setSortBy(sortType);
+    toggleSortDirection();
+  };
+
   return (
-    <Container className="py-4">
+    <Container className="py-4 ">
       <h1>Anular Pago</h1>
-      <Container className="my-3">
-        <Row className="justify-content-between">
-          <Col xs={6} className="text-start">
-            <DropdownButton
-              id="sort-dropdown"
-              title={`Ordenar por ${sortBy}`}
-              variant="outline-dark"
-            >
-              <Dropdown.Item onClick={() => setSortBy("Fecha")}>
-                Fecha
-              </Dropdown.Item>
-              <Dropdown.Item onClick={() => setSortBy("Caja")}>
-                Caja
-              </Dropdown.Item>
-              <Dropdown.Item onClick={() => setSortBy("Usuario")}>
-                Usuario
-              </Dropdown.Item>
-            </DropdownButton>
-          </Col>
-          <Col xs={6} className="text-end">
-            <Button variant="outline-dark" onClick={toggleSortDirection}>
-              {sortDirection === "asc" ? (
-                <span>
-                  Ascendente <CaretUpFill className="align-middle mb-1" />
-                </span>
-              ) : (
-                <span>
-                  Descendente <CaretDownFill className="align-middle mb-1" />
-                </span>
-              )}
-            </Button>
+      <div className="mb-3 input-group input-group-lg justify-content-center">
+        <input
+          type="text"
+          className="form-control"
+          style={{ maxWidth: "50%" }}
+          placeholder="Buscar por cuenta contrato o ID de pago"
+          value={searchQuery}
+          onChange={(e) => {
+            setSearchQuery(e.target.value);
+          }}
+        />
+      </div>
+      <div className="pe-3" style={{ height: "68vh", overflowY: "auto" }}>
+        <Row className="mb-3">
+          <Col>
+            {!isSearching && ( // Condición para mostrar el dropdown de ordenación
+              <DropdownButton
+                id="dropdown-basic-button"
+                variant="outline-dark"
+                title={`Ordenar por ${sortBy} ${
+                  sortDirection === "asc" ? "(ascendente)" : "(descendente)"
+                }`}
+              >
+                <Dropdown.Item onClick={() => handleSortBy("Fecha")}>
+                  Fecha
+                  {sortBy === "Fecha" && sortDirection === "asc" && (
+                    <CaretUpFill className="ms-2" />
+                  )}
+                  {sortBy === "Fecha" && sortDirection === "desc" && (
+                    <CaretDownFill className="ms-2" />
+                  )}
+                </Dropdown.Item>
+                <Dropdown.Item onClick={() => handleSortBy("Caja")}>
+                  Caja
+                  {sortBy === "Caja" && sortDirection === "asc" && (
+                    <CaretUpFill className="ms-2" />
+                  )}
+                  {sortBy === "Caja" && sortDirection === "desc" && (
+                    <CaretDownFill className="ms-2" />
+                  )}
+                </Dropdown.Item>
+                <Dropdown.Item onClick={() => handleSortBy("Usuario")}>
+                  Usuario
+                  {sortBy === "Usuario" && sortDirection === "asc" && (
+                    <CaretUpFill className="ms-2" />
+                  )}
+                  {sortBy === "Usuario" && sortDirection === "desc" && (
+                    <CaretDownFill className="ms-2" />
+                  )}
+                </Dropdown.Item>
+              </DropdownButton>
+            )}
           </Col>
         </Row>
-      </Container>
-      <div style={{ height: "68vh", overflowY: "auto" }}>
-        <Table striped bordered responsive>
-          <thead>
-            <tr>
-              <th>PID</th>
-              <th>Grupo</th>
-              <th>Cuenta Contrato</th>
-              <th>Fecha</th>
-              <th>Hora</th>
-              <th>Monto</th>
-              <th>Caja</th>
-              <th>Usuario</th>
+        {isSearching ? (
+          // Condición para mostrar la tabla de pagos filtrados
+          <Table striped bordered responsive>
+            <thead>
+              <tr>
+                <th>PID</th>
+                <th>Grupo</th>
+                <th>Cuenta Contrato</th>
+                <th>Fecha</th>
+                <th>Hora</th>
+                <th>Monto</th>
+                <th>Caja</th>
+                <th>Usuario</th>
 
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {sortedPayments.map((payment) => (
-              <tr key={payment.paymenttransactionid}>
-                <td>{payment.paymenttransactionid}</td>
-                <td>{payment.cashpointpaymentgroupreferenceid}</td>
-                <td>{payment.payercontractaccountid}</td>
-                <td>{formatDate(payment.valuedate)}</td>
-                <td>{formatTime(payment.valuedate)}</td>
-                <td>{payment.paymentamountcurrencycode}</td>
-                <td>{payment.virtualcashpointname}</td>
-                <td>{payment.username}</td>
-                <td>
-                  <Button
-                    variant="danger"
-                    onClick={() =>
-                      anularPago(
-                        payment.paymenttransactionid,
-                        payment.paymentamountcurrencycode,
-                        payment.payercontractaccountid
-                      )
-                    }
-                  >
-                    Anular Pago
-                  </Button>
-                </td>
+                <th>Acciones</th>
               </tr>
-            ))}
-          </tbody>
-        </Table>
+            </thead>
+            <tbody>
+              {filteredPayments.map((payment) => (
+                <tr key={payment.paymenttransactionid}>
+                  <td>{payment.paymenttransactionid}</td>
+                  <td>{payment.cashpointpaymentgroupreferenceid}</td>
+                  <td>{payment.payercontractaccountid}</td>
+                  <td>{formatDate(payment.valuedate)}</td>
+                  <td>{formatTime(payment.valuedate)}</td>
+                  <td>{payment.paymentamountcurrencycode}</td>
+                  <td>{payment.virtualcashpointname}</td>
+                  <td>{payment.username}</td>
+                  <td>
+                    <Button
+                      variant="danger"
+                      onClick={() =>
+                        anularPago(
+                          payment.paymenttransactionid,
+                          payment.paymentamountcurrencycode,
+                          payment.payercontractaccountid
+                        )
+                      }
+                    >
+                      Anular Pago
+                    </Button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </Table>
+        ) : (
+          // Condición para mostrar la tabla de pagos ordenados
+          <Table striped bordered responsive>
+            <thead>
+              <tr>
+                <th>PID</th>
+                <th>Grupo</th>
+                <th>Cuenta Contrato</th>
+                <th>Fecha</th>
+                <th>Hora</th>
+                <th>Monto</th>
+                <th>Caja</th>
+                <th>Usuario</th>
+
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {sortedPayments.map((payment) => (
+                <tr key={payment.paymenttransactionid}>
+                  <td>{payment.paymenttransactionid}</td>
+                  <td>{payment.cashpointpaymentgroupreferenceid}</td>
+                  <td>{payment.payercontractaccountid}</td>
+                  <td>{formatDate(payment.valuedate)}</td>
+                  <td>{formatTime(payment.valuedate)}</td>
+                  <td>{payment.paymentamountcurrencycode}</td>
+                  <td>{payment.virtualcashpointname}</td>
+                  <td>{payment.username}</td>
+                  <td>
+                    <Button
+                      variant="danger"
+                      onClick={() =>
+                        anularPago(
+                          payment.paymenttransactionid,
+                          payment.paymentamountcurrencycode,
+                          payment.payercontractaccountid
+                        )
+                      }
+                    >
+                      Anular Pago
+                    </Button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </Table>
+        )}
       </div>
     </Container>
   );

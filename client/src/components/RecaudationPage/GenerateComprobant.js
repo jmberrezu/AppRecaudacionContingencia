@@ -1,6 +1,7 @@
 import React, { useRef } from "react";
 import { useReactToPrint } from "react-to-print";
 import { Button } from "react-bootstrap";
+import sparkPayLogo from "../../images/logoM.svg"; // Ruta a tu imagen
 
 function GenerateComprobant({
   user,
@@ -26,20 +27,19 @@ function GenerateComprobant({
             <div
               ref={conponentPDF}
               style={{
-                width: "25%",
+                width: "30%",
                 fontSize: "12px",
               }}
             >
-              <div className="ps-1">
+              <div className="ps-2">
                 <p
                   className="m-0 p-0"
                   style={{ textAlign: "center", fontWeight: "bold" }}
                 >
                   COMPROBANTE DE PAGO
                 </p>
-                {/* Si es reimpresion se muestra un mensaje */}
-                {esReimpresion && (
-                  <p className="m-0 p-0" style={{ textAlign: "center" }}>
+                <div className="m-0 p-0" style={{ textAlign: "center" }}>
+                  {esReimpresion && (
                     <span
                       style={{
                         fontWeight: "bold",
@@ -47,32 +47,21 @@ function GenerateComprobant({
                       }}
                     >
                       {" "}
-                      ------ Copia ------
+                      --------- REIMPRESIÓN ---------
                     </span>
-                  </p>
-                )}
-                {/* Si es original se muestra */}
-                {!esReimpresion && (
-                  <p className="m-0 p-0" style={{ textAlign: "center" }}>
-                    <span
-                      style={{
-                        fontWeight: "bold",
-                        fontStyle: "italic",
-                      }}
-                    >
-                      {" "}
-                      ------ Original ------
-                    </span>
-                  </p>
-                )}
-                <p className="m-0 p-0">=======================</p>
+                  )}
+                </div>
+
+                <p className="m-0 p-0">
+                  <span style={{ fontWeight: "bold" }}>Id de Pago: </span>
+                  {paymentData.pid}
+                </p>
                 <p
                   style={{ textAlign: "center", fontWeight: "bold" }}
-                  className="m-0 p-0"
+                  className="my-1 mx-0 border-top border-bottom border-black"
                 >
-                  ==== DATOS DEL CAJERO ====
+                  DATOS DEL CAJERO
                 </p>
-                <p className="m-0 p-0">=======================</p>
                 <p className="m-0 p-0">
                   {" "}
                   <span style={{ fontWeight: "bold" }}>Oficina: </span>
@@ -96,14 +85,12 @@ function GenerateComprobant({
                   <span style={{ fontWeight: "bold" }}>Fecha Pago: </span>
                   {paymentData.date} | {paymentData.time}
                 </p>
-                <p className="m-0 p-0">=======================</p>
                 <p
                   style={{ textAlign: "center", fontWeight: "bold" }}
-                  className="m-0 p-0"
+                  className="my-1 mx-0  border-top border-bottom border-black"
                 >
-                  ==== DATOS DEL CLIENTE ====
+                  DATOS DEL CLIENTE
                 </p>
-                <p className="m-0 p-0">=======================</p>
                 <p className="m-0 p-0">
                   <span style={{ fontWeight: "bold" }}>Cliente: </span>
                   {cliente.name}
@@ -116,22 +103,40 @@ function GenerateComprobant({
                   <span style={{ fontWeight: "bold" }}>Dirección: </span>
                   {direccion}
                 </p>
-
-                <p className="m-0 p-0">=======================</p>
                 <p
                   style={{ textAlign: "center", fontWeight: "bold" }}
-                  className="m-0 p-0"
+                  className="my-1 mx-0 p-0 border-top border-bottom border-black"
                 >
-                  ==== DETALLES DE PAGO ====
+                  DETALLES DE PAGO
                 </p>
-                <p className="m-0 p-0">=======================</p>
                 <p className="m-0 p-0">
                   <span style={{ fontWeight: "bold" }}>Monto: </span>
                   {parseFloat(paymentData.amount).toFixed(2)}$ USD
                 </p>
-                <p className="m-0 p-0">
-                  <span style={{ fontWeight: "bold" }}>Id de Pago: </span>
-                  {paymentData.pid}
+                <hr className="mt-2 mb-0 py-0 opacity-100" />
+                <p className="mt-2 p-0" style={{ textAlign: "center" }}>
+                  <span style={{ fontWeight: "bold" }}>
+                    Descargue sus facturas de nuestra página web{" "}
+                  </span>
+                </p>
+                <p className=" p-0 border mt-0" style={{ textAlign: "center" }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "center",
+                      alignItems: "center",
+                    }}
+                  >
+                    <img
+                      style={{ height: "25px" }}
+                      src={sparkPayLogo}
+                      alt="SparkPay Logo"
+                      className="img-fluid  mt-1 "
+                    />
+                  </div>
+                  <span style={{ fontWeight: "bold" }}>
+                    * * * SPARK-PAY * * *
+                  </span>
                 </p>
               </div>
             </div>

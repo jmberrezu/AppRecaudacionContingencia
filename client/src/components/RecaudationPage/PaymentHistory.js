@@ -9,6 +9,7 @@ import {
   Tab,
   Nav,
   Col,
+  Button,
 } from "react-bootstrap";
 import { CaretUpFill, CaretDownFill } from "react-bootstrap-icons";
 import { useNavigate } from "react-router-dom";
@@ -24,6 +25,9 @@ function PaymentHistory({ user }) {
   const [sortBy, setSortBy] = useState("Fecha");
   const [sortDirection, setSortDirection] = useState("asc");
   const [groupedPayments, setGroupedPayments] = useState({});
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filteredPayments, setFilteredPayments] = useState([]);
+  const [isSearching, setIsSearching] = useState(false);
 
   // Obtener el token del local storage
   useEffect(() => {
@@ -56,6 +60,44 @@ function PaymentHistory({ user }) {
     }
   }, [navigate]);
 
+  useEffect(() => {
+    const filtered = payments.filter((payment) => {
+      const searchValue = searchQuery.toLowerCase();
+      return (
+        payment.payercontractaccountid.toLowerCase().includes(searchValue) ||
+        payment.paymenttransactionid
+          .toString()
+          .toLowerCase()
+          .includes(searchValue)
+      );
+    });
+
+    setFilteredPayments(filtered);
+    setIsSearching(searchQuery.length > 0);
+  }, [searchQuery, payments]);
+
+  //Busca cliente por cuenta contrato
+  const buscarCliente = useCallback(
+    async (cuentaContrato) => {
+      try {
+        const response = await fetch(
+          `http://localhost:5000/api/paymentRoutes/buscar-cliente/${cuentaContrato}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+        if (response.ok) {
+          return await response.json();
+        }
+      } catch (error) {
+        console.error(error);
+      }
+    },
+    [token]
+  );
+
   // Función para obtener la lista de pagos
   const fetchPayments = useCallback(async () => {
     if (user.idcashpoint) {
@@ -82,26 +124,7 @@ function PaymentHistory({ user }) {
         console.error(error);
       }
     }
-  }, [token, user.idcashpoint]);
-
-  //Busca cliente por cuenta contrato
-  const buscarCliente = async (cuentaContrato) => {
-    try {
-      const response = await fetch(
-        `http://localhost:5000/api/paymentRoutes/buscar-cliente/${cuentaContrato}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-      if (response.ok) {
-        return await response.json();
-      }
-    } catch (error) {
-      console.error(error);
-    }
-  };
+  }, [token, user.idcashpoint, buscarCliente]);
 
   // Funcion para obtener la lista de pagos anulados
   const fetchReversePayments = useCallback(async () => {
@@ -246,6 +269,45 @@ function PaymentHistory({ user }) {
     toggleSortDirection();
   };
 
+  const handleExportClick = async () => {
+    try {
+      // Realizar una solicitud GET para descargar el archivo CSV
+      const response = await axios.get(
+        `http://localhost:5000/api/paymentRoutes/exportar-pagos/${user.idcashpoint}`,
+        {
+          responseType: "blob", // Solicitar una respuesta en formato binario
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      // Crear una URL para el archivo descargado
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+
+      // Crear un enlace para descargar el archivo
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute(
+        "download",
+        `Pagos-${new Date()
+          .toLocaleString()
+          .replace(/[/:]/g, "-")
+          .replace(/,/g, "")
+          .replace(/ /g, "-")}.csv`
+      );
+
+      // Hacer clic en el enlace para iniciar la descarga
+      link.click();
+
+      // Liberar la URL del objeto creado
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Error al exportar pagos:", error);
+    }
+  };
+
+  // Obtener el monto total de los pagos anulados
   const totalReversePaymentsAmount = reversePayments.reduce(
     (acc, payment) => acc + parseFloat(payment.paymentamountcurrencycode),
     0
@@ -260,125 +322,207 @@ function PaymentHistory({ user }) {
               <Nav.Item onClick={fetchPayments}>
                 <Nav.Link eventKey="pagos">Pagos</Nav.Link>
               </Nav.Item>
-              {/* Llamo a  fetchReversePayments(); */}
               <Nav.Item onClick={fetchReversePayments}>
                 <Nav.Link eventKey="anulados">Pagos Anulados</Nav.Link>
               </Nav.Item>
+              {user.role === "gerente" && (
+                <Nav.Item>
+                  <Nav.Link eventKey="exportar">Exportar Pagos</Nav.Link>
+                </Nav.Item>
+              )}
             </Nav>
           </Col>
         </Row>
         <Tab.Content>
+          <Tab.Pane eventKey="exportar">
+            <h2>Exportar Pagos</h2>
+            <hr />
+            <Button
+              onClick={() => {
+                handleExportClick();
+              }}
+              variant="outline-success"
+            >
+              Exportar Pagos
+            </Button>
+          </Tab.Pane>
           <Tab.Pane eventKey="pagos">
-            <Row className="mb-3">
-              <Col>
-                <DropdownButton
-                  id="dropdown-basic-button"
-                  variant="outline-dark"
-                  title={`Ordenar por ${sortBy} ${
-                    sortDirection === "asc" ? "(ascendente)" : "(descendente)"
-                  }`}
-                >
-                  <Dropdown.Item onClick={() => handleSortBy("Fecha")}>
-                    Fecha
-                    {sortBy === "Fecha" && sortDirection === "asc" && (
-                      <CaretUpFill className="ms-2" />
-                    )}
-                    {sortBy === "Fecha" && sortDirection === "desc" && (
-                      <CaretDownFill className="ms-2" />
-                    )}
-                  </Dropdown.Item>
-                  <Dropdown.Item onClick={() => handleSortBy("Caja")}>
-                    Caja
-                    {sortBy === "Caja" && sortDirection === "asc" && (
-                      <CaretUpFill className="ms-2" />
-                    )}
-                    {sortBy === "Caja" && sortDirection === "desc" && (
-                      <CaretDownFill className="ms-2" />
-                    )}
-                  </Dropdown.Item>
-                  <Dropdown.Item onClick={() => handleSortBy("Usuario")}>
-                    Usuario
-                    {sortBy === "Usuario" && sortDirection === "asc" && (
-                      <CaretUpFill className="ms-2" />
-                    )}
-                    {sortBy === "Usuario" && sortDirection === "desc" && (
-                      <CaretDownFill className="ms-2" />
-                    )}
-                  </Dropdown.Item>
-                </DropdownButton>
-              </Col>
-            </Row>
-            <div style={{ height: "69vh", overflowY: "auto" }}>
-              {Object.entries(groupedPayments).map(
-                ([group, { payments, totalAmount }]) => (
-                  <div key={group}>
-                    <div className="row g-0">
-                      <div className="col-sm-8">
-                        <h5>
-                          <strong>Grupo: </strong>
-                          {group}
-                        </h5>
+            <div className="mb-3 input-group input-group-lg justify-content-center">
+              <input
+                type="text"
+                className="form-control"
+                style={{ maxWidth: "50%" }}
+                placeholder="Buscar por cuenta contrato o ID de pago"
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                }}
+              />
+            </div>
+            <div className="pe-3" style={{ height: "67vh", overflowY: "auto" }}>
+              <Row className="mb-3">
+                <Col>
+                  {!isSearching && ( // Condición para mostrar el dropdown de ordenación
+                    <DropdownButton
+                      id="dropdown-basic-button"
+                      variant="outline-dark"
+                      title={`Ordenar por ${sortBy} ${
+                        sortDirection === "asc"
+                          ? "(ascendente)"
+                          : "(descendente)"
+                      }`}
+                    >
+                      <Dropdown.Item onClick={() => handleSortBy("Fecha")}>
+                        Fecha
+                        {sortBy === "Fecha" && sortDirection === "asc" && (
+                          <CaretUpFill className="ms-2" />
+                        )}
+                        {sortBy === "Fecha" && sortDirection === "desc" && (
+                          <CaretDownFill className="ms-2" />
+                        )}
+                      </Dropdown.Item>
+                      <Dropdown.Item onClick={() => handleSortBy("Caja")}>
+                        Caja
+                        {sortBy === "Caja" && sortDirection === "asc" && (
+                          <CaretUpFill className="ms-2" />
+                        )}
+                        {sortBy === "Caja" && sortDirection === "desc" && (
+                          <CaretDownFill className="ms-2" />
+                        )}
+                      </Dropdown.Item>
+                      <Dropdown.Item onClick={() => handleSortBy("Usuario")}>
+                        Usuario
+                        {sortBy === "Usuario" && sortDirection === "asc" && (
+                          <CaretUpFill className="ms-2" />
+                        )}
+                        {sortBy === "Usuario" && sortDirection === "desc" && (
+                          <CaretDownFill className="ms-2" />
+                        )}
+                      </Dropdown.Item>
+                    </DropdownButton>
+                  )}
+                </Col>
+              </Row>
+              {isSearching ? (
+                // Mostrar los pagos filtrados por búsqueda
+                <Table striped bordered responsive>
+                  <thead>
+                    <tr>
+                      <th>PID</th>
+                      <th>Cuenta Contrato</th>
+                      <th>Fecha</th>
+                      <th>Hora</th>
+                      <th>Monto</th>
+                      <th>Caja</th>
+                      <th>Usuario</th>
+                      <th>Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredPayments.map((payment) => (
+                      <tr key={payment.paymenttransactionid}>
+                        <td>{payment.paymenttransactionid}</td>
+                        <td>{payment.payercontractaccountid}</td>
+                        <td>{formatDate(payment.valuedate)}</td>
+                        <td>{formatTime(payment.valuedate)}</td>
+                        <td>{"$" + payment.paymentamountcurrencycode}</td>
+                        <td>{payment.virtualcashpointname}</td>
+                        <td>{payment.username}</td>
+                        <td>
+                          <GenerateComprobant
+                            user={user}
+                            paymentData={{
+                              pid: payment.paymenttransactionid,
+                              date: formatDate(payment.valuedate),
+                              time: formatTime2(payment.valuedate),
+                              amount: payment.paymentamountcurrencycode,
+                            }}
+                            direccion={payment.cliente.address}
+                            cuentaContrato={payment.payercontractaccountid}
+                            cliente={payment.cliente}
+                            esReimpresion={true}
+                            onCloseModal={fetchPayments}
+                          />
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </Table>
+              ) : (
+                // Mostrar los pagos agrupados por grupo
+                Object.entries(groupedPayments).map(
+                  ([group, { payments, totalAmount }]) => (
+                    <div key={group}>
+                      <div className="row g-0">
+                        <div className="col-sm-8">
+                          <h5>
+                            <strong>Grupo: </strong>
+                            {group}
+                          </h5>
+                        </div>
+                        <div className="col-sm-4 text-end ">
+                          Monto Total del Grupo:{" "}
+                          <strong className="text-primary">
+                            {"$" + totalAmount.toFixed(2)}
+                          </strong>
+                        </div>
                       </div>
-                      <div className="col-sm-4 text-end ">
-                        Monto Total del Grupo:{" "}
-                        <strong className="text-primary">
-                          {"$" + totalAmount.toFixed(2)}
-                        </strong>
-                      </div>
+                      <Table striped bordered responsive>
+                        <thead>
+                          <tr>
+                            <th>PID</th>
+                            <th>Cuenta Contrato</th>
+                            <th>Fecha</th>
+                            <th>Hora</th>
+                            <th>Monto</th>
+                            <th>Caja</th>
+                            <th>Usuario</th>
+                            <th>Acciones</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {sortedPayments
+                            .filter(
+                              (payment) =>
+                                payment.cashpointpaymentgroupreferenceid ===
+                                group
+                            )
+                            .map((payment) => (
+                              <tr key={payment.paymenttransactionid}>
+                                <td>{payment.paymenttransactionid}</td>
+                                <td>{payment.payercontractaccountid}</td>
+                                <td>{formatDate(payment.valuedate)}</td>
+                                <td>{formatTime(payment.valuedate)}</td>
+                                <td>
+                                  {"$" + payment.paymentamountcurrencycode}
+                                </td>
+                                <td>{payment.virtualcashpointname}</td>
+                                <td>{payment.username}</td>
+                                <td>
+                                  <GenerateComprobant
+                                    user={user}
+                                    paymentData={{
+                                      pid: payment.paymenttransactionid,
+                                      date: formatDate(payment.valuedate),
+                                      time: formatTime2(payment.valuedate),
+                                      amount: payment.paymentamountcurrencycode,
+                                    }}
+                                    direccion={payment.cliente.address}
+                                    cuentaContrato={
+                                      payment.payercontractaccountid
+                                    }
+                                    cliente={payment.cliente}
+                                    esReimpresion={true}
+                                    onCloseModal={fetchPayments}
+                                  />
+                                </td>
+                              </tr>
+                            ))}
+                        </tbody>
+                      </Table>
+                      <hr />
                     </div>
-                    <Table striped bordered responsive>
-                      <thead>
-                        <tr>
-                          <th>PID</th>
-                          <th>Cuenta Contrato</th>
-                          <th>Fecha</th>
-                          <th>Hora</th>
-                          <th>Monto</th>
-                          <th>Caja</th>
-                          <th>Usuario</th>
-                          <th>Acciones</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {sortedPayments
-                          .filter(
-                            (payment) =>
-                              payment.cashpointpaymentgroupreferenceid === group
-                          )
-                          .map((payment) => (
-                            <tr key={payment.paymenttransactionid}>
-                              <td>{payment.paymenttransactionid}</td>
-                              <td>{payment.payercontractaccountid}</td>
-                              <td>{formatDate(payment.valuedate)}</td>
-                              <td>{formatTime(payment.valuedate)}</td>
-                              <td>{"$" + payment.paymentamountcurrencycode}</td>
-                              <td>{payment.virtualcashpointname}</td>
-                              <td>{payment.username}</td>
-                              <td>
-                                <GenerateComprobant
-                                  user={user}
-                                  // Envio los datos del pago con diferentes nombres
-                                  paymentData={{
-                                    pid: payment.paymenttransactionid,
-                                    date: formatDate(payment.valuedate),
-                                    time: formatTime2(payment.valuedate),
-                                    amount: payment.paymentamountcurrencycode,
-                                  }}
-                                  direccion={payment.cliente.address}
-                                  cuentaContrato={
-                                    payment.payercontractaccountid
-                                  }
-                                  cliente={payment.cliente}
-                                  esReimpresion={true}
-                                  onCloseModal={fetchPayments}
-                                />
-                              </td>
-                            </tr>
-                          ))}
-                      </tbody>
-                    </Table>
-                    <hr />
-                  </div>
+                  )
                 )
               )}
             </div>

@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const db = require("../db");
 const verifyToken = require("../services/verifyToken");
+const fs = require("fs");
 
 // Función para generar un ID único de transacción de pago
 function generatePaymentTransactionID(
@@ -595,6 +596,131 @@ router.get("/pagosAnulados/:idcashPoint", verifyToken, async (req, res) => {
     }
 
     res.status(200).json(reversePayments);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Error en el servidor" });
+  }
+});
+
+// Ruta protegida: Exportar los pagos y envia como respuesta un archivo csv
+router.get("/exportar-pagos/:idcashPoint", verifyToken, async (req, res) => {
+  // Si el usuario no es gerente no puede exportar los pagos
+  if (req.user.role !== "gerente") {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+
+  const idcashPoint = req.params.idcashPoint;
+
+  // Si no se ha proporcionado un idcashPoint
+  if (!idcashPoint) {
+    return res.status(400).json({ message: "No idcashPoint entered" });
+  } else {
+    // Si el idCashPoint no es el mismo que el del usuario
+    if (idcashPoint !== req.user.idcashpoint) {
+      return res.status(400).json({ message: "Invalid idcashPoint" });
+    }
+  }
+
+  try {
+    // Obtener los pagos de la caja y de los grupos cerrados
+    const payments = await db.any(
+      `
+      SELECT
+        Payment.*,
+        VirtualCashPoint.idVirtualCashPoint,
+        VirtualCashPoint.name AS virtualCashPointName,
+        "User".username
+      FROM Payment
+      INNER JOIN VirtualCashPoint ON Payment.idGlobalVirtualCashPoint = VirtualCashPoint.idGlobalVirtualCashPoint
+      INNER JOIN "User" ON Payment.idGlobalUser = "User".idGlobalUser
+      WHERE Payment.idCashPoint=$1;
+    `,
+      [idcashPoint]
+    );
+
+    // Agrego el la deuda actual del cliente y la direccion
+    for (let i = 0; i < payments.length; i++) {
+      const client = await db.oneOrNone(
+        `
+      SELECT debt, address, parroquia, isdisconnected
+      FROM Client
+      WHERE PayerContractAccountID = $1;
+    `,
+        [payments[i].payercontractaccountid]
+      );
+
+      payments[i].debt = client.debt;
+      payments[i].address = client.address;
+      payments[i].parroquia = client.parroquia;
+      payments[i].isdisconnected = client.isdisconnected;
+    }
+
+    // Crear un archivo CSV en memoria
+    const csvData = [
+      // Titulos
+      [
+        "Cuenta_Contrato",
+        "Saldo_Actual",
+        "Direccion",
+        "Parroquia",
+        "Esta_Desconectado",
+        "ID_Pago",
+        "Fecha_Hora",
+        "Monto",
+        "ID_Cajero",
+        "Cajero",
+        "ID_Caja",
+        "ID_Grupo",
+        "ID_CajaVirtual",
+        "Nombre_CajaVirtual",
+      ],
+      // Datos
+      ...payments.map((payment) => [
+        payment.payercontractaccountid,
+        payment.debt,
+        payment.address,
+        payment.parroquia,
+        payment.isdisconnected,
+        payment.paymenttransactionid,
+        payment.valuedate.toISOString(),
+        payment.paymentamountcurrencycode,
+        payment.idglobaluser,
+        payment.username,
+        payment.idcashpoint,
+        payment.cashpointpaymentgroupreferenceid,
+        payment.idvirtualcashpoint,
+        payment.virtualcashpointname,
+      ]),
+    ];
+
+    // Convertir los datos CSV en una cadena CSV
+    const csvString = csvData.map((row) => row.join(";")).join("\n");
+
+    const fileName = `Pagos-${new Date()
+      .toLocaleString()
+      .replace(/[\/:]/g, "-")
+      .replace(/,/g, "")
+      .replace(/ /g, "-")}.csv`;
+
+    // Escribir la cadena CSV en un archivo temporal
+    fs.writeFileSync(fileName, csvString);
+
+    // Configurar las cabeceras de la respuesta para indicar que se enviará un archivo CSV
+    res.setHeader("Content-Disposition", `attachment; filename="${fileName}"`);
+    res.setHeader("Content-Type", "text/csv");
+
+    // Enviar el archivo CSV como respuesta
+    fs.createReadStream(fileName).pipe(res);
+
+    // Escuchar el evento 'finish' en la respuesta
+    res.on("finish", () => {
+      // Eliminar el archivo después de que se ha enviado
+      fs.unlink(fileName, (err) => {
+        if (err) {
+          console.error("Error al eliminar el archivo:", err);
+        }
+      });
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Error en el servidor" });

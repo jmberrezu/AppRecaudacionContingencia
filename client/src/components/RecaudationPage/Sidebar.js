@@ -42,7 +42,7 @@ function Sidebar({ user, handleLogout, setActiveComponent, activeComponent }) {
         console.error(error);
       }
     }
-  }, [token, user]);
+  }, [token, user, isGerente]);
 
   // Obtengo el grupo de pago
   useEffect(() => {

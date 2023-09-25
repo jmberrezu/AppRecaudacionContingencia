@@ -128,6 +128,7 @@ function Payment({ user }) {
       if (response.ok) {
         const responseData = await response.json();
         setPaymentData(responseData); // Almacenar los datos del pago
+        responseData.date = formatDate(responseData.date);
         setShowModal(true); // Abrir el modal
       } else {
         setAlertInfo({
@@ -170,6 +171,11 @@ function Payment({ user }) {
     // Asegurarse de que solo se ingresen números y máximo 2 dígitos
     const inputValue = e.target.value.replace(/[^\d]/g, "").slice(0, 2);
     setCentavos(inputValue);
+  };
+
+  const formatDate = (dateString) => {
+    const options = { year: "numeric", month: "numeric", day: "numeric" };
+    return new Date(dateString).toLocaleDateString(undefined, options);
   };
 
   return (
@@ -288,7 +294,13 @@ function Payment({ user }) {
         <Modal.Footer>
           <GenerateComprobant
             user={user}
-            paymentData={paymentData}
+            // Cuando envio paymentdata debo cambiar la fecha de yyyy-mm-dd a formato dd/mm/yyyy, solo si paymentdata existe
+            paymentData={
+              paymentData && {
+                ...paymentData,
+                date: paymentData.date.split("-").reverse().join("/"),
+              }
+            }
             direccion={direccion}
             cuentaContrato={cuentaContrato}
             cliente={cliente}
