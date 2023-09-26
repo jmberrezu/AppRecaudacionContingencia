@@ -459,9 +459,9 @@ router.post(
               // Inserta el registro en la tabla Client
               await transaction.query(
                 `
-            INSERT INTO Client (PayerContractAccountID, CUEN, name, address, debt, idcashpoint)
-            VALUES ($1, $2, $3, $4, $5, $6)
-            `,
+              INSERT INTO Client (PayerContractAccountID, CUEN, name, address, debt, idcashpoint, parroquia, isdisconnected)
+              VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+              `,
                 [
                   record.CUENTACONTRATO,
                   record.CUEN.substring(0, 10),
@@ -469,6 +469,8 @@ router.post(
                   record.DIRECCION,
                   parseFloat(record.DEUDA.replace(",", ".")),
                   idcashpoint,
+                  record.PARROQUIA,
+                  record.ESTADESCONECTADO,
                 ]
               );
             } catch (error) {
