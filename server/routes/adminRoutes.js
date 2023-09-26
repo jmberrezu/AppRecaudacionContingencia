@@ -5,7 +5,8 @@ const jwt = require("jsonwebtoken");
 const verifyToken = require("../services/verifyToken");
 const { hashPassword, checkPassword } = require("../services/hashpassword");
 const multer = require("multer");
-const parse = require("csv-parse");
+const { addActiveToken } = require("../services/verifyToken");
+const { deleteActiveToken } = require("../services/verifyToken");
 
 // Configura el almacenamiento para los archivos CSV
 const storage = multer.memoryStorage();
@@ -43,6 +44,9 @@ router.post("/", async (req, res) => {
       "admin_CTIC_2023!",
       { expiresIn: "3h" } // El token expira en 3 horas
     );
+
+    // Agregar el token al conjunto de tokens activos
+    addActiveToken(username, token);
 
     res.json({ token });
   }
@@ -492,5 +496,12 @@ router.post(
     }
   }
 );
+
+// Ruta para cerrar sesion
+router.delete("/new/logout", verifyToken, (req, res) => {
+  // Eliminar el token del conjunto de tokens activos
+  deleteActiveToken("admin");
+  res.json({ message: "Logout successful" });
+});
 
 module.exports = router;

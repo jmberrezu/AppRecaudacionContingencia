@@ -7,6 +7,8 @@ const { checkPassword } = require("../services/hashpassword");
 const axios = require("axios");
 const https = require("https");
 const xml2js = require("xml2js");
+const { addActiveToken } = require("../services/verifyToken");
+const { deleteActiveToken } = require("../services/verifyToken");
 
 // Ruta para iniciar sesión
 router.post("/", async (req, res) => {
@@ -44,6 +46,9 @@ router.post("/", async (req, res) => {
       "admin_CTIC_2023!",
       { expiresIn: "3h" } // El token expira en 3 horas
     );
+
+    // Agregar el token al conjunto de tokens activos
+    addActiveToken(user.idcashpoint, token);
 
     res.json({ token });
   }
@@ -453,5 +458,12 @@ router.get(
     }
   }
 );
+
+// Cerrar sesion
+router.delete("/logout", verifyToken, async (req, res) => {
+  // Eliminar el token del conjunto de tokens activos
+  deleteActiveToken(req.user.idcashpoint);
+  res.json({ message: "Logout successful" });
+});
 
 module.exports = router;

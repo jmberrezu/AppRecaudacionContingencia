@@ -17,6 +17,7 @@ function SupervisorView() {
 
   // Para obtener el usuario
   const [user, setUser] = useState(null);
+  const [token, setToken] = useState("");
 
   useEffect(() => {
     const storedToken = localStorage.getItem("token");
@@ -34,6 +35,8 @@ function SupervisorView() {
           } else {
             // Guardar el usuario
             setUser(response.data);
+            // Guardar el token
+            setToken(storedToken);
           }
         })
         .catch((error) => {
@@ -48,9 +51,16 @@ function SupervisorView() {
   }, [navigate]);
 
   // Cerrar sesión
-  const handleLogout = () => {
+  const handleLogout = async () => {
     // Limpiar el token y redirigir al inicio de sesión
     localStorage.removeItem("token");
+    try {
+      await axios.delete(`http://localhost:5000/api/supervisor/logout`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+    } catch (error) {
+      console.error(error);
+    }
     navigate("/supervisor");
   };
 

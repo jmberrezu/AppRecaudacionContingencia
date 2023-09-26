@@ -15,6 +15,7 @@ function Recaudation() {
   const [user, setUser] = useState(null);
   const [activeComponent, setActiveComponent] = useState("payment"); // Inicialmente muestra el componente Payment
   const [currentDateTime, setCurrentDateTime] = useState(new Date());
+  const [token, setToken] = useState("");
 
   // Para mostrar la fecha y hora actual
   useEffect(() => {
@@ -43,6 +44,8 @@ function Recaudation() {
           } else {
             // Guardar el usuario
             setUser(response.data);
+            // Guardar el token
+            setToken(storedToken);
           }
         })
         .catch((error) => {
@@ -57,9 +60,16 @@ function Recaudation() {
   }, [navigate]);
 
   // Cerrar sesión
-  const handleLogout = () => {
+  const handleLogout = async () => {
     // Limpiar el token y redirigir al inicio de sesión
     localStorage.removeItem("token");
+    try {
+      await axios.delete(`http://localhost:5000/api/login/logout`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+    } catch (error) {
+      console.error(error);
+    }
     navigate("/");
   };
 

@@ -262,9 +262,16 @@ function SupervisorCrud() {
   };
 
   // Cerrar sesión
-  const handleLogout = () => {
+  const handleLogout = async () => {
     // Limpiar el token y redirigir al inicio de sesión
     localStorage.removeItem("token");
+    try {
+      await axios.delete(`http://localhost:5000/api/admin/new/logout`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+    } catch (error) {
+      console.error(error);
+    }
     navigate("/admin");
   };
 

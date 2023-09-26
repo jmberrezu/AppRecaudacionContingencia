@@ -4,6 +4,8 @@ const db = require("../db");
 const jwt = require("jsonwebtoken");
 const verifyToken = require("../services/verifyToken");
 const { checkPassword } = require("../services/hashpassword");
+const { addActiveToken } = require("../services/verifyToken");
+const { deleteActiveToken } = require("../services/verifyToken");
 
 // Ruta para iniciar sesión
 router.post("/", async (req, res) => {
@@ -49,6 +51,9 @@ router.post("/", async (req, res) => {
         { expiresIn: "3h" } // El token expira en 3 horas
       );
 
+      // Agregar el token al conjunto de tokens activos
+      addActiveToken(user.idglobaluser, token);
+
       res.json({ token });
     }
   } catch (error) {
@@ -68,6 +73,13 @@ router.get("/verify", verifyToken, (req, res) => {
     idglobaluser: req.user.idglobaluser,
     idglobalvirtualcashpoint: req.user.idglobalvirtualcashpoint,
   });
+});
+
+// Cerrar sesión
+router.delete("/logout", verifyToken, (req, res) => {
+  // Eliminar el token del conjunto de tokens activos
+  deleteActiveToken(req.user.idglobaluser);
+  res.json({ message: "Logout successful" });
 });
 
 module.exports = router;
