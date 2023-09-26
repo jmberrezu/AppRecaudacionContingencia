@@ -7,6 +7,7 @@ import {
   PersonCircle,
   BoxSeam,
   HourglassBottom,
+  Printer,
 } from "react-bootstrap-icons";
 import sparkPayLogo from "../../images/logoM.svg";
 
@@ -87,6 +88,21 @@ function Sidebar({ user, handleLogout, setActiveComponent, activeComponent }) {
       </Nav>
 
       <div className="mt-auto">
+        <hr />
+        <Nav className="nav nav-pills flex-column mb-auto">
+          <Nav.Item>
+            <Link
+              to="#"
+              className={`nav-link ${
+                activeComponent === "impresion" ? "active" : "text-black"
+              } `}
+              onClick={() => setActiveComponent("impresion")}
+            >
+              <Printer size={16} className="align-middle mb-1 me-2" /> Mensaje
+              de Impresión
+            </Link>
+          </Nav.Item>
+        </Nav>
         <hr />{" "}
         {user ? (
           <Nav className="nav nav-pills flex-column mb-auto">

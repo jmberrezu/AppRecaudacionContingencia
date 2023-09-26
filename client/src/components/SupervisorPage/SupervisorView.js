@@ -8,6 +8,7 @@ import SendPrincipalService from "./SendPrincipalService";
 import Sidebar from "./Sidebar";
 import SentHistory from "./SentHistory";
 import { PersonGear } from "react-bootstrap-icons";
+import PrintMessage from "./PrintMessage";
 
 function SupervisorView() {
   // Para el token y la navegación
@@ -73,7 +74,7 @@ function SupervisorView() {
         activeComponent={activeComponent}
       />
       <Container fluid className="my-3">
-        <h1 className="text-primary">
+        <h1>
           <PersonGear className="align-middle mb-1 me-1"> </PersonGear> Página
           de Supervisor
         </h1>
@@ -92,6 +93,9 @@ function SupervisorView() {
         )}
         {activeComponent === "historialenvios" && (
           <SentHistory idcashpoint={user?.idcashpoint} />
+        )}
+        {activeComponent === "impresion" && (
+          <PrintMessage idcashpoint={user?.idcashpoint} />
         )}
       </Container>
     </div>

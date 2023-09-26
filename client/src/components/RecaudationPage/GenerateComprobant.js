@@ -1,7 +1,7 @@
-import React, { useRef } from "react";
+import React, { useRef, useCallback, useState, useEffect } from "react";
 import { useReactToPrint } from "react-to-print";
 import { Button } from "react-bootstrap";
-import sparkPayLogo from "../../images/logoM.svg"; // Ruta a tu imagen
+import sparkPayLogo from "../../images/logoM.svg";
 
 function GenerateComprobant({
   user,
@@ -14,10 +14,42 @@ function GenerateComprobant({
 }) {
   const conponentPDF = useRef();
 
+  // Para obtener el token
+  const token = localStorage.getItem("token");
+  const [message, setMessage] = useState("");
+
   const generatePDF = useReactToPrint({
     content: () => conponentPDF.current,
     documentTitle: "Comprobante_Pago_" + paymentData.pid,
   });
+
+  // Funcion para obtener el mensaje del servidor
+  const getMessage = useCallback(async () => {
+    if (user.idcashpoint)
+      try {
+        const response = await fetch(
+          `http://localhost:5000/api/supervisor/printmessage/${user.idcashpoint}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+        if (response.ok) {
+          const messageData = await response.json();
+          setMessage(messageData);
+        }
+      } catch (error) {
+        console.error(error);
+      }
+  }, [user.idcashpoint, token]);
+
+  // Obtener el mensaje del servidor
+  useEffect(() => {
+    if (!message) {
+      getMessage();
+    }
+  }, [message, getMessage]);
 
   return (
     <React.Fragment>
@@ -116,7 +148,9 @@ function GenerateComprobant({
                 <hr className="mt-2 mb-0 py-0 opacity-100" />
                 <p className="mt-2 p-0" style={{ textAlign: "center" }}>
                   <span style={{ fontWeight: "bold" }}>
-                    Descargue sus facturas de nuestra página web{" "}
+                    <span style={{ fontWeight: "bold" }}>
+                      {message ? message : "Mensaje de Impresión"}
+                    </span>
                   </span>
                 </p>
                 <p className=" p-0 border mt-0" style={{ textAlign: "center" }}>

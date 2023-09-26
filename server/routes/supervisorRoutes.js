@@ -459,6 +459,82 @@ router.get(
   }
 );
 
+// Ruta para obtener el mensaje
+router.get("/printmessage/:idcashpoint", verifyToken, async (req, res) => {
+  // Si el rol no es supervisor o gerente o cajero
+  if (
+    req.user.role !== "supervisor" &&
+    req.user.role !== "gerente" &&
+    req.user.role !== "cajero"
+  ) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+
+  const { idcashpoint } = req.params;
+
+  // Si el idcashPoint no se ha ingresado
+  if (!idcashpoint) {
+    return res.status(400).json({ message: "idcashPoint is required" });
+  }
+
+  try {
+    const results = await db.one(
+      `SELECT printermessage FROM supervisor WHERE idCashPoint = $1`,
+      [idcashpoint]
+    );
+
+    // Si el mensaje esta vacio o es null retorno una cadena en blanco
+    if (!results.printermessage) {
+      return res.json({ printermessage: "" });
+    }
+
+    res.json(results.printermessage);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Error retrieving data" });
+  }
+});
+
+// Ruta para guardar el mensaje
+router.post("/printmessage/:idcashpoint", verifyToken, async (req, res) => {
+  // Si el rol no es supervisor
+  if (req.user.role !== "supervisor") {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+
+  const { idcashpoint } = req.params;
+  const { message } = req.body;
+
+  // Si el idcashPoint no se ha ingresado
+  if (!idcashpoint) {
+    return res.status(400).json({ message: "idcashPoint is required" });
+  }
+
+  // Si el mensaje no se ha ingresado
+  if (!message) {
+    return res.status(400).json({ message: "message is required" });
+  }
+
+  // Si el mensaje es de 0 o mayor a 100 caracteres
+  if (message.length === 0 || message.length > 100) {
+    return res
+      .status(400)
+      .json({ message: "Message must be between 1 and 100 characters" });
+  }
+
+  try {
+    await db.none(
+      `UPDATE supervisor SET printermessage = $1 WHERE idCashPoint = $2`,
+      [message, idcashpoint]
+    );
+
+    res.json({ message: "Printer message updated" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Error retrieving data" });
+  }
+});
+
 // Cerrar sesion
 router.delete("/logout", verifyToken, async (req, res) => {
   // Eliminar el token del conjunto de tokens activos
