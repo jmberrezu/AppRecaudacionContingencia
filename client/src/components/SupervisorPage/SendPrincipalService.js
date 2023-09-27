@@ -14,6 +14,14 @@ function SendPrincipalService({ idcashpoint, office }) {
   const [selectedCash, setSelectedCash] = useState(null);
   // Estado para mostrar alertas
   const [alertInfo, setAlertInfo] = useState(null);
+  // Estado para mostrar los pagos enviados y los que no
+  const [paymentsSent, setPaymentsSent] = useState(null);
+  const [paymentsNotSent, setPaymentsNotSent] = useState(null);
+  const [messageSent, setMessageSent] = useState(null); // Estado para mostrar el mensaje de pagos enviados
+  // Para el modal de pagos enviados y no enviados
+  const [modalPaymentsSent, setModalPaymentsSent] = useState(false);
+  // Para el pago duplicado
+  const [duplicatePayment, setDuplicatePayment] = useState(null);
 
   // Obtener el token del local storage
   useEffect(() => {
@@ -81,9 +89,36 @@ function SendPrincipalService({ idcashpoint, office }) {
     setSelectedCash(null); // Limpia la caja seleccionada al cerrar el modal
   };
 
+  const handleModalPaymentsSentClose = () => {
+    setModalPaymentsSent(false);
+  };
+
   const formatDate = (dateString) => {
     const options = { year: "numeric", month: "numeric", day: "numeric" };
     return new Date(dateString).toLocaleDateString(undefined, options);
+  };
+
+  const anular = () => {
+    console.log(token);
+    axios
+      .delete(
+        `http://localhost:5000/api/supervisor/reversepayment/${duplicatePayment.idcashpoint}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+          data: {
+            paymenttransactionid: duplicatePayment.paymenttransactionid,
+          },
+        }
+      )
+      .then((response) => {
+        if (response.status === 200) {
+          alert("Pago anulado correctamente");
+          handleModalPaymentsSentClose();
+        }
+      })
+      .catch((error) => {
+        console.error(error);
+      });
   };
 
   const enviar = (cash) => {
@@ -103,16 +138,23 @@ function SendPrincipalService({ idcashpoint, office }) {
       )
       .then((response) => {
         if (response.status === 200) {
-          setAlertInfo({
-            variant: "success",
-            message: "Caja enviada correctamente",
-          });
+          alert("Pago enviado correctamente");
           handleModalClose();
           fetchClosedCash();
         }
       })
       .catch((error) => {
-        if (error.response.status === 401) {
+        //Si el error es 409, es porque existe un pago duplicado
+        if (error.response.status === 409) {
+          // Muestra un modal con los pagos enviado y los que no
+          setPaymentsSent(error.response.data.paymentssent);
+          setPaymentsNotSent(error.response.data.paymentsnotsent);
+          setMessageSent(error.response.data.message);
+          setDuplicatePayment(error.response.data.duplicatepayment);
+
+          // Muestra el modal'
+          setModalPaymentsSent(true);
+        } else if (error.response.status === 401) {
           setAlertInfo({
             variant: "danger",
             message: "Usuario o contraseña incorrectos",
@@ -238,6 +280,103 @@ function SendPrincipalService({ idcashpoint, office }) {
           </Button>
           <Button variant="primary" onClick={() => enviar(selectedCash)}>
             Enviar
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      {/* Modal con los pagos enviado y los que no si existe el error*/}
+      <Modal
+        show={modalPaymentsSent}
+        onHide={handleModalPaymentsSentClose}
+        className="modal-xl"
+      >
+        <Modal.Header closeButton>
+          <Modal.Title className="text-danger">
+            Existe un pago duplicado
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <p>{messageSent}</p>
+          <p>
+            Pagos enviados:{" "}
+            {paymentsSent && (
+              <Table striped bordered responsive className="table-sm">
+                <thead>
+                  <tr>
+                    <th>Id Pago</th>
+                    <th>Fecha</th>
+                    <th>Monto</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {paymentsSent.map((payment) => (
+                    <tr key={payment.paymenttransactionid}>
+                      <td>{payment.paymenttransactionid}</td>
+                      <td>{formatDate(payment.valuedate)}</td>
+                      <td>
+                        {parseFloat(payment.paymentamountcurrencycode).toFixed(
+                          2
+                        )}{" "}
+                        $
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </Table>
+            )}
+          </p>
+          <p>
+            Pagos no enviados:{" "}
+            {paymentsNotSent && (
+              <Table striped bordered responsive className="table-sm">
+                <thead>
+                  <tr>
+                    <th>Id Pago</th>
+                    <th>Fecha</th>
+                    <th>Monto</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {paymentsNotSent.map((payment) => (
+                    <tr key={payment.paymenttransactionid}>
+                      <td>{payment.paymenttransactionid}</td>
+                      <td>{formatDate(payment.valuedate)}</td>
+                      <td>
+                        {parseFloat(payment.paymentamountcurrencycode).toFixed(
+                          2
+                        )}{" "}
+                        $
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </Table>
+            )}
+          </p>
+        </Modal.Body>
+        <Modal.Footer>
+          ¿Desea colocar el pago
+          {duplicatePayment && (
+            <span className="text-danger">
+              {" " +
+                duplicatePayment.paymenttransactionid +
+                " (" +
+                parseFloat(duplicatePayment.paymentamountcurrencycode).toFixed(
+                  2
+                ) +
+                "$)"}
+            </span>
+          )}
+          como enviado,en caso que ya ha sido recibido en SAP?
+          <Button
+            variant="danger"
+            onClick={handleModalPaymentsSentClose}
+            className="ms-3"
+          >
+            Cancelar
+          </Button>
+          <Button variant="success" onClick={() => anular()}>
+            Colocar
           </Button>
         </Modal.Footer>
       </Modal>

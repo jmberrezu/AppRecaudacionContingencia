@@ -73,9 +73,9 @@ function SentHistory({ idcashpoint }) {
   return (
     <div style={{ height: "81vh", overflowY: "auto" }}>
       <h3>Historial de Cajas Enviadas</h3>
-      {cashClose.map((cashClose) => (
-        <div key={cashClose.cashpointpaymentgroupreferenceid}>
-          <h5>Grupo: {cashClose.cashpointpaymentgroupreferenceid}</h5>
+      {cashClose.map((cashCloseItem) => (
+        <div key={cashCloseItem.cashpointpaymentgroupreferenceid}>
+          <h5>Grupo: {cashCloseItem.cashpointpaymentgroupreferenceid}</h5>
           <Table bordered responsive>
             <thead>
               <tr>
@@ -85,10 +85,10 @@ function SentHistory({ idcashpoint }) {
             </thead>
             <tbody>
               <tr>
-                <td>{formatDate(cashClose.valuedate)}</td>
+                <td>{formatDate(cashCloseItem.valuedate)}</td>
                 <td>
                   {"$" +
-                    parseFloat(cashClose.closingdoccumentamount).toFixed(2)}
+                    parseFloat(cashCloseItem.closingdoccumentamount).toFixed(2)}
                 </td>
               </tr>
               <tr>
@@ -102,8 +102,8 @@ function SentHistory({ idcashpoint }) {
                       </tr>
                     </thead>
                     <tbody>
-                      {cashClose.pagos.map((cashpointpayment) => (
-                        <tr>
+                      {cashCloseItem.pagos.map((cashpointpayment) => (
+                        <tr key={cashpointpayment.paymenttransactionid}>
                           <td>{cashpointpayment.paymenttransactionid}</td>
                           <td>{formatDate(cashpointpayment.valuedate)}</td>
                           <td>

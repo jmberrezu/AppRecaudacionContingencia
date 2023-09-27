@@ -157,6 +157,12 @@ async function sendPayment(payment, username, password, office) {
 
   try {
     const response = await axios.post(url, xmlData, axiosConfig);
+
+    // Si no existe respuesta
+    if (!response) {
+      throw new Error("No response");
+    }
+
     const responseData = response.data;
 
     // Parsear la respuesta SOAP
@@ -175,7 +181,7 @@ async function sendPayment(payment, username, password, office) {
       const errorText = faultDetail["text"][0];
       const errorId = faultDetail["id"][0];
 
-      // Aquí puedes manejar el error SOAP:Fault como lo desees
+      // Aquí puedes manejar el error SOAP:
       throw new Error(
         `SOAP:Fault - Severity: ${severity}, Error Text: ${errorText}, Error ID: ${errorId}`
       );
@@ -199,6 +205,11 @@ async function sendPayment(payment, username, password, office) {
     // Si no hay errores, devuelve los datos de respuesta exitosa
     return responseData;
   } catch (error) {
+    // Si el error contiene en error la cadena de texto "ya existe", significa que es duplicado
+    if (error.message.includes("ya existe")) {
+      //Envio un error con el codigo 409 y el mensaje de error.message, y el pago que se ha duplicado
+      throw { status: 409, message: error.message, duplicatepayment: payment };
+    }
     if (error.response && error.response.status === 401) {
       // El código de estado 401 indica que las credenciales son incorrectas
       throw new Error("Credenciales incorrectas");
@@ -302,6 +313,25 @@ router.post("/sendprincipal", verifyToken, async (req, res) => {
           );
         });
       } catch (error) {
+        // Si el error es 409, el pago es duplicado
+        if (error.status === 409) {
+          // Obtengo los pagos que si se han enviado, los que no
+          const paymentsSent = await db.query(
+            `SELECT * FROM PaymentSent WHERE idCashPoint = $1 AND CashPointPaymentGroupReferenceID = $2`,
+            [idcashpoint, cash.cashpointpaymentgroupreferenceid]
+          );
+          const paymentsNotSent = await db.query(
+            `SELECT * FROM Payment WHERE idCashPoint = $1 AND CashPointPaymentGroupReferenceID = $2`,
+            [idcashpoint, cash.cashpointpaymentgroupreferenceid]
+          );
+
+          return res.status(409).json({
+            message: error.message,
+            paymentssent: paymentsSent,
+            paymentsnotsent: paymentsNotSent,
+            duplicatepayment: error.duplicatepayment,
+          });
+        }
         // Si el error es 401, las credenciales son incorrectas
         if (error.message === "Credenciales incorrectas") {
           return res.status(401).json({ message: "Credenciales incorrectas" });
@@ -325,7 +355,7 @@ router.post("/sendprincipal", verifyToken, async (req, res) => {
   const ClosingDocumentAmount = cash.closingdoccumentamount;
   const ValueDate = cash.valuedate.split("T")[0];
 
-  // El XML que deseas enviar en la solicitud SOAP
+  // El XML  en la solicitud SOAP
   const xmlData = `
     <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
         xmlns:glob="http://sap.com/xi/SAPGlobal/Global">
@@ -368,6 +398,12 @@ router.post("/sendprincipal", verifyToken, async (req, res) => {
 
   try {
     const response = await axios.post(url, xmlData, axiosConfig);
+
+    // Si no existe respuesta
+    if (!response) {
+      throw new Error("No response");
+    }
+
     const responseData = response.data;
 
     // Parsear la respuesta SOAP
@@ -415,6 +451,57 @@ router.post("/sendprincipal", verifyToken, async (req, res) => {
     } else {
       res.status(500).json({ message: error.message });
     }
+  }
+});
+
+// Anular un pago si es duplicado
+router.delete("/reversepayment/:idcashpoint", verifyToken, async (req, res) => {
+  // Si el rol no es supervisor
+  if (req.user.role !== "supervisor") {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+
+  const { idcashpoint } = req.params;
+
+  // Si el idcashPoint no se ha ingresado
+  if (!idcashpoint) {
+    return res.status(400).json({ message: "idcashPoint is required" });
+  }
+
+  // Si el idcashPoint no coincide con el idcashPoint del usuario
+  if (idcashpoint !== req.user.idcashpoint) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+  const paymenttransactionid = req.body.paymenttransactionid;
+
+  // Si el paymenttransactionid no se ha ingresado
+  if (!paymenttransactionid) {
+    return res
+      .status(400)
+      .json({ message: "paymenttransactionid is required" });
+  }
+
+  try {
+    // Anulo el pago
+    await db.tx(async (transaction) => {
+      // Insertar en la tabla de paymentsent
+      await transaction.none(
+        `INSERT INTO PaymentSent (PaymentTransactionID, valueDate, paymentAmountCurrencyCode, PayerContractAccountID, CashPointPaymentGroupReferenceID, idCashPoint)
+          SELECT PaymentTransactionID, valueDate, paymentAmountCurrencyCode, PayerContractAccountID, CashPointPaymentGroupReferenceID, idCashPoint
+          FROM Payment WHERE paymenttransactionid = $1`,
+        [paymenttransactionid]
+      );
+
+      await transaction.none(
+        `DELETE FROM Payment WHERE paymenttransactionid = $1`,
+        [paymenttransactionid]
+      );
+    });
+
+    res.json({ message: "Payment reversed" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Error reversing payment" });
   }
 });
 
