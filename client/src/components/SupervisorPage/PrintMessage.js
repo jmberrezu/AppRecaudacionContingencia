@@ -95,12 +95,9 @@ function PrintMessage({ idcashpoint }) {
   // Obtener el mensaje del servidor
   useEffect(() => {
     if (token) {
-      // Si no hay mensaje
-      if (!message) {
-        getMessage();
-      }
+      getMessage();
     }
-  }, [getMessage, idcashpoint, token, message]);
+  }, [getMessage, idcashpoint, token]);
 
   return (
     // Aqui se deja al usuario modificar un mensaje que aparezca en los tickets impresos con un boton de guardar y usando bootstrap
@@ -117,7 +114,12 @@ function PrintMessage({ idcashpoint }) {
             const inputMessage = e.target.value;
             if (inputMessage.length <= 100) {
               setMessage(inputMessage);
-              setCharCount(inputMessage.length); // Actualiza el contador de caracteres
+              if (inputMessage === "") {
+                // Solo actualiza charCount si el mensaje no está vacío
+                setCharCount(0);
+              } else {
+                setCharCount(inputMessage.length); // Actualiza el contador de caracteres
+              }
             } else {
               // Truncar el mensaje a 100 caracteres si es más largo
               setMessage(inputMessage.slice(0, 100));

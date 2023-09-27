@@ -33,7 +33,7 @@ router.get("/:idcashPoint", verifyToken, async (req, res) => {
   try {
     // Obtener todos los usuarios de la caja
     const users = await db.any(
-      'SELECT "User".idglobaluser, "User".iduser, "User".username, "User".role, "User".idcashpoint, "User".idglobalvirtualcashpoint , VirtualCashPoint.idVirtualCashPoint, VirtualCashPoint.name AS virtualCashPointName FROM "User" ' +
+      'SELECT "User".idglobaluser, "User".isBlocked, "User".iduser, "User".username, "User".role, "User".idcashpoint, "User".idglobalvirtualcashpoint , VirtualCashPoint.idVirtualCashPoint, VirtualCashPoint.name AS virtualCashPointName FROM "User" ' +
         'INNER JOIN VirtualCashPoint ON "User".idGlobalVirtualCashPoint = VirtualCashPoint.idGlobalVirtualCashPoint ' +
         'WHERE "User".idCashPoint = $1',
       [idcashPoint]
@@ -318,6 +318,54 @@ router.put("/:id", verifyToken, async (req, res) => {
         res.json(updatedUser);
       }
     });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Bloquear o desbloquear un usuario
+router.put("/block/:id", verifyToken, async (req, res) => {
+  // Si el rol del usuario no es supervisor
+  if (req.user.role !== "supervisor") {
+    return res.status(401).json({ message: "Unauthorized User" });
+  }
+
+  const id = req.params.id;
+  const { isblocked } = req.body;
+
+  // Si el id no es un numero
+  if (isNaN(id)) {
+    return res.status(400).json({ message: "id must be a number" });
+  }
+  // Si el id no existe
+  const idResult = await db.oneOrNone(
+    'SELECT idGlobalUser FROM "User" WHERE idGlobalUser=$1',
+    [id]
+  );
+
+  if (!idResult) {
+    return res.status(400).json({ message: "id does not exist" });
+  }
+
+  // Si no se recibe el isBlocked
+  if (isblocked === undefined) {
+    return res.status(400).json({ message: "isBlocked required" });
+  } else {
+    // Si el isBlocked no es true o false
+    if (isblocked !== true && isblocked !== false) {
+      return res
+        .status(400)
+        .json({ message: "isBlocked must be true or false" });
+    }
+  }
+
+  try {
+    // Actualiza el usuario
+    const updatedUser = await db.one(
+      `UPDATE "User" SET isBlocked=$1 WHERE idGlobalUser=$2 RETURNING idGlobalUser, idUser, username, role, idCashPoint, idGlobalVirtualCashPoint`,
+      [isblocked, id]
+    );
+    res.json(updatedUser);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

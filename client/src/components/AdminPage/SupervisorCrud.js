@@ -343,6 +343,30 @@ function SupervisorCrud() {
     }
   };
 
+  // Función para bloquear o desbloquear un usuario
+  const handleBlockUser = async (idcashpoint, isblocked) => {
+    try {
+      await axios.put(
+        `http://localhost:5000/api/admin/block/${idcashpoint}`,
+        { isblocked },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      // Actualiza la lista de supervisores
+      setSupervisors((prevSupervisors) =>
+        prevSupervisors.map((supervisor) =>
+          supervisor.idcashpoint === idcashpoint
+            ? { ...supervisor, isblocked }
+            : supervisor
+        )
+      );
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
   return (
     <div>
       <Navbar className="bg-body-tertiary stick px-5" expand="sm" sticky="top">
@@ -387,6 +411,7 @@ function SupervisorCrud() {
               <th>Usuario</th>
               <th>Oficina</th>
               <th>Acciones</th>
+              <th>Bloqueado</th>
             </tr>
           </thead>
           <tbody>
@@ -427,6 +452,16 @@ function SupervisorCrud() {
                       Cargar Clientes
                     </Button>
                   </div>
+                </td>
+
+                <td>
+                  <Form.Check
+                    type="switch"
+                    checked={supervisor.isblocked}
+                    onChange={(e) =>
+                      handleBlockUser(supervisor.idcashpoint, e.target.checked)
+                    }
+                  />
                 </td>
               </tr>
             ))}

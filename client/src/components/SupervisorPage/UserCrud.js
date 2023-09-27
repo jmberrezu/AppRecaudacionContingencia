@@ -268,6 +268,32 @@ function UserCrud(idcashpoint) {
     }
   };
 
+  const handleBlockUser = async (userId, isblocked) => {
+    try {
+      await axios.put(
+        `http://localhost:5000/api/users/block/${userId}`,
+        { isblocked },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      // Actualizar el estado del usuario en la lista
+      setUsers((prevUsers) =>
+        prevUsers.map((user) =>
+          user.idglobaluser === userId ? { ...user, isblocked } : user
+        )
+      );
+    } catch (error) {
+      console.error(error);
+      setAlertInfo({
+        variant: "danger",
+        message: error.response.data.message,
+      });
+    }
+  };
+
   return (
     <Container>
       <h1>Administración de Usuarios</h1>
@@ -290,6 +316,7 @@ function UserCrud(idcashpoint) {
               <th>Rol</th>
               <th>Caja Virtual</th>
               <th>Acciones</th>
+              <th>Bloqueado</th>
             </tr>
           </thead>
           <tbody>
@@ -313,6 +340,15 @@ function UserCrud(idcashpoint) {
                     />
                     Editar
                   </Button>
+                </td>
+                <td>
+                  <Form.Check
+                    type="switch"
+                    checked={user.isblocked}
+                    onChange={(e) =>
+                      handleBlockUser(user.idglobaluser, e.target.checked)
+                    }
+                  />
                 </td>
               </tr>
             ))}

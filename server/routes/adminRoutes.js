@@ -342,6 +342,52 @@ router.delete("/:idCashPoint", verifyToken, async (req, res) => {
   }
 });
 
+// Ruta para bloquear o desbloquear un supervisor
+router.put("/block/:idCashPoint", verifyToken, async (req, res) => {
+  // Si el rol del usuario no es admin
+  if (req.user.role !== "admin") {
+    return res.status(401).json({ message: "Unauthorized User" });
+  }
+
+  const idCashPoint = req.params.idCashPoint;
+  const { isblocked } = req.body;
+
+  // Si no se recibe el idCashPoint
+  if (!idCashPoint) {
+    return res.status(400).json({ message: "idCashPoint required" });
+  } else {
+    // Si el idCashPoint no es de 16 o 21 caracteres
+    if (idCashPoint.length !== 16 && idCashPoint.length !== 21) {
+      return res
+
+        .status(400)
+        .json({ message: "idCashPoint must be 16 or 21 characters" });
+    }
+  }
+
+  // Si no se recibe el isBlocked
+  if (isblocked === undefined) {
+    return res.status(400).json({ message: "isBlocked required" });
+  } else {
+    // Si el isBlocked no es booleano
+    if (typeof isblocked !== "boolean") {
+      return res.status(400).json({ message: "isBlocked must be boolean" });
+    }
+  }
+
+  try {
+    // Actualiza el supervisor
+    const updatedSupervisor = await db.one(
+      `UPDATE Supervisor SET isBlocked=$1 WHERE idCashPoint=$2 RETURNING idCashPoint, "user", office, isBlocked`,
+      [isblocked, idCashPoint]
+    );
+
+    res.json(updatedSupervisor);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Ruta para cargar el archivo CSV
 router.post(
   "/upload-csv",

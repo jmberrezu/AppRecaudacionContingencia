@@ -39,6 +39,11 @@ function Login() {
           variant: "danger",
           message: "Usuario o Contraseña incorrecta.",
         });
+      } else if (error.response.status === 403) {
+        setAlertInfo({
+          variant: "danger",
+          message: "Cuenta bloqueada, contacte al supervisor.",
+        });
       } else {
         setAlertInfo({
           variant: "danger",

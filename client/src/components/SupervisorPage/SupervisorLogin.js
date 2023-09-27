@@ -44,6 +44,11 @@ function SupervisorLogin() {
           variant: "danger",
           message: "Usuario o Contraseña incorrecta.",
         });
+      } else if (error.response.status === 403) {
+        setAlertInfo({
+          variant: "danger",
+          message: "Cuenta bloqueada, contacte al administrador.",
+        });
       } else {
         setAlertInfo({
           variant: "danger",
