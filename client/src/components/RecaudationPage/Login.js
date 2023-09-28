@@ -91,8 +91,7 @@ function Login() {
         <h2 className="text-center mt-2 mb-3">Inicio de Sesión</h2>
         <h2 className="text-center mb-4">
           <strong className="text-primary">
-            <Person className="align-middle mb-1 me-1"> </Person> Cajero o
-            Gerente
+            -- <Person className="align-middle mb-1 me-1"> </Person> --
           </strong>
         </h2>
         {alertInfo && (
