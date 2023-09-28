@@ -27,7 +27,13 @@ function Login() {
         message: "Login correcto.",
       });
 
-      navigate("/recaudation"); // Redirigir a la página de UserCrud
+      // Si es un usuario, redirigir a la página de Recaudación
+      if (response.data.userType === "user") navigate("/recaudation");
+      // Si es un supervisor, redirigir a la página de Supervisor
+      else if (response.data.userType === "supervisor")
+        navigate("/supervisorview");
+      // Si es un administrador, redirigir a la página de Administrador
+      else if (response.data.userType === "admin") navigate("/supervisorcrud");
     } catch (error) {
       if (error.response.status === 400) {
         setAlertInfo({

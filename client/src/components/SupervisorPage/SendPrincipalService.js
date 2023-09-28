@@ -28,13 +28,13 @@ function SendPrincipalService({ idcashpoint, office }) {
     const storedToken = localStorage.getItem("token");
     if (storedToken) {
       axios
-        .get("http://localhost:5000/api/supervisor/verify", {
+        .get("http://localhost:5000/api/login/verify", {
           headers: { Authorization: `Bearer ${storedToken}` },
         })
         .then((response) => {
           // Verificar el rol de supervisor
           if (response.data.role !== "supervisor") {
-            navigate("/supervisor");
+            navigate("/");
           } else {
             // Guardar el token
             setToken(storedToken);

@@ -24,7 +24,7 @@ function SupervisorView() {
     const storedToken = localStorage.getItem("token");
     if (storedToken) {
       axios
-        .get("http://localhost:5000/api/supervisor/verify", {
+        .get("http://localhost:5000/api/login/verify", {
           headers: {
             Authorization: `Bearer ${storedToken}`,
           },
@@ -32,7 +32,7 @@ function SupervisorView() {
         .then((response) => {
           // Verificar el rol
           if (response.data.role !== "supervisor") {
-            navigate("/supervisor");
+            navigate("/");
           } else {
             // Guardar el usuario
             setUser(response.data);
@@ -43,11 +43,11 @@ function SupervisorView() {
         .catch((error) => {
           // Si el token no es válido, redirigir al inicio de sesión
           console.error("Error verifying token: ", error);
-          navigate("/supervisor");
+          navigate("/");
         });
     } else {
       // Si no hay token, redirigir al inicio de sesión
-      navigate("/supervisor");
+      navigate("/");
     }
   }, [navigate]);
 
@@ -56,13 +56,13 @@ function SupervisorView() {
     // Limpiar el token y redirigir al inicio de sesión
     localStorage.removeItem("token");
     try {
-      await axios.delete(`http://localhost:5000/api/supervisor/logout`, {
+      await axios.delete(`http://localhost:5000/api/login/logout`, {
         headers: { Authorization: `Bearer ${token}` },
       });
     } catch (error) {
       console.error(error);
     }
-    navigate("/supervisor");
+    navigate("/");
   };
 
   return (

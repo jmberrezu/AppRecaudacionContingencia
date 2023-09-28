@@ -26,7 +26,7 @@ function VirtualCashPointCrud(idcashpoint) {
     const storedToken = localStorage.getItem("token");
     if (storedToken) {
       axios
-        .get("http://localhost:5000/api/supervisor/verify", {
+        .get("http://localhost:5000/api/login/verify", {
           headers: {
             Authorization: `Bearer ${storedToken}`,
           },
@@ -34,7 +34,7 @@ function VirtualCashPointCrud(idcashpoint) {
         .then((response) => {
           // Verificar el rol
           if (response.data.role !== "supervisor") {
-            navigate("/supervisor");
+            navigate("/");
           } else {
             // Guardar el token
             setToken(storedToken);
@@ -43,11 +43,11 @@ function VirtualCashPointCrud(idcashpoint) {
         .catch((error) => {
           // Si el token no es válido, redirigir al inicio de sesión
           console.error("Error verifying token: ", error);
-          navigate("/supervisor");
+          navigate("/");
         });
     } else {
       // Si no hay token, redirigir al inicio de sesión
-      navigate("/supervisor");
+      navigate("/");
     }
   }, [navigate]);
 

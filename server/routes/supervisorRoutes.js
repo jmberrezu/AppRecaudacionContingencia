@@ -12,80 +12,6 @@ const { deleteActiveToken } = require("../services/verifyToken");
 
 const failedLoginAttempts = {}; // Objeto para rastrear los intentos fallidos de inicio de sesión por supervisor
 
-// Ruta para iniciar sesión
-router.post("/", async (req, res) => {
-  const { username, password } = req.body;
-
-  // Si no se ha proporcionado usuario o contraseña
-  if (!username || !password) {
-    return res.status(400).json({ message: "User and Password Required" });
-  }
-
-  // Busca usuario en la base de datos
-  const user = await db.oneOrNone(
-    'SELECT * FROM Supervisor WHERE "user" = $1',
-    [username]
-  );
-
-  if (!user) {
-    // Si el usuario no existe
-    return res.status(401).json({ message: "User Not Found." });
-  } else {
-    // Verificar si la cuenta esta bloqueada
-    if (user.isblocked) {
-      return res.status(403).json({ message: "Account is Blocked." });
-    }
-
-    // Si el password es incorrecto
-    if (!(await checkPassword(password, user.password))) {
-      // Si el usuario ha fallado el inicio de sesión 3 veces
-      failedLoginAttempts[username] = (failedLoginAttempts[username] || 0) + 1;
-
-      if (failedLoginAttempts[username] >= 3) {
-        // Bloquear la cuenta
-        await db.none(
-          'UPDATE Supervisor SET isBlocked = true WHERE "user" = $1',
-          [username]
-        );
-
-        return res.status(403).json({ message: "Account is Blocked." });
-      }
-
-      // Si la contraseña es incorrecta
-      return res.status(401).json({ message: "Incorrect Password" });
-    }
-
-    // Si el usuario ha iniciado sesión correctamente, restablecer el número de intentos fallidos
-    failedLoginAttempts[username] = 0;
-
-    const token = jwt.sign(
-      {
-        role: "supervisor",
-        idcashpoint: user.idcashpoint,
-        username: user.user,
-        office: user.office,
-      },
-      "admin_CTIC_2023!",
-      { expiresIn: "3h" } // El token expira en 3 horas
-    );
-
-    // Agregar el token al conjunto de tokens activos
-    addActiveToken(user.idcashpoint, token);
-
-    res.json({ token });
-  }
-});
-
-// Verificar si el token es válido y devuelve el rol del usuario, el username, la caja y la oficina
-router.get("/verify", verifyToken, (req, res) => {
-  res.json({
-    role: req.user.role,
-    idcashpoint: req.user.idcashpoint,
-    username: req.user.username,
-    office: req.user.office,
-  });
-});
-
 // Obtengo las cajas cerradas
 router.get("/closedcash/:idcashpoint", verifyToken, async (req, res) => {
   // Si el rol no es supervisor
@@ -645,10 +571,10 @@ router.post("/printmessage/:idcashpoint", verifyToken, async (req, res) => {
 });
 
 // Cerrar sesion
-router.delete("/logout", verifyToken, async (req, res) => {
-  // Eliminar el token del conjunto de tokens activos
-  deleteActiveToken(req.user.idcashpoint);
-  res.json({ message: "Logout successful" });
-});
+// router.delete("/logout", verifyToken, async (req, res) => {
+//   // Eliminar el token del conjunto de tokens activos
+//   deleteActiveToken(req.user.idcashpoint);
+//   res.json({ message: "Logout successful" });
+// });
 
 module.exports = router;

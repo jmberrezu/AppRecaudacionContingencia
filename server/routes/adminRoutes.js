@@ -12,51 +12,6 @@ const { deleteActiveToken } = require("../services/verifyToken");
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 
-// Ruta para iniciar sesión
-router.post("/", async (req, res) => {
-  const { username, password } = req.body;
-
-  // Si no se ha proporcionado usuario o contraseña
-  if (!username || !password) {
-    return res.status(400).json({ message: "User and Password Required" });
-  }
-
-  // Busca usuario en la base de datos
-  const user = await db.oneOrNone('SELECT * FROM Admin WHERE "user" = $1', [
-    username,
-  ]);
-
-  if (!user) {
-    // Si el usuario no existe
-    return res.status(401).json({ message: "User Not Found." });
-  } else {
-    // Si el usuario existe
-
-    // Si el password es incorrecto
-    if (!(await checkPassword(password, user.password))) {
-      return res.status(401).json({ message: "Incorrect Password" });
-    }
-
-    const token = jwt.sign(
-      {
-        role: "admin",
-      },
-      "admin_CTIC_2023!",
-      { expiresIn: "3h" } // El token expira en 3 horas
-    );
-
-    // Agregar el token al conjunto de tokens activos
-    addActiveToken(username, token);
-
-    res.json({ token });
-  }
-});
-
-// Verificar si el token es válido y devuelve el rol del usuario
-router.get("/verify", verifyToken, (req, res) => {
-  res.json({ role: req.user.role });
-});
-
 // Obtener todos los supervisores
 router.get("/", verifyToken, async (req, res) => {
   // Si el rol del usuario no es admin
@@ -546,10 +501,10 @@ router.post(
 );
 
 // Ruta para cerrar sesion
-router.delete("/new/logout", verifyToken, (req, res) => {
-  // Eliminar el token del conjunto de tokens activos
-  deleteActiveToken("admin");
-  res.json({ message: "Logout successful" });
-});
+// router.delete("/new/logout", verifyToken, (req, res) => {
+//   // Eliminar el token del conjunto de tokens activos
+//   deleteActiveToken("admin");
+//   res.json({ message: "Logout successful" });
+// });
 
 module.exports = router;

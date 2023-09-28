@@ -51,13 +51,13 @@ function SupervisorCrud() {
     const storedToken = localStorage.getItem("token");
     if (storedToken) {
       axios
-        .get("http://localhost:5000/api/admin/verify", {
+        .get("http://localhost:5000/api/login/verify", {
           headers: { Authorization: `Bearer ${storedToken}` },
         })
         .then((response) => {
           // Verificar el rol aquí
           if (response.data.role !== "admin") {
-            navigate("/admin");
+            navigate("/");
           } else {
             // Si el rol es admin, actualizar el estado del token
             setToken(storedToken);
@@ -66,10 +66,10 @@ function SupervisorCrud() {
         .catch((error) => {
           // Manejar errores de la petición
           console.error("Error verifying token:", error);
-          navigate("/admin");
+          navigate("/");
         });
     } else {
-      navigate("/admin");
+      navigate("/");
     }
   }, [navigate]);
 
@@ -266,13 +266,13 @@ function SupervisorCrud() {
     // Limpiar el token y redirigir al inicio de sesión
     localStorage.removeItem("token");
     try {
-      await axios.delete(`http://localhost:5000/api/admin/new/logout`, {
+      await axios.delete(`http://localhost:5000/api/login/logout`, {
         headers: { Authorization: `Bearer ${token}` },
       });
     } catch (error) {
       console.error(error);
     }
-    navigate("/admin");
+    navigate("/");
   };
 
   // Función para manejar la carga de un archivo CSV
