@@ -11,8 +11,6 @@ const { addActiveToken } = require("../services/verifyToken");
 const { deleteActiveToken } = require("../services/verifyToken");
 const e = require("express");
 
-const failedLoginAttempts = {}; // Objeto para rastrear los intentos fallidos de inicio de sesión por supervisor
-
 // Obtengo las cajas cerradas
 router.get("/closedcash/:idcashpoint", verifyToken, async (req, res) => {
   // Si el rol no es supervisor
@@ -46,7 +44,7 @@ router.get("/closedcash/:idcashpoint", verifyToken, async (req, res) => {
 });
 
 // Función para enviar pagos
-async function sendPayment(payment, username, password, office) {
+async function sendPayment(payment, username, password, office, supervisor) {
   // Definir los valores para las variables en el XML
   const ID = "ID-Ejemplo-CONTINGENCIA";
   const CreationDateTime = new Date().toISOString();
@@ -151,6 +149,18 @@ async function sendPayment(payment, username, password, office) {
       throw new Error(errorMessage);
     }
 
+    // Agregar una entrada en la tabla de bitácora ("log")
+    await db.none(
+      `INSERT INTO log (username, action, description, timestamp)
+      VALUES ($1, $2, $3, $4)`,
+      [
+        supervisor,
+        "Envío de pago",
+        `El supervsor ${supervisor}, con username ${username}, ha enviado el pago con el id ${payment.paymenttransactionid} y el valor de ${payment.paymentamountcurrencycode}.`,
+        new Date(),
+      ]
+    );
+
     // Si no hay errores, devuelve los datos de respuesta exitosa
     return responseData;
   } catch (error) {
@@ -233,7 +243,13 @@ router.post("/sendprincipal", verifyToken, async (req, res) => {
     // Envio el pago, agrego el registro Payment a la tabla PaymentSent y elimino el registro de la tabla Payment
     for (const payment of payments) {
       try {
-        await sendPayment(payment, username, password, office);
+        await sendPayment(
+          payment,
+          username,
+          password,
+          office,
+          req.user.username
+        );
 
         await db.tx(async (transaction) => {
           await transaction.none(
@@ -392,6 +408,19 @@ router.post("/sendprincipal", verifyToken, async (req, res) => {
         [cash.cashpointpaymentgroupreferenceid]
       );
     });
+
+    // Agregar una entrada en la tabla de bitácora ("log")
+    await db.none(
+      `INSERT INTO log (username, action, description, timestamp)
+      VALUES ($1, $2, $3, $4)`,
+      [
+        req.user.username,
+        "Envío de cierre",
+        `El supervsor ${req.user.username}, con username ${username}, ha enviado el cierre con el id ${cash.cashpointpaymentgroupreferenceid} y el valor de ${cash.closingdoccumentamount}.`,
+        new Date(),
+      ]
+    );
+
     res.json({ message: "Cash closing sent" });
   } catch (error) {
     if (error.response && error.response.status === 401) {
@@ -446,6 +475,18 @@ router.delete("/reversepayment/:idcashpoint", verifyToken, async (req, res) => {
         [paymenttransactionid]
       );
     });
+
+    // Agregar una entrada en la tabla de bitácora ("log")
+    await db.none(
+      `INSERT INTO log (username, action, description, timestamp)
+      VALUES ($1, $2, $3, $4)`,
+      [
+        req.user.username,
+        "Pasar pago",
+        `El supervsor ${req.user.username}, ha pasado el pago con el id ${paymenttransactionid}.`,
+        new Date(),
+      ]
+    );
 
     res.json({ message: "Payment reversed" });
   } catch (error) {

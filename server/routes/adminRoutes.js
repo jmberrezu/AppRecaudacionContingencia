@@ -97,6 +97,19 @@ router.post("/agregar", verifyToken, async (req, res) => {
               VALUES ($1, $2, $3, $4) RETURNING idCashPoint, "user"`,
         [idCashPoint, username, office, password]
       );
+
+      // Agregar una entrada en la tabla de bitácora ("log")
+      await transaction.none(
+        `INSERT INTO log (username, action, description, timestamp)
+            VALUES ($1, $2, $3, $4)`,
+        [
+          "admin",
+          "Agregar supervisor",
+          `Agregado supervisor ${username}, idCashPoint: ${idCashPoint}`,
+          new Date(),
+        ]
+      );
+
       res.json(newUser); // Devuelvo el usuario creado
     });
   } catch (error) {
@@ -189,6 +202,18 @@ router.put("/:idCashPoint", verifyToken, async (req, res) => {
           `UPDATE Supervisor SET "user"=$1, office=$3
           WHERE idCashPoint=$2 RETURNING idCashPoint, "user", office`,
           [username, idCashPoint, office]
+        );
+
+        // Agregar una entrada en la tabla de bitácora ("log")
+        await transaction.none(
+          `INSERT INTO log (username, action, description, timestamp)
+            VALUES ($1, $2, $3, $4)`,
+          [
+            "admin",
+            "Actualizar supervisor",
+            `Actualizado supervisor ${username}, idCashPoint: ${idCashPoint}`,
+            new Date(),
+          ]
         );
 
         // Devuelve la respuesta exitosa
@@ -289,6 +314,18 @@ router.delete("/:idCashPoint", verifyToken, async (req, res) => {
           await db.none("DELETE FROM Supervisor WHERE idCashPoint=$1", [
             idCashPoint,
           ]);
+
+          // Agregar una entrada en la tabla de bitácora ("log")
+          await transaction.none(
+            `INSERT INTO log (username, action, description, timestamp)
+            VALUES ($1, $2, $3, $4)`,
+            [
+              "admin",
+              "Eliminar supervisor",
+              `Eliminado supervisor ${supervisorToDelete.user}, idCashPoint: ${idCashPoint}`,
+              new Date(),
+            ]
+          );
           res.json({ message: "Supervisor eliminado exitosamente" });
       }
     });
@@ -335,6 +372,22 @@ router.put("/block/:idCashPoint", verifyToken, async (req, res) => {
     const updatedSupervisor = await db.one(
       `UPDATE Supervisor SET isBlocked=$1 WHERE idCashPoint=$2 RETURNING idCashPoint, "user", office, isBlocked`,
       [isblocked, idCashPoint]
+    );
+
+    // Agregar una entrada en la tabla de bitácora ("log")
+    await db.none(
+      `INSERT INTO log (username, action, description, timestamp)
+            VALUES ($1, $2, $3, $4)`,
+      [
+        "admin",
+        // Si el supervisor se bloquea
+        isblocked === true ? "Bloquear supervisor" : "Desbloquear supervisor",
+        // Si el supervisor se bloquea
+        isblocked === true
+          ? `Bloqueado supervisor ${updatedSupervisor.user}, idCashPoint: ${idCashPoint}`
+          : `Desbloqueado supervisor ${updatedSupervisor.user}, idCashPoint: ${idCashPoint}`,
+        new Date(),
+      ]
     );
 
     res.json(updatedSupervisor);
@@ -490,6 +543,18 @@ router.post(
           .status(500)
           .json({ error: "Error del CSV en la linea: " + flag + "." });
       } else {
+        // Agregar una entrada en la tabla de bitácora ("log")
+        await db.none(
+          `INSERT INTO log (username, action, description, timestamp)
+            VALUES ($1, $2, $3, $4)`,
+          [
+            "admin",
+            "Cargar archivo CSV",
+            `Cargado archivo CSV, idCashPoint: ${idcashpoint}`,
+            new Date(),
+          ]
+        );
+
         // No hubo errores, envía una respuesta de éxito
         res.status(200).json({ message: "Archivo CSV cargado exitosamente." });
       }

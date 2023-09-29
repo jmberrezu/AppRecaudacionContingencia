@@ -117,6 +117,17 @@ router.post("/", verifyToken, async (req, res) => {
         [idCashPoint, nextIdVirtualCashPoint]
       );
 
+      // Agregar una entrada en la tabla de bitácora ("log")
+      await transaction.none(
+        "INSERT INTO log (username, action, description, timestamp) VALUES ($1, $2, $3, $4)",
+        [
+          req.user.username,
+          "Agregar Cajero Virtual",
+          `El supervisor ${req.user.username} agregó el cajero virtual ${newVirtualCashPoint.idvirtualcashpoint} a la caja ${idCashPoint}`,
+          new Date(),
+        ]
+      );
+
       res.json(newVirtualCashPoint);
     });
   } catch (error) {
@@ -188,6 +199,18 @@ router.put("/:id", verifyToken, async (req, res) => {
         "UPDATE VirtualCashPoint SET name=$1, idCashPoint=$2 WHERE idGlobalVirtualCashPoint=$3 RETURNING *",
         [name, idCashPoint, id]
       );
+
+      // Agregar una entrada en la tabla de bitácora ("log")
+      await transaction.none(
+        "INSERT INTO log (username, action, description, timestamp) VALUES ($1, $2, $3, $4)",
+        [
+          req.user.username,
+          "Actualizar Cajero Virtual",
+          `El supervisor ${req.user.username} actualizó el cajero virtual ${updatedVirtualCashPoint.idvirtualcashpoint} de la caja ${idCashPoint}`,
+          new Date(),
+        ]
+      );
+
       res.json(updatedVirtualCashPoint);
     });
   } catch (error) {
@@ -266,6 +289,17 @@ router.delete("/:id", verifyToken, async (req, res) => {
           [idVirtualCashPointResult.idcashpoint]
         );
       }
+
+      // Agregar una entrada en la tabla de bitácora ("log")
+      await transaction.none(
+        "INSERT INTO log (username, action, description, timestamp) VALUES ($1, $2, $3, $4)",
+        [
+          req.user.username,
+          "Eliminar Cajero Virtual",
+          `El supervisor ${req.user.username} eliminó el cajero virtual ${idVirtualCashPointResult.idglobalvirtualcashpoint} de la caja ${idVirtualCashPointResult.idcashpoint}`,
+          new Date(),
+        ]
+      );
 
       res.json({ message: "Virtual Cashpoint deleted succesfully" });
     });

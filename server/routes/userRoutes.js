@@ -182,6 +182,17 @@ router.post("/", verifyToken, async (req, res) => {
         [idCashPoint, nextIdUser]
       );
 
+      // Agregar una entrada en la tabla de bitácora ("log")
+      await transaction.none(
+        "INSERT INTO log (username, action, description, timestamp) VALUES ($1, $2, $3, $4)",
+        [
+          req.user.username,
+          "Crear Usuario",
+          `El supervisor ${req.user.username}, de la caja ${req.user.idcashpoint}, ha creado el usuario ${username} con el rol ${role} en la caja virtual ${idGlobalVirtualCashPoint}`,
+          new Date(),
+        ]
+      );
+
       res.json(newUser);
     });
   } catch (error) {
@@ -315,6 +326,18 @@ router.put("/:id", verifyToken, async (req, res) => {
         WHERE idGlobalUser=$6 RETURNING idGlobalUser, idUser, username, role, idCashPoint, idGlobalVirtualCashPoint`,
           [username, password, role, idCashPoint, idGlobalVirtualCashPoint, id]
         );
+
+        // Agregar una entrada en la tabla de bitácora ("log")
+        await transaction.none(
+          "INSERT INTO log (username, action, description, timestamp) VALUES ($1, $2, $3, $4)",
+          [
+            req.user.username,
+            "Actualizar Usuario",
+            `El supervisor ${req.user.username}, de la caja ${req.user.idcashpoint}, ha actualizado el usuario ${username} con el rol ${role} en la caja virtual ${idGlobalVirtualCashPoint}`,
+            new Date(),
+          ]
+        );
+
         res.json(updatedUser);
       }
     });
@@ -365,6 +388,24 @@ router.put("/block/:id", verifyToken, async (req, res) => {
       `UPDATE "User" SET isBlocked=$1 WHERE idGlobalUser=$2 RETURNING idGlobalUser, idUser, username, role, idCashPoint, idGlobalVirtualCashPoint`,
       [isblocked, id]
     );
+
+    // Agregar una entrada en la tabla de bitácora ("log")
+    await db.none(
+      "INSERT INTO log (username, action, description, timestamp) VALUES ($1, $2, $3, $4)",
+      [
+        req.user.username,
+        isblocked ? "Bloquear Usuario" : "Desbloquear Usuario",
+        `El supervisor ${req.user.username}, de la caja ${
+          req.user.idcashpoint
+        }, ha ${isblocked ? "bloqueado" : "desbloqueado"} el usuario ${
+          updatedUser.username
+        } con el rol ${updatedUser.role} en la caja virtual ${
+          updatedUser.idglobalvirtualcashpoint
+        }`,
+        new Date(),
+      ]
+    );
+
     res.json(updatedUser);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -469,6 +510,17 @@ router.put("/changeVirtualCashPoint/:id", verifyToken, async (req, res) => {
       { expiresIn: "1h" }
     );
 
+    // Agregar una entrada en la tabla de bitácora ("log")
+    await db.none(
+      "INSERT INTO log (username, action, description, timestamp) VALUES ($1, $2, $3, $4)",
+      [
+        req.user.username,
+        "Cambiar Caja Virtual",
+        `El usuario ${req.user.username}, de la caja ${req.user.idcashpoint}, ha cambiado de la caja virtual ${req.user.idvirtualcashpoint} a la caja virtual ${updatedUser.idvirtualcashpoint}`,
+        new Date(),
+      ]
+    );
+
     res.json(token);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -537,6 +589,17 @@ router.delete("/:id", verifyToken, async (req, res) => {
             idResult.idcashpoint,
           ]);
         }
+
+        // Agregar una entrada en la tabla de bitácora ("log")
+        await transaction.none(
+          "INSERT INTO log (username, action, description, timestamp) VALUES ($1, $2, $3, $4)",
+          [
+            req.user.username,
+            "Eliminar Usuario",
+            `El supervisor ${req.user.username}, de la caja ${req.user.idcashpoint}, ha eliminado el usuario ${idResult.idglobaluser}`,
+            new Date(),
+          ]
+        );
 
         res.json({ message: "User deleted successfully" });
       }

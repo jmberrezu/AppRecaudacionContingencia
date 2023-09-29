@@ -123,6 +123,17 @@ router.post("/", async (req, res) => {
         { expiresIn: "3h" } // El token expira en 3 horas
       );
 
+      // Agregar una entrada en la tabla de bitácora ("log")
+      await db.none(
+        "INSERT INTO log (username, action, description, timestamp) VALUES ($1, $2, $3, $4)",
+        [
+          userfound[0].username,
+          "Inicio de Sesión",
+          `El usuario ${userfound[0].username}, de la caja ${userfound[0].idcashpoint}, con el rol de ${userfound[0].role}, ha iniciado sesión.`,
+          new Date().toISOString(),
+        ]
+      );
+
       // Agregar el token al conjunto de tokens activos
       addActiveToken(userfound[0].idglobaluser, token);
     } else if (userfound[1] === "supervisor") {
@@ -137,6 +148,17 @@ router.post("/", async (req, res) => {
         { expiresIn: "3h" } // El token expira en 3 horas
       );
 
+      // Agregar una entrada en la tabla de bitácora ("log")
+      await db.none(
+        "INSERT INTO log (username, action, description, timestamp) VALUES ($1, $2, $3, $4)",
+        [
+          userfound[0].user,
+          "Inicio de Sesión",
+          `El usuario ${userfound[0].user}, de la caja ${userfound[0].idcashpoint}, con el rol de ${userfound[0].role}, ha iniciado sesión.`,
+          new Date().toISOString(),
+        ]
+      );
+
       // Agregar el token al conjunto de tokens activos
       addActiveToken(userfound[0].idcashpoint, token);
     } else if (userfound[1] === "admin") {
@@ -146,6 +168,17 @@ router.post("/", async (req, res) => {
         },
         "admin_CTIC_2023!",
         { expiresIn: "3h" } // El token expira en 3 horas
+      );
+
+      // Agregar una entrada en la tabla de bitácora ("log")
+      await db.none(
+        "INSERT INTO log (username, action, description, timestamp) VALUES ($1, $2, $3, $4)",
+        [
+          "admin",
+          "Inicio de Sesión",
+          `El usuario admin, ha iniciado sesión.`,
+          new Date().toISOString(),
+        ]
       );
 
       // Agregar el token al conjunto de tokens activos

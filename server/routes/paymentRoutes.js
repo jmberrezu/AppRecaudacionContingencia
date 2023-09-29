@@ -720,6 +720,18 @@ router.get("/exportar-pagos/:idcashPoint", verifyToken, async (req, res) => {
     res.setHeader("Content-Disposition", `attachment; filename="${fileName}"`);
     res.setHeader("Content-Type", "text/csv");
 
+    // Agregar una entrada en la tabla de bitácora ("log")
+    await db.none(
+      `INSERT INTO log (username, action, description, timestamp)
+      VALUES ($1, $2, $3, $4)`,
+      [
+        req.user.username,
+        "Exportar Pagos",
+        `El usuario ${req.user.username}, ha exportado los pagos de la caja ${idcashPoint}.`,
+        new Date(),
+      ]
+    );
+
     // Enviar el archivo CSV como respuesta
     fs.createReadStream(fileName).pipe(res);
 
