@@ -63,12 +63,6 @@ function PrintMessage({ idcashpoint }) {
 
   // Funcion para enviar el mensaje al servidor
   const sendMessage = useCallback(async () => {
-    // Controlar que el mensaje no sea vacío o undefined
-    if (!message) {
-      alert("El mensaje no puede estar vacío");
-      return;
-    }
-
     if (idcashpoint) {
       try {
         const response = await fetch(
@@ -90,7 +84,7 @@ function PrintMessage({ idcashpoint }) {
         console.error(error);
       }
     }
-  }, [idcashpoint, message, token, getMessage]);
+  }, [idcashpoint, token, getMessage, message]);
 
   // Obtener el mensaje del servidor
   useEffect(() => {

@@ -537,6 +537,17 @@ router.get("/pagos/:idcashPoint", verifyToken, async (req, res) => {
         ).toFixed(2),
       }));
 
+    // Agrego informacion del cliente por cada pago
+    for (let i = 0; i < payments2.length; i++) {
+      const client = await db.oneOrNone(
+        `SELECT * FROM Client WHERE PayerContractAccountID = $1;`,
+
+        [payments2[i].payercontractaccountid]
+      );
+
+      payments2[i].cliente = client;
+    }
+
     res.json(payments2);
   } catch (error) {
     console.error(error);

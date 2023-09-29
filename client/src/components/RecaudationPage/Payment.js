@@ -1,5 +1,5 @@
 import axios from "axios";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Alert, Container, Form, Button, InputGroup } from "react-bootstrap";
 import { Cash, Search } from "react-bootstrap-icons";
 import Modal from "react-bootstrap/Modal";
@@ -19,6 +19,7 @@ function Payment({ user }) {
   const [direccion, setDireccion] = useState("");
   const [dolares, setDolares] = useState("");
   const [centavos, setCentavos] = useState("");
+  const [message, setMessage] = useState("");
 
   // Estado para mostrar alertas
   const [alertInfo, setAlertInfo] = useState(null);
@@ -52,6 +53,33 @@ function Payment({ user }) {
       navigate("/");
     }
   }, [navigate]);
+
+  // Funcion para obtener el mensaje del servidor
+  const getMessage = useCallback(async () => {
+    if (user)
+      try {
+        const response = await fetch(
+          `http://localhost:5000/api/supervisor/printmessage/${user.idcashpoint}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+        if (response.ok) {
+          const messageData = await response.json();
+          setMessage(messageData);
+        }
+      } catch (error) {
+        console.error(error);
+      }
+  }, [user, token]);
+
+  // Obtener el mensaje del servidor
+  useEffect(() => {
+    // Si exist un usuario o token puedo llamar a getMessage
+    if (user && token) getMessage();
+  }, [user, getMessage, token]);
 
   const buscarCliente = async (cuentaContrato) => {
     setAlertInfo(null);
@@ -265,7 +293,7 @@ function Payment({ user }) {
             <Modal.Body>
               {/* Mostrar los datos del pago */}
               {paymentData && (
-                <>
+                <div>
                   <p>
                     <strong>Fecha: </strong>
                     {paymentData.date}
@@ -286,7 +314,7 @@ function Payment({ user }) {
                     <strong>Cantidad Pagada: </strong>
                     {paymentData.amount} $
                   </p>
-                </>
+                </div>
               )}
             </Modal.Body>
           </>
@@ -305,6 +333,7 @@ function Payment({ user }) {
             cuentaContrato={cuentaContrato}
             cliente={cliente}
             esReimpresion={false}
+            message={message}
             onCloseModal={() => {
               setShowModal(false);
               setCliente(null);

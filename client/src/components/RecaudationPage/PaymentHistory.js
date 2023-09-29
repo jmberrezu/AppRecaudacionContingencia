@@ -28,6 +28,7 @@ function PaymentHistory({ user }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [filteredPayments, setFilteredPayments] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [message, setMessage] = useState("");
 
   // Obtener el token del local storage
   useEffect(() => {
@@ -76,12 +77,12 @@ function PaymentHistory({ user }) {
     setIsSearching(searchQuery.length > 0);
   }, [searchQuery, payments]);
 
-  //Busca cliente por cuenta contrato
-  const buscarCliente = useCallback(
-    async (cuentaContrato) => {
+  // Funcion para obtener el mensaje del servidor
+  const getMessage = useCallback(async () => {
+    if (user.idcashpoint)
       try {
         const response = await fetch(
-          `http://localhost:5000/api/paymentRoutes/buscar-cliente/${cuentaContrato}`,
+          `http://localhost:5000/api/supervisor/printmessage/${user.idcashpoint}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -89,14 +90,21 @@ function PaymentHistory({ user }) {
           }
         );
         if (response.ok) {
-          return await response.json();
+          const messageData = await response.json();
+          setMessage(messageData);
         }
       } catch (error) {
         console.error(error);
       }
-    },
-    [token]
-  );
+  }, [user.idcashpoint, token]);
+
+  // Obtener el mensaje del servidor
+  useEffect(() => {
+    // Si hay usuario o token
+    if (user.idcashpoint && token) {
+      getMessage();
+    }
+  }, [getMessage, token, user.idcashpoint]);
 
   // Función para obtener la lista de pagos
   const fetchPayments = useCallback(async () => {
@@ -112,19 +120,13 @@ function PaymentHistory({ user }) {
         );
         if (response.ok) {
           const paymentsData = await response.json();
-          // Agrega los datos del cliente a cada pago
-          for (const payment of paymentsData) {
-            payment.cliente = await buscarCliente(
-              payment.payercontractaccountid
-            );
-          }
           setPayments(paymentsData);
         }
       } catch (error) {
         console.error(error);
       }
     }
-  }, [token, user.idcashpoint, buscarCliente]);
+  }, [token, user.idcashpoint]);
 
   // Funcion para obtener la lista de pagos anulados
   const fetchReversePayments = useCallback(async () => {
@@ -513,6 +515,7 @@ function PaymentHistory({ user }) {
                                     }
                                     cliente={payment.cliente}
                                     esReimpresion={true}
+                                    message={message}
                                     onCloseModal={fetchPayments}
                                   />
                                 </td>

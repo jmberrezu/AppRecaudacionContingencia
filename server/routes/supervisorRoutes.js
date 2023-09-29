@@ -9,6 +9,7 @@ const https = require("https");
 const xml2js = require("xml2js");
 const { addActiveToken } = require("../services/verifyToken");
 const { deleteActiveToken } = require("../services/verifyToken");
+const e = require("express");
 
 const failedLoginAttempts = {}; // Objeto para rastrear los intentos fallidos de inicio de sesión por supervisor
 
@@ -520,7 +521,7 @@ router.get("/printmessage/:idcashpoint", verifyToken, async (req, res) => {
 
     // Si el mensaje esta vacio o es null retorno una cadena en blanco
     if (!results.printermessage) {
-      return res.json({ printermessage: "" });
+      return res.json("");
     }
 
     res.json(results.printermessage);
@@ -545,23 +546,27 @@ router.post("/printmessage/:idcashpoint", verifyToken, async (req, res) => {
     return res.status(400).json({ message: "idcashPoint is required" });
   }
 
-  // Si el mensaje no se ha ingresado
-  if (!message) {
-    return res.status(400).json({ message: "message is required" });
-  }
-
-  // Si el mensaje es de 0 o mayor a 100 caracteres
-  if (message.length === 0 || message.length > 100) {
+  // Si el mensaje es mayor a 100 caracteres
+  if (message.length > 100) {
     return res
       .status(400)
-      .json({ message: "Message must be between 1 and 100 characters" });
+      .json({ message: "Message must be less than 100 characters" });
   }
 
   try {
-    await db.none(
-      `UPDATE supervisor SET printermessage = $1 WHERE idCashPoint = $2`,
-      [message, idcashpoint]
-    );
+    // Si el mensaje es vacio, lo guardo como null
+
+    if (message === "") {
+      await db.none(
+        `UPDATE supervisor SET printermessage = null WHERE idCashPoint = $1`,
+        [idcashpoint]
+      );
+    } else {
+      await db.none(
+        `UPDATE supervisor SET printermessage = $1 WHERE idCashPoint = $2`,
+        [message, idcashpoint]
+      );
+    }
 
     res.json({ message: "Printer message updated" });
   } catch (error) {
@@ -569,12 +574,5 @@ router.post("/printmessage/:idcashpoint", verifyToken, async (req, res) => {
     res.status(500).json({ error: "Error retrieving data" });
   }
 });
-
-// Cerrar sesion
-// router.delete("/logout", verifyToken, async (req, res) => {
-//   // Eliminar el token del conjunto de tokens activos
-//   deleteActiveToken(req.user.idcashpoint);
-//   res.json({ message: "Logout successful" });
-// });
 
 module.exports = router;

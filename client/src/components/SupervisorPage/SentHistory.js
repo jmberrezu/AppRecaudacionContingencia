@@ -97,6 +97,7 @@ function SentHistory({ idcashpoint }) {
                     <thead>
                       <tr>
                         <th>PID</th>
+                        <th>Cuenta Contrato</th>
                         <th>Fecha</th>
                         <th>Monto</th>
                       </tr>
@@ -105,6 +106,7 @@ function SentHistory({ idcashpoint }) {
                       {cashCloseItem.pagos.map((cashpointpayment) => (
                         <tr key={cashpointpayment.paymenttransactionid}>
                           <td>{cashpointpayment.paymenttransactionid}</td>
+                          <td>{cashpointpayment.payercontractaccountid}</td>
                           <td>{formatDate(cashpointpayment.valuedate)}</td>
                           <td>
                             {"$" +

@@ -471,7 +471,7 @@ router.post(
                   parseFloat(record.DEUDA.replace(",", ".")),
                   idcashpoint,
                   record.PARROQUIA,
-                  record.ESTADESCONECTADO,
+                  record.ESTADO_DESCONECTADO,
                 ]
               );
             } catch (error) {
@@ -499,12 +499,5 @@ router.post(
     }
   }
 );
-
-// Ruta para cerrar sesion
-// router.delete("/new/logout", verifyToken, (req, res) => {
-//   // Eliminar el token del conjunto de tokens activos
-//   deleteActiveToken("admin");
-//   res.json({ message: "Logout successful" });
-// });
 
 module.exports = router;

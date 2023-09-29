@@ -1,7 +1,14 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import { Table, Button, Modal, Form, Alert } from "react-bootstrap";
+import {
+  Table,
+  Button,
+  Modal,
+  Form,
+  Alert,
+  ProgressBar,
+} from "react-bootstrap";
 import { SendFill } from "react-bootstrap-icons";
 
 function SendPrincipalService({ idcashpoint, office }) {
@@ -22,6 +29,8 @@ function SendPrincipalService({ idcashpoint, office }) {
   const [modalPaymentsSent, setModalPaymentsSent] = useState(false);
   // Para el pago duplicado
   const [duplicatePayment, setDuplicatePayment] = useState(null);
+  const [sendingInProgress, setSendingInProgress] = useState(false); // Estado para controlar el progreso del envío
+  const [progress, setProgress] = useState(0); // Estado para el valor de progreso
 
   // Obtener el token del local storage
   useEffect(() => {
@@ -122,6 +131,8 @@ function SendPrincipalService({ idcashpoint, office }) {
   };
 
   const enviar = (cash) => {
+    // Mostrar la barra de progreso
+    setSendingInProgress(true);
     axios
       .post(
         "http://localhost:5000/api/supervisor/sendprincipal",
@@ -134,6 +145,11 @@ function SendPrincipalService({ idcashpoint, office }) {
         },
         {
           headers: { Authorization: `Bearer ${token}` },
+          onUploadProgress: (progressEvent) => {
+            setProgress(
+              Math.round((progressEvent.loaded * 100) / progressEvent.total)
+            );
+          },
         }
       )
       .then((response) => {
@@ -141,6 +157,8 @@ function SendPrincipalService({ idcashpoint, office }) {
           alert("Pago enviado correctamente");
           handleModalClose();
           fetchClosedCash();
+          // En caso de éxito, ocultar la barra de progreso
+          setSendingInProgress(false);
         }
       })
       .catch((error) => {
@@ -174,6 +192,8 @@ function SendPrincipalService({ idcashpoint, office }) {
               ". Contactarse con el administrador",
           });
         }
+        // En caso de error, ocultar la barra de progreso
+        setSendingInProgress(false);
       });
   };
 
@@ -273,6 +293,12 @@ function SendPrincipalService({ idcashpoint, office }) {
               />
             </Form.Group>
           </Form>
+          {/* Barra de progreso */}
+          {sendingInProgress && (
+            <div className="mt-3">
+              <ProgressBar now={progress} label={`${progress}%`} />
+            </div>
+          )}
         </Modal.Body>
         <Modal.Footer>
           <Button variant="secondary" onClick={handleModalClose}>
