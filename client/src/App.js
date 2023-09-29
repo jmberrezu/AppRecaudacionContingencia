@@ -3,9 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import SupervisorView from "./components/SupervisorPage/SupervisorView";
 import Login from "./components/RecaudationPage/Login";
 import Recaudation from "./components/RecaudationPage/Recaudation";
-import AdminLogin from "./components/AdminPage/AdminLogin";
 import SupevisorCrud from "./components/AdminPage/SupervisorCrud";
-import SupervisorLogin from "./components/SupervisorPage/SupervisorLogin";
 import NotFound from "./NotFound";
 
 function App() {
@@ -16,8 +14,6 @@ function App() {
         <Route path="/supervisorview" element={<SupervisorView />} />
         <Route path="/recaudation" element={<Recaudation />} />
         <Route path="/supervisorcrud" element={<SupevisorCrud />} />
-        <Route path="/admin" element={<AdminLogin />} />
-        <Route path="/supervisor" element={<SupervisorLogin />} />
         <Route path="/404" element={<NotFound />} />
         <Route path="*" element={<Navigate to="/404" />} />
       </Routes>
