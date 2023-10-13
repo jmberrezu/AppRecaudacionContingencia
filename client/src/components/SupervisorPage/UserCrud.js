@@ -177,6 +177,11 @@ function UserCrud({ societydivision, idcashpoint }) {
           variant: "danger",
           message: "El nombre de usuario debe tener entre 2 y 50 caracteres.",
         });
+      } else if (error.response.data.message === "Username already exists") {
+        setAlertInfo({
+          variant: "danger",
+          message: "El nombre de usuario ya existe, por favor elija otro.",
+        });
       } else if (
         error.response.data.message === "password must be 2 to 60 characters"
       ) {
@@ -235,11 +240,31 @@ function UserCrud({ societydivision, idcashpoint }) {
       });
       fetchUsers();
     } catch (error) {
-      console.error(error);
-      setAlertInfo({
-        variant: "danger",
-        message: error.response.data.message,
-      });
+      if (
+        error.response.data.message === "username must be 2 to 50 characters"
+      ) {
+        setAlertInfo({
+          variant: "danger",
+          message: "El nombre de usuario debe tener entre 2 y 50 caracteres.",
+        });
+      } else if (error.response.data.message === "Username already exists") {
+        setAlertInfo({
+          variant: "danger",
+          message: "El nombre de usuario ya existe, por favor elija otro.",
+        });
+      } else if (
+        error.response.data.message === "password must be 2 to 60 characters"
+      ) {
+        setAlertInfo({
+          variant: "danger",
+          message: "La contraseña debe tener entre 2 y 60 caracteres.",
+        });
+      } else {
+        setAlertInfo({
+          variant: "danger",
+          message: error.response.data.message,
+        });
+      }
     }
   };
 

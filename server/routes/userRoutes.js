@@ -159,6 +159,20 @@ router.post("/", verifyToken, async (req, res) => {
     }
   }
 
+  // Si el username ya existe en la tabla de Supervisor o User o Admin
+  const userExists = await db.oneOrNone(
+    `SELECT $1 AS username FROM Admin WHERE "user" = $1
+    UNION
+    SELECT $1 AS username FROM Supervisor WHERE "user" = $1
+    UNION
+    SELECT username FROM "User" WHERE username = $1;`,
+    [username]
+  );
+
+  if (userExists) {
+    return res.status(400).json({ message: "Username already exists" });
+  }
+
   try {
     await db.tx(async (transaction) => {
       // Obtener el valor máximo de idUser para el idCashPoint actual
@@ -335,6 +349,20 @@ router.put("/:id", verifyToken, async (req, res) => {
             .status(400)
             .json({ message: "idGlobalVirtualCashPoint does not exist" });
         }
+      }
+
+      // Si el username ya existe en la tabla de Supervisor o User o Admin
+      const userExists = await db.oneOrNone(
+        `SELECT $1 AS username FROM Admin WHERE "user" = $1
+    UNION
+    SELECT $1 AS username FROM Supervisor WHERE "user" = $1
+    UNION
+    SELECT username FROM "User" WHERE username = $1;`,
+        [username]
+      );
+
+      if (userExists) {
+        return res.status(400).json({ message: "Username already exists" });
       }
 
       // Si no hay contraseña

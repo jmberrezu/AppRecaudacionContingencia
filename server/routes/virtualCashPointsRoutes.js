@@ -85,6 +85,16 @@ router.post("/", verifyToken, async (req, res) => {
         }
       }
 
+      // Si el nombre se repite en la caja
+      const nameResult = await transaction.oneOrNone(
+        "SELECT name FROM VirtualCashPoint WHERE name = $1 AND idCashPoint = $2",
+        [name, idCashPoint]
+      );
+
+      if (nameResult) {
+        return res.status(400).json({ message: "name already exists" });
+      }
+
       // Obtener el valor máximo de idVirtualCashPoint para el idCashPoint actual
       const maxIdVirtualCashPointResult = await transaction.oneOrNone(
         "SELECT maxIdVirtualCashPoint FROM MaxVirtualCashPointSeq WHERE idCashPoint = $1",
@@ -193,6 +203,16 @@ router.put("/:id", verifyToken, async (req, res) => {
             .status(400)
             .json({ message: "name must be 1 to 50 characters" });
         }
+      }
+
+      // Si el nombre se repite en la caja
+      const nameResult = await transaction.oneOrNone(
+        "SELECT name FROM VirtualCashPoint WHERE name = $1 AND idCashPoint = $2",
+        [name, idCashPoint]
+      );
+
+      if (nameResult) {
+        return res.status(400).json({ message: "name already exists" });
       }
 
       const updatedVirtualCashPoint = await transaction.one(

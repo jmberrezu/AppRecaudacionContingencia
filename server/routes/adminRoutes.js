@@ -330,13 +330,27 @@ router.post("/agregar", verifyToken, async (req, res) => {
     password = await hashPassword(password);
   }
 
+  // Si el username ya existe en la tabla de Supervisor o User o Admin
+  const userExists = await db.oneOrNone(
+    `SELECT $1 AS username FROM Admin WHERE "user" = $1
+    UNION
+    SELECT $1 AS username FROM Supervisor WHERE "user" = $1
+    UNION
+    SELECT username FROM "User" WHERE username = $1;`,
+    [username]
+  );
+
+  if (userExists) {
+    return res.status(400).json({ message: "Username already exists" });
+  }
+
   try {
     await db.tx(async (transaction) => {
       let newUser = null;
       // Agrego el supervisor a la base de datos
       newUser = await transaction.one(
         `INSERT INTO Supervisor (idCashPoint, "user", office, password, societydivision)
-              VALUES ($1, $2, $3, $4, $5) RETURNING idCashPoint, "user", office, societydivision ORDER BY societydivision, idCashPoint`, // Ordena por sociedad y idCashPoint
+              VALUES ($1, $2, $3, $4, $5) RETURNING idCashPoint, "user", office, societydivision`,
         [idCashPoint, username, office, password, societydivision]
       );
 
@@ -435,6 +449,20 @@ router.put("/:idCashPoint", verifyToken, async (req, res) => {
 
     // Hasheo el password
     password = await hashPassword(password);
+  }
+
+  // Si el nuevo username ya existe en la tabla de Supervisor o User o Admin
+  const userExists = await db.oneOrNone(
+    `SELECT $1 AS username FROM Admin WHERE "user" = $1
+      UNION
+      SELECT $1 AS username FROM Supervisor WHERE "user" = $1
+      UNION
+      SELECT username FROM "User" WHERE username = $1;`,
+    [username]
+  );
+
+  if (userExists) {
+    return res.status(400).json({ message: "Username already exists" });
   }
 
   try {

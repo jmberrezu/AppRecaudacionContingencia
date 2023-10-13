@@ -123,15 +123,21 @@ function VirtualCashPointCrud(idcashpoint) {
         });
       }
     } catch (error) {
-      if (error.response.message === "name must be 2 to 50 characters") {
+      if (error.response.data.message === "name must be 1 to 50 characters") {
         setAlertInfo({
           variant: "danger",
-          message: "El nombre debe tener entre 2 y 50 caracteres.",
+          message: "El nombre debe tener entre 1 y 50 caracteres.",
+        });
+      } else if (error.response.data.message === "name already exists") {
+        setAlertInfo({
+          variant: "danger",
+          message:
+            "El nombre del cajero virtual ya existe, por favor elija otro.",
         });
       } else {
         setAlertInfo({
           variant: "danger",
-          message: error.response.message,
+          message: error.response.data.message,
         });
       }
     }
@@ -172,11 +178,23 @@ function VirtualCashPointCrud(idcashpoint) {
       });
       fetchVirtualCashPoints();
     } catch (error) {
-      console.error(error);
-      setAlertInfo({
-        variant: "danger",
-        message: error.response.message,
-      });
+      if (error.response.data.message === "name must be 2 to 50 characters") {
+        setAlertInfo({
+          variant: "danger",
+          message: "El nombre debe tener entre 2 y 50 caracteres.",
+        });
+      } else if (error.response.data.message === "name already exists") {
+        setAlertInfo({
+          variant: "danger",
+          message:
+            "El nombre del cajero virtual ya existe, por favor elija otro.",
+        });
+      } else {
+        setAlertInfo({
+          variant: "danger",
+          message: error.response.data.message,
+        });
+      }
     }
   };
 

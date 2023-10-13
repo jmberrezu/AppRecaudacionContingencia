@@ -161,6 +161,11 @@ function SupervisorCrud() {
           variant: "danger",
           message: "El usuario debe ser de 2 a 50 caracteres.",
         });
+      } else if (error.response.data.message === "Username already exists") {
+        setAlertInfo({
+          variant: "danger",
+          message: "El nombre de usuario ya existe, por favor ingrese otro.",
+        });
       } else if (
         error.response.data.message === "office must be 2 to 50 characters"
       ) {
@@ -231,11 +236,62 @@ function SupervisorCrud() {
       });
       fetchSupervisors();
     } catch (error) {
-      console.error(error);
-      setAlertInfo({
-        variant: "danger",
-        message: error.response.data.message,
-      });
+      // Si el idCashPoint ingresado no es de 16 o 21 caracteres
+      if (
+        error.response.data.message ===
+        "idCashPoint must be 16 or 21 characters"
+      ) {
+        setAlertInfo({
+          variant: "danger",
+          message: "El ID de caja debe ser de 16 o 21 caracteres.",
+        });
+      }
+      // Si el usuario ingresado no es de 2 a 50 caracteres
+      else if (
+        error.response.data.message === "username must be 2 to 50 characters"
+      ) {
+        setAlertInfo({
+          variant: "danger",
+          message: "El usuario debe ser de 2 a 50 caracteres.",
+        });
+      }
+      // Si el usuario ya existe
+      else if (error.response.data.message === "Username already exists") {
+        setAlertInfo({
+          variant: "danger",
+          message: "El nombre de usuario ya existe, por favor ingrese otro.",
+        });
+      }
+      // Si la oficina ingresada no es de 2 a 50 caracteres
+      else if (
+        error.response.data.message === "office must be 2 to 50 characters"
+      ) {
+        setAlertInfo({
+          variant: "danger",
+          message: "La oficina debe ser de 2 a 50 caracteres.",
+        });
+      }
+      // Si la contraseña ingresada no es de 2 a 60 caracteres
+      else if (
+        error.response.data.message === "password must be 2 to 60 characters"
+      ) {
+        setAlertInfo({
+          variant: "danger",
+          message: "La contraseña debe ser de mayor a 2 caracteres.",
+        });
+      }
+      // Si el idCashPoint ya existe
+      else if (error.response.data.message === "idCashPoint already exists") {
+        setAlertInfo({
+          variant: "danger",
+          message: "El ID de caja ya existe.",
+        });
+      } else {
+        setAlertInfo({
+          variant: "danger",
+          message: error.response.data.message,
+        });
+      }
     }
   };
 
