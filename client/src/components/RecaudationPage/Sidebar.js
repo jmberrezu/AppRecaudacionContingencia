@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { Nav, Button, Form, Row, Col } from "react-bootstrap";
+import React from "react";
+import { Nav, Button, Row, Col } from "react-bootstrap";
 import { Link } from "react-router-dom";
 import {
   CashStack,
@@ -12,66 +12,10 @@ import {
   ClockHistory,
   HourglassSplit,
 } from "react-bootstrap-icons";
-import axios from "axios";
-import { useNavigate } from "react-router-dom";
 import sparkPayLogo from "../../images/logoM.svg"; // Ruta a tu imagen
-import { useCallback } from "react";
 
 function Sidebar({ user, handleLogout, setActiveComponent, activeComponent }) {
   const isGerente = user && user.role === "gerente";
-  const [virtualCashPoints, setVirtualCashPoints] = useState([]);
-  const [idGlobalVirtualCashPoint] = useState("");
-  const navigate = useNavigate();
-  const token = localStorage.getItem("token");
-
-  // Función para obtener la lista de cajas virtuales
-  const fetchVirtualCashPoints = useCallback(async () => {
-    // si es gerente
-    if (isGerente) {
-      try {
-        let response = await axios.get(
-          `http://localhost:5000/api/virtualcashpoints/${user.idcashpoint}`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-        setVirtualCashPoints(response.data);
-      } catch (error) {
-        console.error(error);
-      }
-    }
-  }, [token, user, isGerente]);
-
-  // Obtengo el grupo de pago
-  useEffect(() => {
-    if (token && user) {
-      fetchVirtualCashPoints();
-    }
-  }, [token, user, fetchVirtualCashPoints]);
-
-  // Función para cambiar la caja virtual
-  const handleChangeVirtualCashPoint = async (idGlobalVirtualCashPoint) => {
-    try {
-      await axios.put(
-        `http://localhost:5000/api/users/changeVirtualCashPoint/${user.idglobaluser}`,
-        {
-          newidglobalvirtualcashpoint: idGlobalVirtualCashPoint,
-          idcashpoint: user.idcashpoint,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      navigate("/");
-    } catch (error) {
-      console.error(error);
-    }
-  };
 
   return (
     <div
@@ -198,31 +142,6 @@ function Sidebar({ user, handleLogout, setActiveComponent, activeComponent }) {
                   <BoxSeam size={16} className="align-middle mb-1 me-3" />
                   Caja: <strong>{user.virtualcashpointname}</strong>
                 </div>
-                {isGerente && (
-                  <div className="col">
-                    <Form>
-                      <Form.Group>
-                        <Form.Select
-                          className="form-select-sm"
-                          value={idGlobalVirtualCashPoint}
-                          onChange={(e) => {
-                            handleChangeVirtualCashPoint(e.target.value);
-                          }}
-                        >
-                          <option value="">--Cambiar--</option>
-                          {virtualCashPoints.map((virtualCashPoint) => (
-                            <option
-                              key={virtualCashPoint.idglobalvirtualcashpoint}
-                              value={virtualCashPoint.idglobalvirtualcashpoint}
-                            >
-                              {virtualCashPoint.name}
-                            </option>
-                          ))}
-                        </Form.Select>
-                      </Form.Group>
-                    </Form>
-                  </div>
-                )}
               </div>
             </Nav.Item>
 

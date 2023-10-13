@@ -85,7 +85,7 @@ router.post("/company", verifyToken, async (req, res) => {
       // Agrego la empresa a la base de datos
       newCompany = await transaction.one(
         `INSERT INTO Company (societydivision, name)
-              VALUES ($1, $2) RETURNING societydivision, name ORDER BY societydivision`, // Ordena por sociedad
+              VALUES ($1, $2) RETURNING societydivision, name`,
         [societydivision, name]
       );
 
@@ -153,7 +153,7 @@ router.put("/company/:societydivision", verifyToken, async (req, res) => {
     await db.tx(async (transaction) => {
       // Busca la empresa a actualizar
       const companyToUpdate = await transaction.oneOrNone(
-        `SELECT * FROM Company WHERE societydivision = $1 ORDER BY societydivision`, // Ordena por sociedad
+        `SELECT * FROM Company WHERE societydivision = $1`,
         [societydivision]
       );
 
@@ -164,7 +164,7 @@ router.put("/company/:societydivision", verifyToken, async (req, res) => {
       // Actualiza la empresa
       const updatedCompany = await transaction.one(
         `UPDATE Company SET name=$1
-          WHERE societydivision=$2 RETURNING societydivision, name ORDER BY societydivision`, // Ordena por sociedad
+          WHERE societydivision=$2 RETURNING societydivision, name`,
         [name, societydivision]
       );
 
@@ -455,10 +455,10 @@ router.put("/:idCashPoint", verifyToken, async (req, res) => {
   const userExists = await db.oneOrNone(
     `SELECT $1 AS username FROM Admin WHERE "user" = $1
       UNION
-      SELECT $1 AS username FROM Supervisor WHERE "user" = $1
+      SELECT $1 AS username FROM Supervisor WHERE "user" = $1 AND idCashPoint <> $2
       UNION
       SELECT username FROM "User" WHERE username = $1;`,
-    [username]
+    [username, idCashPoint]
   );
 
   if (userExists) {
@@ -482,7 +482,7 @@ router.put("/:idCashPoint", verifyToken, async (req, res) => {
         // Actualiza el supervisor sin contraseña
         const updatedUser = await transaction.one(
           `UPDATE Supervisor SET "user"=$1, office=$3, societydivision=$4
-          WHERE idCashPoint=$2 RETURNING idCashPoint, "user", office, societydivision ORDER BY societydivision, idCashPoint`, // Ordena por sociedad y idCashPoint
+          WHERE idCashPoint=$2 RETURNING idCashPoint, "user", office, societydivision`,
           [username, idCashPoint, office, societydivision]
         );
 
@@ -652,7 +652,7 @@ router.put("/block/:idCashPoint", verifyToken, async (req, res) => {
   try {
     // Actualiza el supervisor
     const updatedSupervisor = await db.one(
-      `UPDATE Supervisor SET isBlocked=$1 WHERE idCashPoint=$2 RETURNING idCashPoint, "user", office, societydivision, isBlocked ORDER BY societydivision, idCashPoint`, // Ordena por sociedad y idCashPoint
+      `UPDATE Supervisor SET isBlocked=$1 WHERE idCashPoint=$2 RETURNING idCashPoint, "user", office, societydivision, isBlocked`,
       [isblocked, idCashPoint]
     );
 

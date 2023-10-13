@@ -205,10 +205,10 @@ router.put("/:id", verifyToken, async (req, res) => {
         }
       }
 
-      // Si el nombre se repite en la caja
+      // Si el nombre se repite en la caja y no es el mismo cajero virtual
       const nameResult = await transaction.oneOrNone(
-        "SELECT name FROM VirtualCashPoint WHERE name = $1 AND idCashPoint = $2",
-        [name, idCashPoint]
+        "SELECT name FROM VirtualCashPoint WHERE name = $1 AND idCashPoint = $2 AND idglobalvirtualcashpoint != $3",
+        [name, idCashPoint, id]
       );
 
       if (nameResult) {

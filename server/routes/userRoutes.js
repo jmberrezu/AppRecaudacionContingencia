@@ -351,14 +351,14 @@ router.put("/:id", verifyToken, async (req, res) => {
         }
       }
 
-      // Si el username ya existe en la tabla de Supervisor o User o Admin
+      // Si el username ya existe en la tabla de Supervisor o User o Admin y es diferente al username del usuario a actualizar
       const userExists = await db.oneOrNone(
         `SELECT $1 AS username FROM Admin WHERE "user" = $1
     UNION
     SELECT $1 AS username FROM Supervisor WHERE "user" = $1
     UNION
-    SELECT username FROM "User" WHERE username = $1;`,
-        [username]
+    SELECT username FROM "User" WHERE username = $1 AND idGlobalUser <> $2`,
+        [username, id]
       );
 
       if (userExists) {
