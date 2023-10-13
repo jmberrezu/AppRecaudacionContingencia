@@ -59,7 +59,7 @@ router.post("/", async (req, res) => {
     }
 
     // Si no se ha encontrado un usuario, supervisor o administrador
-    if (!userfound.length === 0) {
+    if (userfound.length === 0) {
       return res.status(401).json({ message: "User Not Found." });
     }
 
@@ -116,6 +116,7 @@ router.post("/", async (req, res) => {
           role: userfound[0].role,
           idglobalvirtualcashpoint: userfound[0].idglobalvirtualcashpoint,
           idcashpoint: userfound[0].idcashpoint,
+          societydivision: userfound[0].societydivision,
           idvirtualcashpoint: userfound[0].idvirtualcashpoint, // Agregar idVirtualCashPoint al token
           virtualcashpointname: userfound[0].virtualcashpointname, // Agregar virtualCashPointName al token
         },
@@ -141,6 +142,7 @@ router.post("/", async (req, res) => {
         {
           role: "supervisor",
           idcashpoint: userfound[0].idcashpoint,
+          societydivision: userfound[0].societydivision,
           username: userfound[0].user,
           office: userfound[0].office,
         },
@@ -203,6 +205,7 @@ router.get("/verify", verifyToken, (req, res) => {
       virtualcashpointname: req.user.virtualcashpointname,
       idvirtualcashpoint: req.user.idvirtualcashpoint,
       idcashpoint: req.user.idcashpoint,
+      societydivision: req.user.societydivision,
       idglobaluser: req.user.idglobaluser,
       idglobalvirtualcashpoint: req.user.idglobalvirtualcashpoint,
     });
@@ -210,6 +213,7 @@ router.get("/verify", verifyToken, (req, res) => {
     res.json({
       role: req.user.role,
       idcashpoint: req.user.idcashpoint,
+      societydivision: req.user.societydivision,
       username: req.user.username,
       office: req.user.office,
     });

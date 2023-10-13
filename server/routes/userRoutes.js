@@ -35,7 +35,7 @@ router.get("/:idcashPoint", verifyToken, async (req, res) => {
     const users = await db.any(
       'SELECT "User".idglobaluser, "User".isBlocked, "User".iduser, "User".username, "User".role, "User".idcashpoint, "User".idglobalvirtualcashpoint , VirtualCashPoint.idVirtualCashPoint, VirtualCashPoint.name AS virtualCashPointName FROM "User" ' +
         'INNER JOIN VirtualCashPoint ON "User".idGlobalVirtualCashPoint = VirtualCashPoint.idGlobalVirtualCashPoint ' +
-        'WHERE "User".idCashPoint = $1',
+        'WHERE "User".idCashPoint = $1 ORDER BY "User".role DESC, "User".username ASC',
       [idcashPoint]
     );
 
@@ -52,7 +52,13 @@ router.post("/", verifyToken, async (req, res) => {
     return res.status(401).json({ message: "Unauthorized User" });
   }
 
-  const { username, role, idCashPoint, idGlobalVirtualCashPoint } = req.body;
+  const {
+    username,
+    role,
+    idCashPoint,
+    idGlobalVirtualCashPoint,
+    societydivision,
+  } = req.body;
 
   let { password } = req.body;
 
@@ -86,6 +92,18 @@ router.post("/", verifyToken, async (req, res) => {
       return res
         .status(400)
         .json({ message: "username must be 2 to 50 characters" });
+    }
+  }
+
+  // Si no se recibe el societydivision
+  if (!societydivision) {
+    return res.status(400).json({ message: "societydivision required" });
+  } else {
+    // Si el societydivision no es de 2 a 50 caracteres
+    if (societydivision.length < 2 || societydivision.length > 50) {
+      return res
+        .status(400)
+        .json({ message: "societydivision must be 2 to 50 characters" });
     }
   }
 
@@ -163,8 +181,8 @@ router.post("/", verifyToken, async (req, res) => {
 
       // Insertar el nuevo usuario
       const newUser = await transaction.one(
-        'INSERT INTO "User" (idUser, username, password, role, idCashPoint, idGlobalVirtualCashPoint) ' +
-          "VALUES ($1, $2, $3, $4, $5, $6) RETURNING idUser, username, role, idCashPoint, idGlobalVirtualCashPoint",
+        'INSERT INTO "User" (idUser, username, password, role, idCashPoint, idGlobalVirtualCashPoint, societydivision) ' +
+          "VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING idUser, username, role, idCashPoint, idGlobalVirtualCashPoint, societydivision",
 
         [
           nextIdUser,
@@ -173,6 +191,7 @@ router.post("/", verifyToken, async (req, res) => {
           role,
           idCashPoint,
           idGlobalVirtualCashPoint,
+          societydivision,
         ]
       );
 
@@ -208,7 +227,13 @@ router.put("/:id", verifyToken, async (req, res) => {
   }
 
   const id = req.params.id;
-  const { username, role, idCashPoint, idGlobalVirtualCashPoint } = req.body;
+  const {
+    username,
+    role,
+    idCashPoint,
+    idGlobalVirtualCashPoint,
+    societydivision,
+  } = req.body;
 
   let { password } = req.body;
   try {
@@ -262,6 +287,18 @@ router.put("/:id", verifyToken, async (req, res) => {
         }
       }
 
+      // Si no se recibe el societydivision
+      if (!societydivision) {
+        return res.status(400).json({ message: "societydivision required" });
+      } else {
+        // Si el societydivision no es de 2 a 50 caracteres
+        if (societydivision.length < 2 || societydivision.length > 50) {
+          return res
+            .status(400)
+            .json({ message: "societydivision must be 2 to 50 characters" });
+        }
+      }
+
       // Si no se recibe el rol
       if (!role) {
         return res.status(400).json({ message: "role required" });
@@ -304,9 +341,16 @@ router.put("/:id", verifyToken, async (req, res) => {
       if (!password) {
         // Actualiza el usuario sin contraseña
         const updatedUser = await transaction.one(
-          `UPDATE "User" SET username=$1, role=$2, idCashPoint=$3, idGlobalVirtualCashPoint=$4
-        WHERE idGlobalUser=$5 RETURNING idGlobalUser, idUser, username, role, idCashPoint, idGlobalVirtualCashPoint`,
-          [username, role, idCashPoint, idGlobalVirtualCashPoint, id]
+          `UPDATE "User" SET username=$1, role=$2, idCashPoint=$3, idGlobalVirtualCashPoint=$4, societydivision=$5
+        WHERE idGlobalUser=$6 RETURNING idGlobalUser, idUser, username, role, idCashPoint, idGlobalVirtualCashPoint, societydivision`,
+          [
+            username,
+            role,
+            idCashPoint,
+            idGlobalVirtualCashPoint,
+            societydivision,
+            id,
+          ]
         );
         res.json(updatedUser);
       } else {
@@ -322,9 +366,17 @@ router.put("/:id", verifyToken, async (req, res) => {
 
         // Actualiza el usuario con contraseña
         const updatedUser = await transaction.one(
-          `UPDATE "User" SET username=$1, password=$2, role=$3, idCashPoint=$4, idGlobalVirtualCashPoint=$5
-        WHERE idGlobalUser=$6 RETURNING idGlobalUser, idUser, username, role, idCashPoint, idGlobalVirtualCashPoint`,
-          [username, password, role, idCashPoint, idGlobalVirtualCashPoint, id]
+          `UPDATE "User" SET username=$1, password=$2, role=$3, idCashPoint=$4, idGlobalVirtualCashPoint=$5, societydivision=$6
+        WHERE idGlobalUser=$7 RETURNING idGlobalUser, idUser, username, role, idCashPoint, idGlobalVirtualCashPoint, societydivision`,
+          [
+            username,
+            password,
+            role,
+            idCashPoint,
+            idGlobalVirtualCashPoint,
+            societydivision,
+            id,
+          ]
         );
 
         // Agregar una entrada en la tabla de bitácora ("log")
@@ -385,7 +437,7 @@ router.put("/block/:id", verifyToken, async (req, res) => {
   try {
     // Actualiza el usuario
     const updatedUser = await db.one(
-      `UPDATE "User" SET isBlocked=$1 WHERE idGlobalUser=$2 RETURNING idGlobalUser, idUser, username, role, idCashPoint, idGlobalVirtualCashPoint`,
+      `UPDATE "User" SET isBlocked=$1 WHERE idGlobalUser=$2 RETURNING idGlobalUser, idUser, username, role, idCashPoint, idGlobalVirtualCashPoint, societydivision`,
       [isblocked, id]
     );
 
@@ -490,7 +542,7 @@ router.put("/changeVirtualCashPoint/:id", verifyToken, async (req, res) => {
    SET idGlobalVirtualCashPoint = $1
    FROM VirtualCashPoint AS vc
    WHERE u.idGlobalUser = $2 AND u.idGlobalVirtualCashPoint = vc.idGlobalVirtualCashPoint
-   RETURNING u.idGlobalUser, u.idUser, u.username, u.role, u.idCashPoint, u.idGlobalVirtualCashPoint, vc.idVirtualCashPoint, vc.name AS virtualCashPointName`,
+   RETURNING u.idGlobalUser, u.idUser, u.username, u.role, u.idCashPoint, u.idGlobalVirtualCashPoint, vc.idVirtualCashPoint, vc.name AS virtualCashPointName, u.societydivision`,
       [newidglobalvirtualcashpoint, id]
     );
 
@@ -503,6 +555,7 @@ router.put("/changeVirtualCashPoint/:id", verifyToken, async (req, res) => {
         role: updatedUser.role,
         idglobalvirtualcashpoint: updatedUser.idglobalvirtualcashpoint,
         idcashpoint: updatedUser.idcashpoint,
+        societydivision: updatedUser.societydivision,
         idvirtualcashpoint: updatedUser.idvirtualcashpoint,
         virtualcashpointname: updatedUser.virtualcashpointname,
       },

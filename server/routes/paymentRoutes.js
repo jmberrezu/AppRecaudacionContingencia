@@ -29,7 +29,7 @@ router.get("/buscar-cliente/:cuentaContrato", verifyToken, async (req, res) => {
   }
 
   const { cuentaContrato } = req.params;
-  const idcashpoint = req.user.idcashpoint;
+  const societydivision = req.user.societydivision;
 
   // Si no se ha proporcionado una cuenta contrato o CUEN
   if (!cuentaContrato) {
@@ -44,9 +44,9 @@ router.get("/buscar-cliente/:cuentaContrato", verifyToken, async (req, res) => {
     return res.status(400).json({ message: "Cuenta contrato o CUEN inválida" });
   }
 
-  // Si no se ha proporcionado un idcashpoint
-  if (!idcashpoint) {
-    return res.status(400).json({ message: "No idcashpoint entered" });
+  // Si no se ha proporcionado un societydivision
+  if (!societydivision) {
+    return res.status(400).json({ message: "Societydivision" });
   }
 
   try {
@@ -54,9 +54,9 @@ router.get("/buscar-cliente/:cuentaContrato", verifyToken, async (req, res) => {
     const client = await db.oneOrNone(
       `
       SELECT * FROM Client
-      WHERE idCashPoint = $1 AND (PayerContractAccountID = $2 OR CUEN = $2);
+      WHERE societydivision = $1 AND (PayerContractAccountID = $2 OR CUEN = $2);
     `,
-      [idcashpoint, cuentaContrato]
+      [societydivision, cuentaContrato]
     );
 
     // Si el cliente existe
@@ -494,7 +494,7 @@ router.get("/pagos/:idcashPoint", verifyToken, async (req, res) => {
       FROM Payment
       INNER JOIN VirtualCashPoint ON Payment.idGlobalVirtualCashPoint = VirtualCashPoint.idGlobalVirtualCashPoint
       INNER JOIN "User" ON Payment.idGlobalUser = "User".idGlobalUser
-      WHERE Payment.idCashPoint=$1 AND Payment.idglobalvirtualcashpoint=$2;
+      WHERE Payment.idCashPoint=$1 AND Payment.idglobalvirtualcashpoint=$2 ORDER BY Payment.valueDate DESC;
     `,
         [idcashPoint, req.user.idglobalvirtualcashpoint]
       );
@@ -509,7 +509,7 @@ router.get("/pagos/:idcashPoint", verifyToken, async (req, res) => {
       FROM Payment
       INNER JOIN VirtualCashPoint ON Payment.idGlobalVirtualCashPoint = VirtualCashPoint.idGlobalVirtualCashPoint
       INNER JOIN "User" ON Payment.idGlobalUser = "User".idGlobalUser
-      WHERE Payment.idCashPoint=$1;
+      WHERE Payment.idCashPoint=$1 ORDER BY Payment.valueDate DESC;
     `,
         [idcashPoint]
       );
@@ -517,7 +517,7 @@ router.get("/pagos/:idcashPoint", verifyToken, async (req, res) => {
 
     // Obtener los grupos de pago de la caja
     const paymentgroup = await db.any(
-      `SELECT CashPointPaymentGroupReferenceID FROM PaymentGroup WHERE idCashPoint=$1;`,
+      `SELECT CashPointPaymentGroupReferenceID FROM PaymentGroup WHERE idCashPoint=$1 ORDER BY CashPointPaymentGroupReferenceID DESC;`,
       [idcashPoint]
     );
 
@@ -585,7 +585,7 @@ router.get("/pagosAnulados/:idcashPoint", verifyToken, async (req, res) => {
            "User".username
          FROM ReversePayment
              INNER JOIN "User" ON ReversePayment.idGlobalUser = "User".idGlobalUser
-       WHERE ReversePayment.idCashPoint = $1 AND SUBSTRING(ReversePayment.PaymentTransactionID, 24, 2) = $2
+       WHERE ReversePayment.idCashPoint = $1 AND SUBSTRING(ReversePayment.PaymentTransactionID, 24, 2) = $2 ORDER BY ReversePayment.fecha_hora DESC;
     `,
         [
           idcashPoint,
@@ -600,7 +600,7 @@ router.get("/pagosAnulados/:idcashPoint", verifyToken, async (req, res) => {
         "User".username
       FROM ReversePayment
       INNER JOIN "User" ON ReversePayment.idGlobalUser = "User".idGlobalUser
-      WHERE ReversePayment.idCashPoint=$1;
+      WHERE ReversePayment.idCashPoint=$1 ORDER BY ReversePayment.fecha_hora DESC;
     `,
         [idcashPoint]
       );
@@ -644,7 +644,7 @@ router.get("/exportar-pagos/:idcashPoint", verifyToken, async (req, res) => {
       FROM Payment
       INNER JOIN VirtualCashPoint ON Payment.idGlobalVirtualCashPoint = VirtualCashPoint.idGlobalVirtualCashPoint
       INNER JOIN "User" ON Payment.idGlobalUser = "User".idGlobalUser
-      WHERE Payment.idCashPoint=$1;
+      WHERE Payment.idCashPoint=$1 ORDER BY Payment.valueDate DESC;
     `,
       [idcashPoint]
     );

@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { PencilSquare, PlusCircle } from "react-bootstrap-icons";
 import { useCallback } from "react";
 
-function UserCrud(idcashpoint) {
+function UserCrud({ societydivision, idcashpoint }) {
   // Para el token y la navegación
   const navigate = useNavigate();
   const [token, setToken] = useState("");
@@ -58,10 +58,10 @@ function UserCrud(idcashpoint) {
 
   // Función para obtener la lista de usuarios de la caja en especifico
   const fetchUsers = useCallback(async () => {
-    if (idcashpoint.idcashpoint) {
+    if (idcashpoint) {
       try {
         const response = await axios.get(
-          `http://localhost:5000/api/users/${idcashpoint.idcashpoint}`,
+          `http://localhost:5000/api/users/${idcashpoint}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -73,7 +73,7 @@ function UserCrud(idcashpoint) {
         console.error(error);
       }
     }
-  }, [token, idcashpoint.idcashpoint]);
+  }, [token, idcashpoint]);
 
   // Cargar datos iniciales
   useEffect(() => {
@@ -109,7 +109,7 @@ function UserCrud(idcashpoint) {
     let response = null;
     try {
       response = await axios.get(
-        `http://localhost:5000/api/virtualcashpoints/${idcashpoint.idcashpoint}`,
+        `http://localhost:5000/api/virtualcashpoints/${idcashpoint}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -144,7 +144,8 @@ function UserCrud(idcashpoint) {
             username,
             password,
             role,
-            idCashPoint: idcashpoint.idcashpoint,
+            idCashPoint: idcashpoint,
+            societydivision: societydivision,
             idGlobalVirtualCashPoint,
           },
           {
@@ -209,7 +210,8 @@ function UserCrud(idcashpoint) {
         username,
         password,
         role,
-        idCashPoint: idcashpoint.idcashpoint,
+        idCashPoint: idcashpoint,
+        societydivision: societydivision,
         idGlobalVirtualCashPoint,
       };
       await axios.put(

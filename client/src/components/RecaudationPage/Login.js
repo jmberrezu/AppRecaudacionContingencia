@@ -33,7 +33,7 @@ function Login() {
       else if (response.data.userType === "supervisor")
         navigate("/supervisorview");
       // Si es un administrador, redirigir a la página de Administrador
-      else if (response.data.userType === "admin") navigate("/supervisorcrud");
+      else if (response.data.userType === "admin") navigate("/adminview");
     } catch (error) {
       if (error.response.status === 400) {
         setAlertInfo({

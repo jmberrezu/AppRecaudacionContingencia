@@ -42,7 +42,7 @@ router.post("/", verifyToken, async (req, res) => {
   try {
     //Obtengo los pagos de la caja ordenados por fecha
     let results = await db.query(
-      `SELECT * FROM PaymentGroup WHERE idCashPoint = $1 AND idVirtualCashPoint = $2 ORDER BY valueDate`,
+      `SELECT * FROM PaymentGroup WHERE idCashPoint = $1 AND idVirtualCashPoint = $2 ORDER BY valueDate ASC`,
       [idcashpoint, idvirtualcashpoint]
     );
 
@@ -252,7 +252,7 @@ router.get("/closedcash/:idcashpoint", verifyToken, async (req, res) => {
             VirtualCashPoint.name AS virtualCashPointName
         FROM CashClosing
         INNER JOIN VirtualCashPoint ON CashClosing.idGlobalVirtualCashPoint = VirtualCashPoint.idGlobalVirtualCashPoint
-        WHERE CashClosing.idCashPoint = $1 AND CashClosing.idGlobalVirtualCashPoint = $2`,
+        WHERE CashClosing.idCashPoint = $1 AND CashClosing.idGlobalVirtualCashPoint = $2 ORDER BY valueDate DESC`,
         [idcashpoint, req.user.idglobalvirtualcashpoint]
       );
 
@@ -265,7 +265,7 @@ router.get("/closedcash/:idcashpoint", verifyToken, async (req, res) => {
             VirtualCashPoint.name AS virtualCashPointName
         FROM CashClosing
         INNER JOIN VirtualCashPoint ON CashClosing.idGlobalVirtualCashPoint = VirtualCashPoint.idGlobalVirtualCashPoint
-        WHERE CashClosing.idCashPoint = $1`,
+        WHERE CashClosing.idCashPoint = $1 ORDER BY valueDate DESC`,
       [idcashpoint]
     );
 
@@ -309,7 +309,7 @@ router.get(
             VirtualCashPoint.name AS virtualCashPointName
         FROM CashClosing
         INNER JOIN VirtualCashPoint ON CashClosing.idGlobalVirtualCashPoint = VirtualCashPoint.idGlobalVirtualCashPoint
-        WHERE CashClosing.idCashPoint = $1 AND CashClosing.idGlobalVirtualCashPoint = $2`,
+        WHERE CashClosing.idCashPoint = $1 AND CashClosing.idGlobalVirtualCashPoint = $2 ORDER BY valueDate DESC`,
           [idcashpoint, req.user.idglobalvirtualcashpoint]
         );
 
@@ -324,7 +324,8 @@ router.get(
           FROM Payment
           INNER JOIN VirtualCashPoint ON Payment.idGlobalVirtualCashPoint = VirtualCashPoint.idGlobalVirtualCashPoint
           INNER JOIN "User" ON Payment.idGlobalUser = "User".idGlobalUser
-          WHERE CashPointPaymentGroupReferenceID=$1`,
+          WHERE CashPointPaymentGroupReferenceID=$1 ORDER BY valueDate DESC;
+        `,
             [results[i].cashpointpaymentgroupreferenceid]
           );
 
@@ -340,7 +341,7 @@ router.get(
             VirtualCashPoint.name AS virtualCashPointName
         FROM CashClosing
         INNER JOIN VirtualCashPoint ON CashClosing.idGlobalVirtualCashPoint = VirtualCashPoint.idGlobalVirtualCashPoint
-        WHERE CashClosing.idCashPoint = $1`,
+        WHERE CashClosing.idCashPoint = $1 ORDER BY valueDate DESC`,
         [idcashpoint]
       );
 
@@ -355,7 +356,7 @@ router.get(
         FROM Payment
         INNER JOIN VirtualCashPoint ON Payment.idGlobalVirtualCashPoint = VirtualCashPoint.idGlobalVirtualCashPoint
         INNER JOIN "User" ON Payment.idGlobalUser = "User".idGlobalUser
-        WHERE CashPointPaymentGroupReferenceID = $1;
+        WHERE CashPointPaymentGroupReferenceID = $1 ORDER BY valueDate DESC;
       `,
 
           [results[i].cashpointpaymentgroupreferenceid]

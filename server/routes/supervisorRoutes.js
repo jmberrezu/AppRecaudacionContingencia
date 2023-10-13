@@ -1,15 +1,10 @@
 const express = require("express");
 const router = express.Router();
 const db = require("../db");
-const jwt = require("jsonwebtoken");
 const verifyToken = require("../services/verifyToken");
-const { checkPassword } = require("../services/hashpassword");
 const axios = require("axios");
 const https = require("https");
 const xml2js = require("xml2js");
-const { addActiveToken } = require("../services/verifyToken");
-const { deleteActiveToken } = require("../services/verifyToken");
-const e = require("express");
 
 // Obtengo las cajas cerradas
 router.get("/closedcash/:idcashpoint", verifyToken, async (req, res) => {
@@ -32,7 +27,7 @@ router.get("/closedcash/:idcashpoint", verifyToken, async (req, res) => {
             VirtualCashPoint.name AS virtualCashPointName
         FROM CashClosing
         INNER JOIN VirtualCashPoint ON CashClosing.idGlobalVirtualCashPoint = VirtualCashPoint.idGlobalVirtualCashPoint
-        WHERE CashClosing.idCashPoint = $1`,
+        WHERE CashClosing.idCashPoint = $1 ORDER BY CashClosing.valueDate DESC`,
       [idcashpoint]
     );
 
@@ -236,7 +231,7 @@ router.post("/sendprincipal", verifyToken, async (req, res) => {
   // Enviar cada uno de los pagos
   try {
     const payments = await db.query(
-      `SELECT * FROM Payment WHERE idCashPoint = $1 AND CashPointPaymentGroupReferenceID = $2`,
+      `SELECT * FROM Payment WHERE idCashPoint = $1 AND CashPointPaymentGroupReferenceID = $2 ORDER BY valueDate DESC`,
       [idcashpoint, cash.cashpointpaymentgroupreferenceid]
     );
 
@@ -282,11 +277,11 @@ router.post("/sendprincipal", verifyToken, async (req, res) => {
         if (error.status === 409) {
           // Obtengo los pagos que si se han enviado, los que no
           const paymentsSent = await db.query(
-            `SELECT * FROM PaymentSent WHERE idCashPoint = $1 AND CashPointPaymentGroupReferenceID = $2`,
+            `SELECT * FROM PaymentSent WHERE idCashPoint = $1 AND CashPointPaymentGroupReferenceID = $2 ORDER BY valueDate DESC`,
             [idcashpoint, cash.cashpointpaymentgroupreferenceid]
           );
           const paymentsNotSent = await db.query(
-            `SELECT * FROM Payment WHERE idCashPoint = $1 AND CashPointPaymentGroupReferenceID = $2`,
+            `SELECT * FROM Payment WHERE idCashPoint = $1 AND CashPointPaymentGroupReferenceID = $2 ORDER BY valueDate DESC`,
             [idcashpoint, cash.cashpointpaymentgroupreferenceid]
           );
 

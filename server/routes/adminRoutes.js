@@ -20,8 +20,238 @@ router.get("/", verifyToken, async (req, res) => {
   }
 
   try {
-    const supervisors = await db.any("SELECT * FROM Supervisor");
+    const supervisors = await db.any(
+      "SELECT * FROM Supervisor ORDER BY societydivision, idCashPoint" // Ordena por sociedad y idCashPoint
+    );
     res.json(supervisors);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Obtener todas las empresas
+router.get("/company", verifyToken, async (req, res) => {
+  // Si el rol del usuario no es admin
+  if (req.user.role !== "admin") {
+    return res.status(401).json({ message: "Unauthorized User" });
+  }
+
+  try {
+    const companies = await db.any(
+      "SELECT * FROM Company ORDER BY societydivision" // Ordena por sociedad
+    );
+    res.json(companies);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Agregar una nueva empresa
+router.post("/company", verifyToken, async (req, res) => {
+  // Si el rol del usuario no es admin
+  if (req.user.role !== "admin") {
+    return res.status(401).json({ message: "Unauthorized User" });
+  }
+
+  const { societydivision, name } = req.body;
+
+  // Si no se recibe el societydivision
+  if (!societydivision) {
+    return res.status(400).json({ message: "societydivision required" });
+  } else {
+    // Si el societydivision no es de 2 a 21 caracteres
+    if (societydivision.length < 2 || societydivision.length > 21) {
+      return res
+        .status(400)
+        .json({ message: "societydivision must be 2 to 21 characters" });
+    }
+  }
+
+  // Si no se recibe el nombre
+  if (!name) {
+    return res.status(400).json({ message: "name required" });
+  } else {
+    // Si el nombre no es de 2 a 50 caracteres
+    if (name.length < 2 || name.length > 50) {
+      return res
+        .status(400)
+        .json({ message: "name must be 2 to 50 characters" });
+    }
+  }
+
+  try {
+    await db.tx(async (transaction) => {
+      let newCompany = null;
+      // Agrego la empresa a la base de datos
+      newCompany = await transaction.one(
+        `INSERT INTO Company (societydivision, name)
+              VALUES ($1, $2) RETURNING societydivision, name ORDER BY societydivision`, // Ordena por sociedad
+        [societydivision, name]
+      );
+
+      // Agregar una entrada en la tabla de bitácora ("log")
+      await transaction.none(
+        `INSERT INTO log (username, action, description, timestamp)
+            VALUES ($1, $2, $3, $4)`,
+        [
+          "admin",
+          "Agregar empresa",
+          `Agregada empresa ${societydivision}, nombre: ${name}`,
+          new Date(),
+        ]
+      );
+
+      res.json(newCompany); // Devuelvo la empresa creada
+    });
+  } catch (error) {
+    // Si el societydivision ya existe
+    if (error.code === "23505") {
+      return res
+        .status(400)
+        .json({ message: "societydivision already exists" });
+    } else {
+      res.status(500).json({ error: error.message });
+    }
+  }
+});
+
+// Actualizar una empresa existente
+router.put("/company/:societydivision", verifyToken, async (req, res) => {
+  // Si el rol del usuario no es admin
+  if (req.user.role !== "admin") {
+    return res.status(401).json({ message: "Unauthorizead User" });
+  }
+
+  const societydivision = req.params.societydivision;
+  const { name } = req.body;
+
+  // Si no se recibe el societydivision
+  if (!societydivision) {
+    return res.status(400).json({ message: "societydivision required" });
+  } else {
+    // Si el soscietydivision no es de 2 a 21 caracteres
+    if (societydivision.length < 2 || societydivision.length > 21) {
+      return res
+        .status(400)
+        .json({ message: "societydivision must be 2 to 21 characters" });
+    }
+  }
+
+  // Si no se recibe el nombre o el nombre no es de 2 a 50 caracteres
+  if (!name) {
+    return res.status(400).json({ message: "name required" });
+  } else {
+    // Si el nombre no es de 2 a 50 caracteres
+    if (name.length < 2 || name.length > 50) {
+      return res
+        .status(400)
+        .json({ message: "name must be 2 to 50 characters" });
+    }
+  }
+
+  try {
+    await db.tx(async (transaction) => {
+      // Busca la empresa a actualizar
+      const companyToUpdate = await transaction.oneOrNone(
+        `SELECT * FROM Company WHERE societydivision = $1 ORDER BY societydivision`, // Ordena por sociedad
+        [societydivision]
+      );
+
+      if (!companyToUpdate) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+
+      // Actualiza la empresa
+      const updatedCompany = await transaction.one(
+        `UPDATE Company SET name=$1
+          WHERE societydivision=$2 RETURNING societydivision, name ORDER BY societydivision`, // Ordena por sociedad
+        [name, societydivision]
+      );
+
+      // Agregar una entrada en la tabla de bitácora ("log")
+      await transaction.none(
+        `INSERT INTO log (username, action, description, timestamp)
+            VALUES ($1, $2, $3, $4)`,
+        [
+          "admin",
+          "Actualizar empresa",
+          `Actualizada empresa ${societydivision}, nombre: ${name}`,
+          new Date(),
+        ]
+      );
+
+      // Devuelve la respuesta exitosa
+      res.json(updatedCompany);
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Eliminar una empresa
+router.delete("/company/:societydivision", verifyToken, async (req, res) => {
+  // Si el rol del usuario no es admin
+  if (req.user.role !== "admin") {
+    return res.status(401).json({ message: "Unauthorized User" });
+  }
+
+  const societydivision = req.params.societydivision;
+
+  // Si no se recibe el societydivision
+  if (!societydivision) {
+    return res.status(400).json({ message: "societydivision required" });
+  } else {
+    // Si el societydivision no es de 2 a 21 caracteres
+    if (societydivision.length < 2 || societydivision.length > 21) {
+      return res
+        .status(400)
+        .json({ message: "societydivision must be 2 to 21 characters" });
+    }
+  }
+
+  try {
+    await db.tx(async (transaction) => {
+      // Busca la empresa a eliminar
+      const companyToDelete = await transaction.oneOrNone(
+        `SELECT * FROM Company WHERE societydivision = $1 ORDER BY societydivision`, // Ordena por sociedad
+        [societydivision]
+      );
+
+      if (!companyToDelete) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+
+      // Verificar si se puede eliminar la empresa, si tiene un supervisor asignado
+      const counts = await transaction.one(
+        `SELECT COUNT(*) FROM Supervisor WHERE societydivision = $1`,
+        [societydivision]
+      );
+
+      if (counts.count > 0) {
+        return res.status(400).json({
+          message: "Company cannot be deleted because it has a supervisor",
+        });
+      }
+
+      // Elimina la empresa
+      await transaction.none("DELETE FROM Company WHERE societydivision=$1", [
+        societydivision,
+      ]);
+
+      // Agregar una entrada en la tabla de bitácora ("log")
+      await transaction.none(
+        `INSERT INTO log (username, action, description, timestamp)
+            VALUES ($1, $2, $3, $4)`,
+        [
+          "admin",
+          "Eliminar empresa",
+          `Eliminada empresa ${societydivision}, nombre: ${companyToDelete.name}`,
+          new Date(),
+        ]
+      );
+
+      res.json({ message: "Company eliminada exitosamente" });
+    });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -34,7 +264,7 @@ router.post("/agregar", verifyToken, async (req, res) => {
     return res.status(401).json({ message: "Unauthorized User" });
   }
 
-  const { username, idCashPoint, office } = req.body;
+  const { username, idCashPoint, office, societydivision } = req.body;
   let { password } = req.body;
 
   // Si no se recibe el idCashPoint
@@ -73,6 +303,18 @@ router.post("/agregar", verifyToken, async (req, res) => {
     }
   }
 
+  // Si no se recibe la sociedad
+  if (!societydivision) {
+    return res.status(400).json({ message: "societydivision required" });
+  } else {
+    // Si la sociedad no es de 2 a 50 caracteres
+    if (societydivision.length < 2 || societydivision.length > 50) {
+      return res
+        .status(400)
+        .json({ message: "societydivision must be 2 to 50 characters" });
+    }
+  }
+
   // Si no se recibe el password
   if (!password) {
     return res.status(400).json({ message: "password required" });
@@ -93,9 +335,9 @@ router.post("/agregar", verifyToken, async (req, res) => {
       let newUser = null;
       // Agrego el supervisor a la base de datos
       newUser = await transaction.one(
-        `INSERT INTO Supervisor (idCashPoint, "user", office, password)
-              VALUES ($1, $2, $3, $4) RETURNING idCashPoint, "user"`,
-        [idCashPoint, username, office, password]
+        `INSERT INTO Supervisor (idCashPoint, "user", office, password, societydivision)
+              VALUES ($1, $2, $3, $4, $5) RETURNING idCashPoint, "user", office, societydivision ORDER BY societydivision, idCashPoint`, // Ordena por sociedad y idCashPoint
+        [idCashPoint, username, office, password, societydivision]
       );
 
       // Agregar una entrada en la tabla de bitácora ("log")
@@ -105,7 +347,7 @@ router.post("/agregar", verifyToken, async (req, res) => {
         [
           "admin",
           "Agregar supervisor",
-          `Agregado supervisor ${username}, idCashPoint: ${idCashPoint}`,
+          `Agregado supervisor ${username}, idCashPoint: ${idCashPoint}, sociedad: ${societydivision}, oficina: ${office}`,
           new Date(),
         ]
       );
@@ -130,7 +372,7 @@ router.put("/:idCashPoint", verifyToken, async (req, res) => {
   }
 
   const idCashPoint = req.params.idCashPoint;
-  const { username, office } = req.body;
+  const { username, office, societydivision } = req.body;
   let { password } = req.body;
 
   // Si no se recibe el idCashPoint
@@ -167,6 +409,18 @@ router.put("/:idCashPoint", verifyToken, async (req, res) => {
       return res
         .status(400)
         .json({ message: "office must be 2 to 50 characters" });
+    }
+  }
+
+  // Si no se recibe la sociedad
+  if (!societydivision) {
+    return res.status(400).json({ message: "societydivision required" });
+  } else {
+    // Si la sociedad no es de 2 a 50 caracteres
+    if (societydivision.length < 2 || societydivision.length > 50) {
+      return res
+        .status(400)
+        .json({ message: "societydivision must be 2 to 50 characters" });
     }
   }
 
@@ -199,9 +453,9 @@ router.put("/:idCashPoint", verifyToken, async (req, res) => {
       if (!password) {
         // Actualiza el supervisor sin contraseña
         const updatedUser = await transaction.one(
-          `UPDATE Supervisor SET "user"=$1, office=$3
-          WHERE idCashPoint=$2 RETURNING idCashPoint, "user", office`,
-          [username, idCashPoint, office]
+          `UPDATE Supervisor SET "user"=$1, office=$3, societydivision=$4
+          WHERE idCashPoint=$2 RETURNING idCashPoint, "user", office, societydivision ORDER BY societydivision, idCashPoint`, // Ordena por sociedad y idCashPoint
+          [username, idCashPoint, office, societydivision]
         );
 
         // Agregar una entrada en la tabla de bitácora ("log")
@@ -211,7 +465,7 @@ router.put("/:idCashPoint", verifyToken, async (req, res) => {
           [
             "admin",
             "Actualizar supervisor",
-            `Actualizado supervisor ${username}, idCashPoint: ${idCashPoint}`,
+            `Actualizado supervisor ${username}, idCashPoint: ${idCashPoint}, sociedad: ${societydivision}, oficina: ${office}`,
             new Date(),
           ]
         );
@@ -222,9 +476,9 @@ router.put("/:idCashPoint", verifyToken, async (req, res) => {
 
       // Realiza la actualización solo si el supervisor existe y hay contraseña
       const updatedUser = await transaction.one(
-        `UPDATE Supervisor SET "user"=$1, password=$2, office=$4
-       WHERE idCashPoint=$3 RETURNING idCashPoint, "user", office`,
-        [username, password, idCashPoint, office]
+        `UPDATE Supervisor SET "user"=$1, password=$2, office=$4, societydivision=$5
+       WHERE idCashPoint=$3 RETURNING idCashPoint, "user", office, societydivision ORDER BY societydivision, idCashPoint`, // Ordena por sociedad y idCashPoint
+        [username, password, idCashPoint, office, societydivision]
       );
       // Devuelve la respuesta exitosa
       res.json(updatedUser);
@@ -259,7 +513,7 @@ router.delete("/:idCashPoint", verifyToken, async (req, res) => {
     await db.tx(async (transaction) => {
       // Busca el supervisor a eliminar
       const supervisorToDelete = await transaction.oneOrNone(
-        `SELECT * FROM Supervisor WHERE idCashPoint = $1`,
+        `SELECT * FROM Supervisor WHERE idCashPoint = $1 ORDER BY societydivision, idCashPoint`, // Ordena por sociedad y idCashPoint
         [idCashPoint]
       );
 
@@ -322,7 +576,7 @@ router.delete("/:idCashPoint", verifyToken, async (req, res) => {
             [
               "admin",
               "Eliminar supervisor",
-              `Eliminado supervisor ${supervisorToDelete.user}, idCashPoint: ${idCashPoint}`,
+              `Eliminado supervisor ${supervisorToDelete.user}, idCashPoint: ${idCashPoint}, sociedad: ${supervisorToDelete.societydivision}, oficina: ${supervisorToDelete.office}`,
               new Date(),
             ]
           );
@@ -370,7 +624,7 @@ router.put("/block/:idCashPoint", verifyToken, async (req, res) => {
   try {
     // Actualiza el supervisor
     const updatedSupervisor = await db.one(
-      `UPDATE Supervisor SET isBlocked=$1 WHERE idCashPoint=$2 RETURNING idCashPoint, "user", office, isBlocked`,
+      `UPDATE Supervisor SET isBlocked=$1 WHERE idCashPoint=$2 RETURNING idCashPoint, "user", office, societydivision, isBlocked ORDER BY societydivision, idCashPoint`, // Ordena por sociedad y idCashPoint
       [isblocked, idCashPoint]
     );
 
@@ -384,8 +638,8 @@ router.put("/block/:idCashPoint", verifyToken, async (req, res) => {
         isblocked === true ? "Bloquear supervisor" : "Desbloquear supervisor",
         // Si el supervisor se bloquea
         isblocked === true
-          ? `Bloqueado supervisor ${updatedSupervisor.user}, idCashPoint: ${idCashPoint}`
-          : `Desbloqueado supervisor ${updatedSupervisor.user}, idCashPoint: ${idCashPoint}`,
+          ? `Bloqueado supervisor ${updatedSupervisor.user}, idCashPoint: ${idCashPoint}, sociedad: ${updatedSupervisor.societydivision}, oficina: ${updatedSupervisor.office}`
+          : `Desbloqueado supervisor ${updatedSupervisor.user}, idCashPoint: ${idCashPoint}, sociedad: ${updatedSupervisor.societydivision}, oficina: ${updatedSupervisor.office}`,
         new Date(),
       ]
     );
@@ -407,17 +661,17 @@ router.post(
       return res.status(401).json({ message: "Unauthorized User" });
     }
 
-    const idcashpoint = req.body.idcashpoint;
+    const societydivision = req.body.societydivision;
 
-    // Si no se recibe el idCashPoint
-    if (!idcashpoint) {
-      return res.status(400).json({ error: "idCashPoint required" });
+    // Si no se recibe el societydivision
+    if (!societydivision) {
+      return res.status(400).json({ error: "societydivision required" });
     } else {
-      // Si el idCashPoint no es de 16 o 21 caracteres
-      if (idcashpoint.length !== 16 && idcashpoint.length !== 21) {
+      // Si el idCashPoint no es de 2 a 50 caracteres
+      if (societydivision.length < 2 || societydivision.length > 21) {
         return res
           .status(400)
-          .json({ error: "idCashPoint must be 16 or 21 characters" });
+          .json({ error: "societydivision must be 2 to 21 characters" });
       }
     }
 
@@ -425,10 +679,16 @@ router.post(
     const counts = await db.one(
       `
       SELECT
-        (SELECT COUNT(*) FROM PaymentGroup WHERE idCashPoint = $1) AS open_payment_group_count,
-        (SELECT COUNT(*) FROM CashClosing WHERE idCashPoint = $1) AS closed_cash_closing_count
+        (SELECT COUNT(*) 
+        FROM PaymentGroup AS PG
+        JOIN Supervisor AS S ON PG.idCashPoint = S.idCashPoint
+        WHERE S.societydivision = $1) AS open_payment_group_count,
+        (SELECT COUNT(*) 
+        FROM CashClosing AS CC
+        JOIN Supervisor AS S ON CC.idCashPoint = S.idCashPoint
+        WHERE S.societydivision = $1) AS closed_cash_closing_count
     `,
-      [idcashpoint]
+      [societydivision]
     );
 
     if (
@@ -467,9 +727,9 @@ router.post(
         // Limpio la tabla de reversePayment agregandolas en la tabla de PaymentSent
         const reversepayments = await db.manyOrNone(
           `
-          SELECT * FROM ReversePayment WHERE idCashPoint = $1
+          SELECT * FROM ReversePayment WHERE idCashPoint IN (SELECT S.idCashPoint FROM Supervisor AS S WHERE S.societydivision = $1) ORDER BY fecha_hora DESC
           `,
-          [idcashpoint]
+          [societydivision]
         );
 
         for (const reverse of reversepayments) {
@@ -495,8 +755,8 @@ router.post(
         }
 
         // Limpio la tabla Client
-        await transaction.none("DELETE FROM Client where idcashpoint=$1", [
-          idcashpoint,
+        await transaction.none("DELETE FROM Client where societydivision=$1", [
+          societydivision,
         ]);
 
         // Itera a través de las líneas y procesa los registros
@@ -513,7 +773,7 @@ router.post(
               // Inserta el registro en la tabla Client
               await transaction.query(
                 `
-              INSERT INTO Client (PayerContractAccountID, CUEN, name, address, debt, idcashpoint, parroquia, isdisconnected)
+              INSERT INTO Client (PayerContractAccountID, CUEN, name, address, debt, societydivision, parroquia, isdisconnected)
               VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
               `,
                 [
@@ -522,7 +782,7 @@ router.post(
                   record.NOMBRE,
                   record.DIRECCION,
                   parseFloat(record.DEUDA.replace(",", ".")),
-                  idcashpoint,
+                  societydivision,
                   record.PARROQUIA,
                   record.ESTADO_DESCONECTADO,
                 ]
@@ -550,7 +810,7 @@ router.post(
           [
             "admin",
             "Cargar archivo CSV",
-            `Cargado archivo CSV, idCashPoint: ${idcashpoint}`,
+            `Cargado archivo CSV, sociedad: ${societydivision}`,
             new Date(),
           ]
         );

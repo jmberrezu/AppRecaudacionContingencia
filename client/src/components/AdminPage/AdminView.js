@@ -1,40 +1,33 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
-import UserCrud from "./UserCrud";
-import VirtualCashPointCrud from "./VirtualCashPointCrud";
-import { Container } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
-import SendPrincipalService from "./SendPrincipalService";
 import Sidebar from "./Sidebar";
-import SentHistory from "./SentHistory";
+import SupervisorCrud from "./SupervisorCrud";
+import CompanyCrud from "./CompanyCrud";
+import { Container } from "react-bootstrap";
 import { PersonGear } from "react-bootstrap-icons";
-import PrintMessage from "./PrintMessage";
 
-function SupervisorView() {
-  // Para el token y la navegación
-  const navigate = useNavigate();
-  // Para el componente activo
-  const [activeComponent, setActiveComponent] = useState("crudusuarios"); // Inicialmente muestra el componente de CRUD de usuarios
+import axios from "axios";
 
+function AdminView() {
   // Para obtener el usuario
-  const [user, setUser] = useState(null);
   const [token, setToken] = useState("");
+  const navigate = useNavigate();
+  const [user, setUser] = useState(null);
+  const [activeComponent, setActiveComponent] = useState("crudsupervisores"); // Inicialmente muestra el componente de CRUD de usuarios
 
+  // Obtener el token del local storage
   useEffect(() => {
     const storedToken = localStorage.getItem("token");
     if (storedToken) {
       axios
         .get("http://localhost:5000/api/login/verify", {
-          headers: {
-            Authorization: `Bearer ${storedToken}`,
-          },
+          headers: { Authorization: `Bearer ${storedToken}` },
         })
         .then((response) => {
-          // Verificar el rol
-          if (response.data.role !== "supervisor") {
+          // Verificar el rol de admin
+          if (response.data.role !== "admin") {
             navigate("/");
           } else {
-            // Guardar el usuario
             setUser(response.data);
             // Guardar el token
             setToken(storedToken);
@@ -74,35 +67,16 @@ function SupervisorView() {
         activeComponent={activeComponent}
       />
       <Container fluid className="my-3">
-        <h1>
+        <h1 className="text-warning">
           <PersonGear className="align-middle mb-1 me-1"> </PersonGear> Página
-          de Supervisor
+          de Administrador
         </h1>
         <hr />
-        {activeComponent === "crudusuarios" && user && (
-          <UserCrud
-            idcashpoint={user.idcashpoint}
-            societydivision={user.societydivision}
-          />
-        )}
-        {activeComponent === "crudcajasvirtuales" && (
-          <VirtualCashPointCrud idcashpoint={user?.idcashpoint} />
-        )}
-        {activeComponent === "envio" && (
-          <SendPrincipalService
-            idcashpoint={user?.idcashpoint}
-            office={user?.office}
-          />
-        )}
-        {activeComponent === "historialenvios" && (
-          <SentHistory idcashpoint={user?.idcashpoint} />
-        )}
-        {activeComponent === "impresion" && (
-          <PrintMessage idcashpoint={user?.idcashpoint} />
-        )}
+        {activeComponent === "crudsupervisores" && <SupervisorCrud />}
+        {activeComponent === "crudempresas" && <CompanyCrud />}
       </Container>
     </div>
   );
 }
 
-export default SupervisorView;
+export default AdminView;

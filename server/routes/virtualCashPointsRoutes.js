@@ -32,7 +32,7 @@ router.get("/:idcashPoint", verifyToken, async (req, res) => {
   try {
     // Obtener todas las cajas virtuales de la caja
     const virtualCashPoints = await db.any(
-      "SELECT * FROM VirtualCashPoint WHERE idCashPoint=$1",
+      "SELECT * FROM VirtualCashPoint WHERE idCashPoint=$1 ORDER BY idVirtualCashPoint ASC",
       idcashPoint
     );
     res.json(virtualCashPoints);

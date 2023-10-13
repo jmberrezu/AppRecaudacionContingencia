@@ -1,23 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import {
-  Container,
-  Button,
-  Table,
-  Modal,
-  Alert,
-  Form,
-  Nav,
-  Navbar,
-} from "react-bootstrap";
-import {
-  InfoCircle,
-  PencilSquare,
-  PersonFillAdd,
-  PlusCircle,
-} from "react-bootstrap-icons";
-import sparkPayLogo from "../../images/logoM.svg";
+import { Container, Button, Table, Modal, Alert, Form } from "react-bootstrap";
+import { PencilSquare, PlusCircle } from "react-bootstrap-icons";
 import { useCallback } from "react";
 
 function SupervisorCrud() {
@@ -33,18 +18,13 @@ function SupervisorCrud() {
   const [office, setOffice] = useState("");
   const [password, setPassword] = useState("");
   const [idCashPoint, setIdCashPoint] = useState("");
+  // Para la lista de empresas
+  const [empresas, setEmpresas] = useState([]);
+  const [societydivision, setSocietyDivision] = useState("");
   // Para editar un supervisor
   const [editingSupervisor, setEditingSupervisor] = useState(null);
   // Para mostrar alertas
   const [alertInfo, setAlertInfo] = useState(null);
-
-  const [showUploadModal, setShowUploadModal] = useState(false);
-
-  const [csvFile, setCsvFile] = useState(null);
-  const [csvIDCashPoint, setCsvIDCashPoint] = useState(null);
-  const [isUploading, setIsUploading] = useState(false);
-  const [uploadSuccess, setUploadSuccess] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
 
   // Obtener token de local stroage
   useEffect(() => {
@@ -85,18 +65,35 @@ function SupervisorCrud() {
     }
   }, [token]);
 
+  // Obtener lista de empresas
+  const fetchEmpresas = useCallback(async () => {
+    try {
+      const response = await axios.get(
+        "http://localhost:5000/api/admin/company",
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      setEmpresas(response.data);
+    } catch (error) {
+      console.error(error);
+    }
+  }, [token]);
+
   // Cargar datos iniciales
   useEffect(() => {
     if (token) {
       fetchSupervisors();
+      fetchEmpresas();
     }
-  }, [token, fetchSupervisors]);
+  }, [token, fetchSupervisors, fetchEmpresas]);
 
   // Limpiar los campos de los modales
   useEffect(() => {
     if (!showModal) {
       setUsername("");
       setOffice("");
+      setSocietyDivision("");
       setPassword("");
       setIdCashPoint("");
       setAlertInfo(null);
@@ -107,6 +104,7 @@ function SupervisorCrud() {
     if (!showEditModal) {
       setUsername("");
       setOffice("");
+      setSocietyDivision("");
       setPassword("");
       setIdCashPoint("");
       setAlertInfo(null);
@@ -116,12 +114,13 @@ function SupervisorCrud() {
   // Agregar un nuevo supervisor
   const createSupervisor = async () => {
     try {
-      if (username && office && password && idCashPoint) {
+      if (username && societydivision && password && idCashPoint && office) {
         await axios.post(
           "http://localhost:5000/api/admin/agregar",
           {
             username: username,
             office: office,
+            societydivision: societydivision,
             password: password,
             idCashPoint: idCashPoint,
           },
@@ -131,6 +130,7 @@ function SupervisorCrud() {
         );
         setUsername("");
         setOffice("");
+        setSocietyDivision("");
         setPassword("");
         setIdCashPoint("");
         setAlertInfo({
@@ -195,6 +195,7 @@ function SupervisorCrud() {
     setEditingSupervisor(supervisor);
     setUsername(supervisor.user);
     setOffice(supervisor.office);
+    setSocietyDivision(supervisor.societydivision);
     setIdCashPoint(supervisor.idcashpoint);
     setShowEditModal(true);
   };
@@ -206,6 +207,7 @@ function SupervisorCrud() {
         ...editingSupervisor,
         username,
         office,
+        societydivision,
         password,
         idCashPoint,
       };
@@ -220,6 +222,7 @@ function SupervisorCrud() {
       setShowEditModal(false);
       setUsername("");
       setOffice("");
+      setSocietyDivision("");
       setPassword("");
       setIdCashPoint("");
       setAlertInfo({
@@ -261,88 +264,6 @@ function SupervisorCrud() {
     }
   };
 
-  // Cerrar sesión
-  const handleLogout = async () => {
-    // Limpiar el token y redirigir al inicio de sesión
-    localStorage.removeItem("token");
-    try {
-      await axios.delete(`http://localhost:5000/api/login/logout`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-    } catch (error) {
-      console.error(error);
-    }
-    navigate("/");
-  };
-
-  // Función para manejar la carga de un archivo CSV
-  const handleUpload = async (file) => {
-    setCsvFile(file);
-  };
-
-  const uploadFile = async () => {
-    setAlertInfo(null);
-    setUploadSuccess(false);
-
-    if (csvFile !== null) {
-      setIsUploading(true); // Indicar que se está procesando la carga
-      try {
-        const formData = new FormData();
-        formData.append("csvFile", csvFile);
-        formData.append("idcashpoint", csvIDCashPoint); // Agregar idcashpoint como parte del FormData
-
-        const response = await axios.post(
-          "http://localhost:5000/api/admin/upload-csv",
-          formData,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "multipart/form-data",
-            },
-            onUploadProgress: (progressEvent) => {
-              // Calcular el progreso y actualizar el estado
-              const progress =
-                (progressEvent.loaded / progressEvent.total) * 100;
-              setUploadProgress(progress);
-            },
-          }
-        );
-
-        // Manejar la respuesta del servidor (por ejemplo, mostrar una alerta)
-        if (response.status === 200) {
-          // Mostrar mensaje de éxito y mantener el modal abierto
-          setUploadSuccess(true);
-        }
-      } catch (error) {
-        if (error.response && error.response.status === 400) {
-          setAlertInfo({
-            variant: "danger",
-            message: error.response.data.error,
-          });
-        } else if (error.response && error.response.status === 500) {
-          setAlertInfo({
-            variant: "danger",
-            message: "No se pudo cargar el CSV. " + error.response.data.error,
-          });
-        } else {
-          setAlertInfo({
-            variant: "danger",
-            message: error.message, // Mostrar el mensaje de error general
-          });
-        }
-      } finally {
-        setIsUploading(false); // Indicar que la carga ha terminado
-        setCsvFile(null); // Limpiar el archivo
-        document.getElementById("csvFile").value = "";
-      }
-    } else {
-      setAlertInfo({
-        variant: "danger",
-        message: "Por favor, seleccione un archivo CSV.",
-      });
-    }
-  };
-
   // Función para bloquear o desbloquear un usuario
   const handleBlockUser = async (idcashpoint, isblocked) => {
     try {
@@ -369,32 +290,9 @@ function SupervisorCrud() {
 
   return (
     <div>
-      <Navbar className="bg-body-tertiary stick px-5" expand="sm" sticky="top">
-        <Navbar.Toggle aria-controls="basic-navbar-nav" />
-        <Navbar.Brand>
-          <img
-            src={sparkPayLogo}
-            alt="SparkPay Logo"
-            className="img-fluid me-3 mb-1"
-            style={{ width: "45px" }}
-          />
-          <span className="fs-3 ">Spark-Pay</span>
-        </Navbar.Brand>
-        <Navbar.Collapse id="basic-navbar-nav">
-          <Nav className="me-auto"></Nav>
-
-          <Nav>
-            <Nav.Item className="mt-2 mt-sm-0">
-              <Button variant="outline-warning" onClick={handleLogout}>
-                Cerrar Sesión
-              </Button>
-            </Nav.Item>
-          </Nav>
-        </Navbar.Collapse>
-      </Navbar>
       <Container className="mt-4 ">
         <h1>Administración de Supervisores</h1>
-
+        <hr />
         <Button
           variant="warning"
           onClick={() => {
@@ -404,69 +302,60 @@ function SupervisorCrud() {
           <PlusCircle className="me-2 mb-1" />
           Agregar Supervisor
         </Button>
-        <Table striped bordered hover className="mt-3">
-          <thead>
-            <tr>
-              <th>ID de Caja</th>
-              <th>Usuario</th>
-              <th>Oficina</th>
-              <th>Acciones</th>
-              <th>Bloqueado</th>
-            </tr>
-          </thead>
-          <tbody>
-            {supervisors.map((supervisor) => (
-              <tr key={supervisor.idcashpoint}>
-                <td>{supervisor.idcashpoint}</td>
-                <td>{supervisor.user}</td>
-                <td>{supervisor.office}</td>
-                <td className="d-flex justify-content-between">
-                  <div>
-                    <Button
-                      className="me-1"
-                      variant="success"
-                      onClick={() => {
-                        editSupervisor(supervisor);
-                      }}
-                    >
-                      <PencilSquare
-                        size={16}
-                        className="align-middle mb-1 me-2"
-                      />
-                      Editar
-                    </Button>
-                  </div>
-                  <div>
-                    <Button
-                      className="ms-1"
-                      variant="primary"
-                      onClick={() => {
-                        setCsvIDCashPoint(supervisor.idcashpoint);
-                        setShowUploadModal(true);
-                      }}
-                    >
-                      <PersonFillAdd
-                        size={16}
-                        className="align-middle mb-1 me-2"
-                      />
-                      Cargar Clientes
-                    </Button>
-                  </div>
-                </td>
-
-                <td>
-                  <Form.Check
-                    type="switch"
-                    checked={supervisor.isblocked}
-                    onChange={(e) =>
-                      handleBlockUser(supervisor.idcashpoint, e.target.checked)
-                    }
-                  />
-                </td>
+        <div className="mt-2" style={{ height: "69vh", overflowY: "auto" }}>
+          <Table striped bordered hover className="mt-3">
+            <thead>
+              <tr>
+                <th>Sociedad / División</th>
+                <th>ID de Caja SAP</th>
+                <th>Usuario</th>
+                <th>Oficina SAP</th>
+                <th>Acciones</th>
+                <th>Bloqueado</th>
               </tr>
-            ))}
-          </tbody>
-        </Table>
+            </thead>
+            <tbody>
+              {supervisors.map((supervisor) => (
+                <tr key={supervisor.idcashpoint}>
+                  <td>{supervisor.societydivision}</td>
+                  <td>{supervisor.idcashpoint}</td>
+                  <td>{supervisor.user}</td>
+                  <td>{supervisor.office}</td>
+                  <td className="d-flex justify-content-between">
+                    <div>
+                      <Button
+                        className="me-1"
+                        variant="success"
+                        onClick={() => {
+                          editSupervisor(supervisor);
+                        }}
+                      >
+                        <PencilSquare
+                          size={16}
+                          className="align-middle mb-1 me-2"
+                        />
+                        Editar
+                      </Button>
+                    </div>
+                  </td>
+
+                  <td>
+                    <Form.Check
+                      type="switch"
+                      checked={supervisor.isblocked}
+                      onChange={(e) =>
+                        handleBlockUser(
+                          supervisor.idcashpoint,
+                          e.target.checked
+                        )
+                      }
+                    />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </Table>
+        </div>
         <Modal show={showModal} onHide={() => setShowModal(false)}>
           <Modal.Header closeButton>
             <Modal.Title>Agregar Supervisor</Modal.Title>
@@ -479,11 +368,40 @@ function SupervisorCrud() {
             {/* Formulario para agregar supervisor */}
             <Form>
               <Form.Group>
-                <Form.Label>ID de Caja</Form.Label>
+                <Form.Label>Sociedad / División</Form.Label>
+                {/* Mostrar la lista de sociedades que existen */}
+                <Form.Control
+                  as="select"
+                  value={societydivision}
+                  onChange={(e) => setSocietyDivision(e.target.value)}
+                >
+                  <option value="">
+                    -- Seleccione una sociedad / división --
+                  </option>
+                  {empresas.map((empresa) => (
+                    <option
+                      key={empresa.societydivision}
+                      value={empresa.societydivision}
+                    >
+                      {empresa.societydivision + " - " + empresa.name}
+                    </option>
+                  ))}
+                </Form.Control>
+              </Form.Group>
+              <Form.Group>
+                <Form.Label>ID de Caja SAP</Form.Label>
                 <Form.Control
                   type="text"
                   value={idCashPoint}
                   onChange={(e) => setIdCashPoint(e.target.value)}
+                />
+              </Form.Group>
+              <Form.Group>
+                <Form.Label>Oficina SAP</Form.Label>
+                <Form.Control
+                  type="text"
+                  value={office}
+                  onChange={(e) => setOffice(e.target.value)}
                 />
               </Form.Group>
               <Form.Group>
@@ -492,14 +410,6 @@ function SupervisorCrud() {
                   type="text"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                />
-              </Form.Group>
-              <Form.Group>
-                <Form.Label>Oficina</Form.Label>
-                <Form.Control
-                  type="text"
-                  value={office}
-                  onChange={(e) => setOffice(e.target.value)}
                 />
               </Form.Group>
               <Form.Group>
@@ -533,7 +443,28 @@ function SupervisorCrud() {
             {/* Formulario para editar supervisor */}
             <Form>
               <Form.Group>
-                <Form.Label>ID de Caja</Form.Label>
+                <Form.Label>Sociedad / División</Form.Label>
+                {/* Mostrar la lista de sociedades que existen */}
+                <Form.Control
+                  as="select"
+                  value={societydivision}
+                  onChange={(e) => setSocietyDivision(e.target.value)}
+                >
+                  <option value="">
+                    -- Seleccione una sociedad / división --
+                  </option>
+                  {empresas.map((empresa) => (
+                    <option
+                      key={empresa.societydivision}
+                      value={empresa.societydivision}
+                    >
+                      {empresa.societydivision + " - " + empresa.name}
+                    </option>
+                  ))}
+                </Form.Control>
+              </Form.Group>
+              <Form.Group>
+                <Form.Label>ID de Caja SAP</Form.Label>
                 <Form.Control
                   type="text"
                   value={idCashPoint}
@@ -542,19 +473,19 @@ function SupervisorCrud() {
                 />
               </Form.Group>
               <Form.Group>
+                <Form.Label>Oficina SAP</Form.Label>
+                <Form.Control
+                  type="text"
+                  value={office}
+                  onChange={(e) => setOffice(e.target.value)}
+                />
+              </Form.Group>
+              <Form.Group>
                 <Form.Label>Usuario</Form.Label>
                 <Form.Control
                   type="text"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                />
-              </Form.Group>
-              <Form.Group>
-                <Form.Label>Oficina</Form.Label>
-                <Form.Control
-                  type="text"
-                  value={office}
-                  onChange={(e) => setOffice(e.target.value)}
                 />
               </Form.Group>
               <Form.Group>
@@ -579,67 +510,6 @@ function SupervisorCrud() {
             </Button>
             <Button variant="primary" onClick={updateSupervisor}>
               Guardar
-            </Button>
-          </Modal.Footer>
-        </Modal>
-        <Modal show={showUploadModal} onHide={() => setShowUploadModal(false)}>
-          <Modal.Header closeButton>
-            <Modal.Title>Cargar Clientes Mediante Archivo CSV</Modal.Title>
-          </Modal.Header>
-          <Modal.Body>
-            <p>
-              {" "}
-              Caja: <strong>{csvIDCashPoint}</strong>
-            </p>
-            {isUploading ? (
-              <Alert variant="info">
-                <p>Procesando la carga del archivo CSV...</p>
-                <div className="progress">
-                  <div
-                    className="progress-bar progress-bar-striped progress-bar-animated"
-                    role="progressbar"
-                    style={{ width: `${uploadProgress}%` }}
-                    aria-valuenow={uploadProgress}
-                    aria-valuemin="0"
-                    aria-valuemax="100"
-                  ></div>
-                </div>
-              </Alert>
-            ) : uploadSuccess ? (
-              <Alert variant="success">Archivo CSV cargado exitosamente.</Alert>
-            ) : (
-              alertInfo && (
-                <Alert variant={alertInfo.variant}>{alertInfo.message}</Alert>
-              )
-            )}
-            <Form>
-              <Form.Group controlId="csvFile">
-                <Form.Label>Selecciona un archivo CSV</Form.Label>
-                <Form.Control
-                  type="file"
-                  accept=".csv"
-                  onChange={(e) => handleUpload(e.target.files[0])}
-                />
-              </Form.Group>
-            </Form>
-            <Alert variant="primary" className="mt-3">
-              <strong>
-                <InfoCircle className="me-1 mb-1" />{" "}
-              </strong>
-              Al cargar un archivo CSV de clientes se eliminarán todos los
-              clientes y los pagos realizados por estos. ¿Está seguro que desea
-              continuar?
-            </Alert>
-          </Modal.Body>
-          <Modal.Footer>
-            <Button
-              variant="secondary"
-              onClick={() => setShowUploadModal(false)}
-            >
-              Volver
-            </Button>
-            <Button variant="primary" onClick={uploadFile}>
-              Subir
             </Button>
           </Modal.Footer>
         </Modal>
