@@ -156,7 +156,6 @@ function Payment({ user }) {
       if (response.ok) {
         const responseData = await response.json();
         setPaymentData(responseData); // Almacenar los datos del pago
-        responseData.date = formatDate(responseData.date);
         setShowModal(true); // Abrir el modal
       } else {
         setAlertInfo({
@@ -182,6 +181,16 @@ function Payment({ user }) {
     }
   };
 
+  const formatTime2 = (dateString) => {
+    const options = {
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: false,
+    };
+    return new Date(dateString).toLocaleTimeString(undefined, options);
+  };
+
   const handleCuentaContratoChange = (e) => {
     // Asegurarse de que solo se ingresen números
     const inputValue = e.target.value.replace(/[^\d]/g, "");
@@ -204,6 +213,11 @@ function Payment({ user }) {
   const formatDate = (dateString) => {
     const options = { year: "numeric", month: "numeric", day: "numeric" };
     return new Date(dateString).toLocaleDateString(undefined, options);
+  };
+
+  const formatTime = (dateString) => {
+    const options = { hour: "numeric", minute: "numeric", second: "numeric" };
+    return new Date(dateString).toLocaleTimeString(undefined, options);
   };
 
   return (
@@ -296,7 +310,9 @@ function Payment({ user }) {
                 <div>
                   <p>
                     <strong>Fecha: </strong>
-                    {paymentData.date}
+                    {formatDate(paymentData.valuedate)}
+                    <strong> Hora: </strong>
+                    {formatTime(paymentData.valuedate)}
                   </p>
                   <p>
                     <strong>Cuenta Contrato: </strong>
@@ -326,7 +342,8 @@ function Payment({ user }) {
             paymentData={
               paymentData && {
                 ...paymentData,
-                date: paymentData.date.split("-").reverse().join("/"),
+                date: formatDate(paymentData.valuedate),
+                time: formatTime2(paymentData.valuedate),
               }
             }
             direccion={direccion}

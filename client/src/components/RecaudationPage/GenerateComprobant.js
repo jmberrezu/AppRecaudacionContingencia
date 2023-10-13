@@ -20,18 +20,6 @@ function GenerateComprobant({
     documentTitle: "Comprobante_Pago_" + paymentData.pid,
   });
 
-  // Reformatear la hora a la hora local
-  const formatearHora = (hora) => {
-    // si es reimpresion no reformatear la hora ya hora es 14:50:46, en lugar de 09:50:46
-    if (!esReimpresion) {
-      const horaLocal = new Date();
-      const horaLocalString = horaLocal.toLocaleTimeString();
-      return horaLocalString;
-    } else {
-      return hora;
-    }
-  };
-
   return (
     <React.Fragment>
       {cliente && (
@@ -96,7 +84,7 @@ function GenerateComprobant({
                 </p>
                 <p className="m-0 p-0">
                   <span style={{ fontWeight: "bold" }}>Fecha Pago: </span>
-                  {paymentData.date} | {formatearHora(paymentData.time)}
+                  {paymentData.date} | {paymentData.time}
                 </p>
                 <p
                   style={{ textAlign: "center", fontWeight: "bold" }}

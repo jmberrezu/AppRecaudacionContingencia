@@ -1,10 +1,9 @@
 const axios = require("axios");
 
 const baseUrl = "http://localhost:5000";
-const numInsertions = 1;
+const numInsertions = 1000;
 
-const token =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiaWRnbG9iYWx1c2VyIjozOCwidXNlcm5hbWUiOiJsdWlzIiwicm9sZSI6ImdlcmVudGUiLCJpZGdsb2JhbHZpcnR1YWxjYXNocG9pbnQiOjg1LCJpZGNhc2hwb2ludCI6IkNBRVgtQ09OLUMyLTEwMDIiLCJzb2NpZXR5ZGl2aXNpb24iOiIxMDAyIiwiaWR2aXJ0dWFsY2FzaHBvaW50IjoxLCJ2aXJ0dWFsY2FzaHBvaW50bmFtZSI6IkNhamEgMSIsImlhdCI6MTY5NzIwNTgyNSwiZXhwIjoxNjk3MjE2NjI1fQ.ZIrWfxPPjNGmZNIeTjrRprAOv2AT2SGKzVRQPR8Ar04";
+const token = "";
 
 // Datos del pago (ajusta según tus necesidades)
 const paymentData = {

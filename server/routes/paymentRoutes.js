@@ -280,8 +280,7 @@ router.post("/realizar-pago", verifyToken, async (req, res) => {
 
     res.status(200).json({
       message: "Pago realizado con éxito.",
-      date: fecha.toISOString().slice(0, 10),
-      time: fecha.toISOString().slice(11, 19),
+      valuedate: fecha,
       amount: cantidadTotal,
       pid: PID,
     });
