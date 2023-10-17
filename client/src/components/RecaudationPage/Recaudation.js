@@ -174,10 +174,10 @@ function Recaudation() {
                       size="sm"
                       className="align-middle mb-2 ms-2"
                     >
-                      Cambiar
+                      Cambiar Caja
                       <ArrowLeftRight
                         style={{ fontSize: "0.9em" }}
-                        className="align-middle ms-1"
+                        className="align-middle ms-2"
                       />
                     </Button>
                   </li>
@@ -212,7 +212,7 @@ function Recaudation() {
           </div>
         </div>
 
-        <hr />
+        <hr className="mb-4" />
         {activeComponent === "payment" && <Payment user={user} />}
         {activeComponent === "cashClose" && <CashClose user={user} />}
         {activeComponent === "reversePayment" && <ReversePayment user={user} />}

@@ -15,6 +15,7 @@ function SupervisorCrud() {
   // Para el CRUD
   const [supervisors, setSupervisors] = useState([]);
   const [username, setUsername] = useState("");
+  const [name, setName] = useState("");
   const [office, setOffice] = useState("");
   const [password, setPassword] = useState("");
   const [idCashPoint, setIdCashPoint] = useState("");
@@ -92,6 +93,7 @@ function SupervisorCrud() {
   useEffect(() => {
     if (!showModal) {
       setUsername("");
+      setName("");
       setOffice("");
       setSocietyDivision("");
       setPassword("");
@@ -103,6 +105,7 @@ function SupervisorCrud() {
   useEffect(() => {
     if (!showEditModal) {
       setUsername("");
+      setName("");
       setOffice("");
       setSocietyDivision("");
       setPassword("");
@@ -114,7 +117,14 @@ function SupervisorCrud() {
   // Agregar un nuevo supervisor
   const createSupervisor = async () => {
     try {
-      if (username && societydivision && password && idCashPoint && office) {
+      if (
+        username &&
+        societydivision &&
+        password &&
+        idCashPoint &&
+        office &&
+        name
+      ) {
         await axios.post(
           "http://localhost:5000/api/admin/agregar",
           {
@@ -123,12 +133,14 @@ function SupervisorCrud() {
             societydivision: societydivision,
             password: password,
             idCashPoint: idCashPoint,
+            name: name,
           },
           {
             headers: { Authorization: `Bearer ${token}` },
           }
         );
         setUsername("");
+        setName("");
         setOffice("");
         setSocietyDivision("");
         setPassword("");
@@ -199,6 +211,7 @@ function SupervisorCrud() {
   const editSupervisor = (supervisor) => {
     setEditingSupervisor(supervisor);
     setUsername(supervisor.user);
+    setName(supervisor.name);
     setOffice(supervisor.office);
     setSocietyDivision(supervisor.societydivision);
     setIdCashPoint(supervisor.idcashpoint);
@@ -215,6 +228,7 @@ function SupervisorCrud() {
         societydivision,
         password,
         idCashPoint,
+        name,
       };
       await axios.put(
         `http://localhost:5000/api/admin/${editingSupervisor.idcashpoint}`,
@@ -226,6 +240,7 @@ function SupervisorCrud() {
       setEditingSupervisor(null);
       setShowEditModal(false);
       setUsername("");
+      setName("");
       setOffice("");
       setSocietyDivision("");
       setPassword("");
@@ -365,6 +380,7 @@ function SupervisorCrud() {
                 <th>Sociedad / División</th>
                 <th>ID de Caja SAP</th>
                 <th>Usuario</th>
+                <th>Nombre</th>
                 <th>Oficina SAP</th>
                 <th>Acciones</th>
                 <th>Bloqueado</th>
@@ -376,6 +392,7 @@ function SupervisorCrud() {
                   <td>{supervisor.societydivision}</td>
                   <td>{supervisor.idcashpoint}</td>
                   <td>{supervisor.user}</td>
+                  <td>{supervisor.name}</td>
                   <td>{supervisor.office}</td>
                   <td className="d-flex justify-content-between">
                     <div>
@@ -469,6 +486,14 @@ function SupervisorCrud() {
                 />
               </Form.Group>
               <Form.Group>
+                <Form.Label>Nombre</Form.Label>
+                <Form.Control
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                />
+              </Form.Group>
+              <Form.Group>
                 <Form.Label>Contraseña</Form.Label>
                 <Form.Control
                   type="password"
@@ -542,6 +567,14 @@ function SupervisorCrud() {
                   type="text"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
+                />
+              </Form.Group>
+              <Form.Group>
+                <Form.Label>Nombre</Form.Label>
+                <Form.Control
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
                 />
               </Form.Group>
               <Form.Group>

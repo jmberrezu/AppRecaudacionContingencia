@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect } from "react";
-import { Table, Button } from "react-bootstrap";
+import { Table, Button, Container } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
@@ -97,57 +97,62 @@ function ReverseCashClose({ user }) {
   };
 
   return (
-    <div style={{ height: "63vh", overflowY: "auto" }}>
-      <h3>Lista de Cajas Cerradas:</h3>
-      <Table striped bordered responsive>
-        <thead>
-          <tr>
-            <th>Grupo</th>
-            <th>Fecha</th>
-            <th>Monto Cerrado</th>
-            <th>Caja</th>
-            <th>Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          {closedCash.map((cash) => (
-            <tr key={cash.cashpointpaymentgroupreferenceid}>
-              <td>{cash.cashpointpaymentgroupreferenceid}</td>
-              <td>{formatDate(cash.valuedate)}</td>
-              <td
-                className={
-                  parseFloat(cash.closingdoccumentamount) ===
-                  parseFloat(cash.realclosingdoccumentamount)
-                    ? "text-success"
-                    : "text-danger"
-                }
-              >
-                {"$" + parseFloat(cash.closingdoccumentamount).toFixed(2)}
-                {parseFloat(cash.closingdoccumentamount) !==
-                  parseFloat(cash.realclosingdoccumentamount) &&
-                  ` (Existe diferencia: ${
-                    (parseFloat(cash.closingdoccumentamount) -
-                      parseFloat(cash.realclosingdoccumentamount) >
-                    0
-                      ? "+"
-                      : "") +
-                    (
-                      parseFloat(cash.closingdoccumentamount) -
-                      parseFloat(cash.realclosingdoccumentamount)
-                    ).toFixed(2)
-                  }$ )`}
-              </td>
-              <td>{cash.virtualcashpointname}</td>
-              <td>
-                <Button variant="danger" onClick={() => anularCierreCaja(cash)}>
-                  Anular Cierre
-                </Button>
-              </td>
+    <Container className="py-4">
+      <h1>Anular Cierre de Caja</h1>
+      <div className="mt-4" style={{ height: "63vh", overflowY: "auto" }}>
+        <Table striped bordered responsive>
+          <thead>
+            <tr>
+              <th>Grupo</th>
+              <th>Fecha</th>
+              <th>Monto Cerrado</th>
+              <th>Caja</th>
+              <th>Acciones</th>
             </tr>
-          ))}
-        </tbody>
-      </Table>
-    </div>
+          </thead>
+          <tbody>
+            {closedCash.map((cash) => (
+              <tr key={cash.cashpointpaymentgroupreferenceid}>
+                <td>{cash.cashpointpaymentgroupreferenceid}</td>
+                <td>{formatDate(cash.valuedate)}</td>
+                <td
+                  className={
+                    parseFloat(cash.closingdoccumentamount) ===
+                    parseFloat(cash.realclosingdoccumentamount)
+                      ? "text-success"
+                      : "text-danger"
+                  }
+                >
+                  {"$" + parseFloat(cash.closingdoccumentamount).toFixed(2)}
+                  {parseFloat(cash.closingdoccumentamount) !==
+                    parseFloat(cash.realclosingdoccumentamount) &&
+                    ` (Existe diferencia: ${
+                      (parseFloat(cash.closingdoccumentamount) -
+                        parseFloat(cash.realclosingdoccumentamount) >
+                      0
+                        ? "+"
+                        : "") +
+                      (
+                        parseFloat(cash.closingdoccumentamount) -
+                        parseFloat(cash.realclosingdoccumentamount)
+                      ).toFixed(2)
+                    }$ )`}
+                </td>
+                <td>{cash.virtualcashpointname}</td>
+                <td>
+                  <Button
+                    variant="danger"
+                    onClick={() => anularCierreCaja(cash)}
+                  >
+                    Anular Cierre
+                  </Button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </Table>
+      </div>
+    </Container>
   );
 }
 

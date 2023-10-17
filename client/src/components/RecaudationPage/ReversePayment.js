@@ -17,7 +17,7 @@ function ReversePayment({ user }) {
   const [payments, setPayments] = useState([]);
   const [sortedPayments, setSortedPayments] = useState([]);
   const [sortBy, setSortBy] = useState("Fecha");
-  const [sortDirection, setSortDirection] = useState("asc");
+  const [sortDirection, setSortDirection] = useState("desc");
   const navigate = useNavigate();
   const [token, setToken] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -262,7 +262,7 @@ function ReversePayment({ user }) {
   }
 
   return (
-    <Container className="py-4 ">
+    <Container className="py-4">
       <h1>Anular Pago</h1>
       <div className="mb-3 input-group input-group-lg justify-content-center">
         <input

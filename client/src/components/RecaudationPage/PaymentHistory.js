@@ -24,7 +24,7 @@ function PaymentHistory({ user }) {
   const [sortedPayments, setSortedPayments] = useState([]);
   const [sortedReversePayments, setSortedReversePayments] = useState([]);
   const [sortBy, setSortBy] = useState("Fecha");
-  const [sortDirection, setSortDirection] = useState("asc");
+  const [sortDirection, setSortDirection] = useState("desc");
   const [groupedPayments, setGroupedPayments] = useState({});
   const [searchQuery, setSearchQuery] = useState("");
   const [filteredPayments, setFilteredPayments] = useState([]);
@@ -441,7 +441,10 @@ function PaymentHistory({ user }) {
                 }}
               />
             </div>
-            <div className="pe-3" style={{ height: "67vh", overflowY: "auto" }}>
+            <div
+              className="pe-3 mb-3"
+              style={{ height: "61vh", overflowY: "auto" }}
+            >
               <Row className="mb-3">
                 <Col>
                   {!isSearching && ( // Condición para mostrar el dropdown de ordenación
@@ -613,13 +616,13 @@ function PaymentHistory({ user }) {
                   )
                 )
               )}
-              {/* Solo si no se esta buscando */}
-              {!isSearching && (
-                <div className="d-flex justify-content-center">
-                  <Pagination>{paginationItems}</Pagination>
-                </div>
-              )}
             </div>
+            {/* Solo si no se esta buscando */}
+            {!isSearching && (
+              <div className="d-flex justify-content-center">
+                <Pagination>{paginationItems}</Pagination>
+              </div>
+            )}
           </Tab.Pane>
           <Tab.Pane eventKey="anulados">
             <Container className="py-4">

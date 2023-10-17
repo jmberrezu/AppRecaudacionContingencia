@@ -264,7 +264,7 @@ router.post("/agregar", verifyToken, async (req, res) => {
     return res.status(401).json({ message: "Unauthorized User" });
   }
 
-  const { username, idCashPoint, office, societydivision } = req.body;
+  const { username, idCashPoint, office, societydivision, name } = req.body;
   let { password } = req.body;
 
   // Si no se recibe el idCashPoint
@@ -349,9 +349,9 @@ router.post("/agregar", verifyToken, async (req, res) => {
       let newUser = null;
       // Agrego el supervisor a la base de datos
       newUser = await transaction.one(
-        `INSERT INTO Supervisor (idCashPoint, "user", office, password, societydivision)
-              VALUES ($1, $2, $3, $4, $5) RETURNING idCashPoint, "user", office, societydivision`,
-        [idCashPoint, username, office, password, societydivision]
+        `INSERT INTO Supervisor (idCashPoint, "user", office, password, societydivision, name)
+              VALUES ($1, $2, $3, $4, $5, $6) RETURNING idCashPoint, "user", office, societydivision, name`,
+        [idCashPoint, username, office, password, societydivision, name]
       );
 
       // Agregar una entrada en la tabla de bitácora ("log")
@@ -361,7 +361,7 @@ router.post("/agregar", verifyToken, async (req, res) => {
         [
           "admin",
           "Agregar supervisor",
-          `Agregado supervisor ${username}, idCashPoint: ${idCashPoint}, sociedad: ${societydivision}, oficina: ${office}`,
+          `Agregado supervisor ${username}, idCashPoint: ${idCashPoint}, sociedad: ${societydivision}, oficina: ${office}, nombre: ${name}`,
           new Date(),
         ]
       );
@@ -386,7 +386,7 @@ router.put("/:idCashPoint", verifyToken, async (req, res) => {
   }
 
   const idCashPoint = req.params.idCashPoint;
-  const { username, office, societydivision } = req.body;
+  const { username, office, societydivision, name } = req.body;
   let { password } = req.body;
 
   // Si no se recibe el idCashPoint
@@ -481,9 +481,9 @@ router.put("/:idCashPoint", verifyToken, async (req, res) => {
       if (!password) {
         // Actualiza el supervisor sin contraseña
         const updatedUser = await transaction.one(
-          `UPDATE Supervisor SET "user"=$1, office=$3, societydivision=$4
-          WHERE idCashPoint=$2 RETURNING idCashPoint, "user", office, societydivision`,
-          [username, idCashPoint, office, societydivision]
+          `UPDATE Supervisor SET "user"=$1, office=$3, societydivision=$4, name=$5
+          WHERE idCashPoint=$2 RETURNING idCashPoint, "user", office, societydivision, name`,
+          [username, idCashPoint, office, societydivision, name]
         );
 
         // Agregar una entrada en la tabla de bitácora ("log")
@@ -493,7 +493,7 @@ router.put("/:idCashPoint", verifyToken, async (req, res) => {
           [
             "admin",
             "Actualizar supervisor",
-            `Actualizado supervisor ${username}, idCashPoint: ${idCashPoint}, sociedad: ${societydivision}, oficina: ${office}`,
+            `Actualizado supervisor ${username}, idCashPoint: ${idCashPoint}, sociedad: ${societydivision}, oficina: ${office}, nombre: ${name}`,
             new Date(),
           ]
         );
@@ -504,9 +504,9 @@ router.put("/:idCashPoint", verifyToken, async (req, res) => {
 
       // Realiza la actualización solo si el supervisor existe y hay contraseña
       const updatedUser = await transaction.one(
-        `UPDATE Supervisor SET "user"=$1, password=$2, office=$4, societydivision=$5
-       WHERE idCashPoint=$3 RETURNING idCashPoint, "user", office, societydivision ORDER BY societydivision, idCashPoint`, // Ordena por sociedad y idCashPoint
-        [username, password, idCashPoint, office, societydivision]
+        `UPDATE Supervisor SET "user"=$1, password=$2, office=$4, societydivision=$5, name=$6
+       WHERE idCashPoint=$3 RETURNING idCashPoint, "user", office, namme, societydivision ORDER BY societydivision, idCashPoint`, // Ordena por sociedad y idCashPoint
+        [username, password, idCashPoint, office, societydivision, name]
       );
       // Devuelve la respuesta exitosa
       res.json(updatedUser);

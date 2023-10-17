@@ -222,19 +222,27 @@ function CashClose({ user }) {
   };
 
   return (
-    <Container className="py-4 border" style={{ maxWidth: "800px" }}>
+    <Container className="py-4 border" style={{ maxWidth: "900px" }}>
       <h1>Realizar Cierre de Caja</h1>
       {alertInfo && (
         <Alert variant={alertInfo.variant}>{alertInfo.message}</Alert>
       )}
       <InputGroup className="my-3 px-3">
-        <InputGroup.Text id="group">Grupo</InputGroup.Text>
+        <InputGroup.Text id="group">Grupo: </InputGroup.Text>
         <Form.Control
           type="text"
           value={grupo ? grupo.cashpointpaymentgroupreferenceid : ""} // Use an empty string if grupo is falsy
           disabled
         />
-        <InputGroup.Text id="TotalRecaudado">Total Recaudado</InputGroup.Text>
+        <InputGroup.Text id="Fecha">Fecha: </InputGroup.Text>
+        <Form.Control
+          type="text"
+          value={
+            grupo ? new Date(grupo.valuedate).toISOString().slice(0, 10) : "" // Use an empty string if grupo is falsy
+          }
+          disabled
+        />
+        <InputGroup.Text id="TotalRecaudado">Total Recaudado: </InputGroup.Text>
         <Form.Control
           type="text"
           value={grupo ? "$" + grupo.total_sumado : ""} // Use an empty string if grupo is falsy
@@ -264,7 +272,7 @@ function CashClose({ user }) {
         </InputGroup>
       </Container>
 
-      <Container className="d-grid mt-2" style={{ maxWidth: "425px" }}>
+      <Container className="d-grid mt-3" style={{ maxWidth: "425px" }}>
         <Button
           variant="success"
           onClick={cerrarCaja}

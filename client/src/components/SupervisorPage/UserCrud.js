@@ -16,6 +16,7 @@ function UserCrud({ societydivision, idcashpoint }) {
   const [showEditModal, setShowEditModal] = useState(false);
   // Estados para almacenar los datos del formulario
   const [username, setUsername] = useState("");
+  const [name, setName] = useState("");
   const [password, setPassword] = useState("");
   const [role, setRole] = useState("");
   const [idGlobalVirtualCashPoint, setIdGlobalVirtualCashPoint] = useState("");
@@ -86,6 +87,7 @@ function UserCrud({ societydivision, idcashpoint }) {
   useEffect(() => {
     if (!showModal) {
       setUsername("");
+      setName("");
       setPassword("");
       setRole("");
       setIdGlobalVirtualCashPoint("");
@@ -97,6 +99,7 @@ function UserCrud({ societydivision, idcashpoint }) {
   useEffect(() => {
     if (!showEditModal) {
       setUsername("");
+      setName("");
       setPassword("");
       setRole("");
       setIdGlobalVirtualCashPoint("");
@@ -142,6 +145,7 @@ function UserCrud({ societydivision, idcashpoint }) {
           "http://localhost:5000/api/users",
           {
             username,
+            name,
             password,
             role,
             idCashPoint: idcashpoint,
@@ -155,6 +159,7 @@ function UserCrud({ societydivision, idcashpoint }) {
           }
         );
         setUsername("");
+        setName("");
         setPassword("");
         setRole("");
         setIdGlobalVirtualCashPoint("");
@@ -202,6 +207,7 @@ function UserCrud({ societydivision, idcashpoint }) {
   const editUser = (user) => {
     setEditingUser(user);
     setUsername(user.username);
+    setName(user.name);
     setRole(user.role);
     setIdGlobalVirtualCashPoint(user.idglobalvirtualcashpoint);
     setShowEditModal(true);
@@ -213,6 +219,7 @@ function UserCrud({ societydivision, idcashpoint }) {
       let updatedUser = {
         ...editingUser,
         username,
+        name,
         password,
         role,
         idCashPoint: idcashpoint,
@@ -231,6 +238,7 @@ function UserCrud({ societydivision, idcashpoint }) {
       setEditingUser(null);
       setShowEditModal(false);
       setUsername("");
+      setName("");
       setPassword("");
       setRole("");
       setIdGlobalVirtualCashPoint("");
@@ -340,6 +348,7 @@ function UserCrud({ societydivision, idcashpoint }) {
             <tr>
               <th>ID</th>
               <th>Usuario</th>
+              <th>Nombre</th>
               <th>Rol</th>
               <th>Caja Virtual</th>
               <th>Acciones</th>
@@ -351,6 +360,7 @@ function UserCrud({ societydivision, idcashpoint }) {
               <tr key={user.idglobaluser}>
                 <td>{user.iduser}</td>
                 <td>{user.username}</td>
+                <td>{user.name}</td>
                 <td>{user.role}</td>
                 <td>{user.virtualcashpointname}</td>
                 <td>
@@ -397,6 +407,14 @@ function UserCrud({ societydivision, idcashpoint }) {
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
+              />
+            </Form.Group>
+            <Form.Group>
+              <Form.Label>Nombre</Form.Label>
+              <Form.Control
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
               />
             </Form.Group>
             <Form.Group>
@@ -462,6 +480,14 @@ function UserCrud({ societydivision, idcashpoint }) {
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
+              />
+            </Form.Group>
+            <Form.Group>
+              <Form.Label>Nombre</Form.Label>
+              <Form.Control
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
               />
             </Form.Group>
             <Form.Group>

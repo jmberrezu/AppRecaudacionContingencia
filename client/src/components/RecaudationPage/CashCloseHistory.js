@@ -1,12 +1,14 @@
 import axios from "axios";
 import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Table } from "react-bootstrap";
+import { Container, Table, Button, Modal } from "react-bootstrap";
 
 function CashCloseHistory({ user }) {
   const navigate = useNavigate();
   const [token, setToken] = useState("");
   const [cashClose, setCashClose] = useState([]);
+  const [selectedCashClose, setSelectedCashClose] = useState(null);
+  const [showModal, setShowModal] = useState(false);
 
   // Obtener el token del local storage
   useEffect(() => {
@@ -72,90 +74,118 @@ function CashCloseHistory({ user }) {
     return new Date(dateString).toLocaleDateString(undefined, options);
   };
 
+  // Function to show the modal with payment details
+  const showPaymentDetails = (cashCloseItem) => {
+    setSelectedCashClose(cashCloseItem);
+    setShowModal(true);
+  };
+
+  // Render a "Ver Pagos" button for each cash close item
+  const renderCashCloseItems = () => {
+    return cashClose.map((cashCloseItem) => (
+      <div key={cashCloseItem.cashpointpaymentgroupreferenceid}>
+        <h5>Grupo: {cashCloseItem.cashpointpaymentgroupreferenceid}</h5>
+        <Table bordered responsive>
+          <thead>
+            <tr>
+              <th>Fecha de Cierre de Caja</th>
+              <th>Monto Cerrado</th>
+              <th>Caja</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>{formatDate(cashCloseItem.valuedate)}</td>
+              <td
+                className={
+                  parseFloat(cashCloseItem.closingdoccumentamount) ===
+                  parseFloat(cashCloseItem.realclosingdoccumentamount)
+                    ? "text-success"
+                    : "text-danger"
+                }
+              >
+                {"$" +
+                  parseFloat(cashCloseItem.closingdoccumentamount).toFixed(2)}
+                {parseFloat(cashCloseItem.closingdoccumentamount) !==
+                  parseFloat(cashCloseItem.realclosingdoccumentamount) &&
+                  ` (Existe diferencia: ${
+                    (parseFloat(cashCloseItem.closingdoccumentamount) -
+                      parseFloat(cashCloseItem.realclosingdoccumentamount) >
+                    0
+                      ? "+"
+                      : "") +
+                    (
+                      parseFloat(cashCloseItem.closingdoccumentamount) -
+                      parseFloat(cashCloseItem.realclosingdoccumentamount)
+                    ).toFixed(2)
+                  }$ )`}
+              </td>
+              <td>{cashCloseItem.virtualcashpointname}</td>
+            </tr>
+          </tbody>
+        </Table>
+        <Button
+          onClick={() => showPaymentDetails(cashCloseItem)}
+          variant="primary"
+        >
+          Ver Pagos
+        </Button>
+        <hr />
+      </div>
+    ));
+  };
+
   return (
-    <div>
-      <h3 className="mb-3">Historial de Cierres de Caja</h3>
-      <div className="p-4" style={{ height: "80vh", overflowY: "auto" }}>
-        {cashClose.map((cashCloseItem) => (
-          <div key={cashCloseItem.cashpointpaymentgroupreferenceid}>
-            <h5>Grupo: {cashCloseItem.cashpointpaymentgroupreferenceid}</h5>
-            <Table bordered responsive>
+    <Container className="py-4">
+      <h1> Historial de Cierres de Caja </h1>
+      <div className="p-4" style={{ height: "75vh", overflowY: "auto" }}>
+        {renderCashCloseItems()}
+      </div>
+
+      {/* Modal for payment details */}
+      <Modal
+        className="modal-xl"
+        show={showModal}
+        onHide={() => setShowModal(false)}
+      >
+        <Modal.Header closeButton>
+          <Modal.Title>Detalles de Pagos</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {selectedCashClose && (
+            <Table bordered responsive className="table-sm">
               <thead>
                 <tr>
-                  <th>Fecha de Cierre de Caja</th>
-                  <th>Monto Cerrado</th>
+                  <th>PID</th>
+                  <th>Cuenta Contrato</th>
+                  <th>Fecha</th>
+                  <th>Monto</th>
                   <th>Caja</th>
+                  <th>Usuario</th>
                 </tr>
               </thead>
               <tbody>
-                <tr>
-                  <td>{formatDate(cashCloseItem.valuedate)}</td>
-                  <td
-                    className={
-                      parseFloat(cashCloseItem.closingdoccumentamount) ===
-                      parseFloat(cashCloseItem.realclosingdoccumentamount)
-                        ? "text-success"
-                        : "text-danger"
-                    }
-                  >
-                    {"$" +
-                      parseFloat(cashCloseItem.closingdoccumentamount).toFixed(
-                        2
-                      )}
-                    {parseFloat(cashCloseItem.closingdoccumentamount) !==
-                      parseFloat(cashCloseItem.realclosingdoccumentamount) &&
-                      ` (Existe diferencia: ${
-                        (parseFloat(cashCloseItem.closingdoccumentamount) -
-                          parseFloat(cashCloseItem.realclosingdoccumentamount) >
-                        0
-                          ? "+"
-                          : "") +
-                        (
-                          parseFloat(cashCloseItem.closingdoccumentamount) -
-                          parseFloat(cashCloseItem.realclosingdoccumentamount)
-                        ).toFixed(2)
-                      }$ )`}
-                  </td>
-                  <td>{cashCloseItem.virtualcashpointname}</td>
-                </tr>
-                <tr>
-                  <td colSpan={3}>
-                    <Table
-                      responsive
-                      bordered
-                      className="table-light m-0 table-sm"
-                    >
-                      <thead>
-                        <tr>
-                          <th>PID</th>
-                          <th>Fecha</th>
-                          <th>Monto</th>
-                          <th>Caja</th>
-                          <th>Usuario</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {cashCloseItem.pagos.map((cashpointpayment) => (
-                          <tr key={cashpointpayment.paymenttransactionid}>
-                            <td>{cashpointpayment.paymenttransactionid}</td>
-                            <td>{formatDate(cashpointpayment.valuedate)}</td>
-                            <td>
-                              {"$" + cashpointpayment.paymentamountcurrencycode}
-                            </td>
-                            <td>{cashpointpayment.virtualcashpointname}</td>
-                            <td>{cashpointpayment.username}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </Table>
-                  </td>
-                </tr>
+                {selectedCashClose.pagos.map((cashpointpayment) => (
+                  <tr key={cashpointpayment.paymenttransactionid}>
+                    <td>{cashpointpayment.paymenttransactionid}</td>
+                    <td>{cashpointpayment.payercontractaccountid}</td>
+                    <td>{formatDate(cashpointpayment.valuedate)}</td>
+                    <td>{"$" + cashpointpayment.paymentamountcurrencycode}</td>
+                    <td>{cashpointpayment.virtualcashpointname}</td>
+                    <td>{cashpointpayment.username}</td>
+                  </tr>
+                ))}
               </tbody>
             </Table>
-          </div>
-        ))}
-      </div>
-    </div>
+          )}
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowModal(false)}>
+            Cerrar
+          </Button>
+        </Modal.Footer>
+      </Modal>
+    </Container>
   );
 }
 

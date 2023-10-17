@@ -169,6 +169,7 @@ async function sendPayment(payment, username, password, office, supervisor) {
       // El código de estado 401 indica que las credenciales son incorrectas
       throw new Error("Credenciales incorrectas");
     } else {
+      // Si el error no es 401, envio el error y el pago que falló
       throw new Error(error);
     }
   }
@@ -298,7 +299,8 @@ router.post("/sendprincipal", verifyToken, async (req, res) => {
           return res.status(401).json({ message: "Credenciales incorrectas" });
         } else {
           console.error(error);
-          return res.status(500).json({ message: error.message }); // Enviar el mensaje de error al front // Detener la ejecución
+          // Envio el error y el pago que falló
+          return res.status(500).json({ message: error.message, payment });
         }
       }
     }

@@ -9,6 +9,7 @@ import {
   HourglassBottom,
   Printer,
   BoxArrowUp,
+  PersonVcard,
 } from "react-bootstrap-icons";
 import sparkPayLogo from "../../images/logoM.svg";
 
@@ -119,6 +120,10 @@ function Sidebar({ user, handleLogout, setActiveComponent, activeComponent }) {
         <hr />{" "}
         {user ? (
           <Nav className="nav nav-pills flex-column mb-auto">
+            <Nav.Item className="mb-2 ms-3">
+              <PersonVcard size={16} className="align-middle mb-1 me-3" />
+              Nombre: <strong>{user.name}</strong>
+            </Nav.Item>
             <Nav.Item className="mb-2 ms-3">
               <PersonCircle size={16} className="align-middle mb-1 me-3" />
               Usuario: <strong>{user.username}</strong>

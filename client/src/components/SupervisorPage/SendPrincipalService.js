@@ -187,9 +187,17 @@ function SendPrincipalService({ idcashpoint, office }) {
         } else {
           setAlertInfo({
             variant: "danger",
+            // Si el mensaje contiene el atributo payment, se muestra tambien el id del pago
             message:
               error.response.data.message +
+              (error.response.data.payment.paymenttransactionid
+                ? " El pago es:" +
+                  error.response.data.payment.paymenttransactionid
+                : "") +
               ". Contactarse con el administrador",
+            // message:
+            //   error.response.data.message +
+            //   ". Contactarse con el administrador",
           });
         }
         // En caso de error, ocultar la barra de progreso

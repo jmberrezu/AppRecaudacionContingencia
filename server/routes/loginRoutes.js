@@ -113,6 +113,7 @@ router.post("/", async (req, res) => {
           id: userfound[0].iduser,
           idglobaluser: userfound[0].idglobaluser,
           username: userfound[0].username,
+          name: userfound[0].name,
           role: userfound[0].role,
           idglobalvirtualcashpoint: userfound[0].idglobalvirtualcashpoint,
           idcashpoint: userfound[0].idcashpoint,
@@ -144,6 +145,7 @@ router.post("/", async (req, res) => {
           idcashpoint: userfound[0].idcashpoint,
           societydivision: userfound[0].societydivision,
           username: userfound[0].user,
+          name: userfound[0].name,
           office: userfound[0].office,
         },
         "admin_CTIC_2023!",
@@ -202,6 +204,7 @@ router.get("/verify", verifyToken, (req, res) => {
       id: req.user.id,
       role: req.user.role,
       username: req.user.username,
+      name: req.user.name,
       virtualcashpointname: req.user.virtualcashpointname,
       idvirtualcashpoint: req.user.idvirtualcashpoint,
       idcashpoint: req.user.idcashpoint,
@@ -215,6 +218,7 @@ router.get("/verify", verifyToken, (req, res) => {
       idcashpoint: req.user.idcashpoint,
       societydivision: req.user.societydivision,
       username: req.user.username,
+      name: req.user.name,
       office: req.user.office,
     });
   } else if (req.user.role === "admin") {

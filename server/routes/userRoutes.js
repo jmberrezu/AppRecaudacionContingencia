@@ -33,7 +33,7 @@ router.get("/:idcashPoint", verifyToken, async (req, res) => {
   try {
     // Obtener todos los usuarios de la caja
     const users = await db.any(
-      'SELECT "User".idglobaluser, "User".isBlocked, "User".iduser, "User".username, "User".role, "User".idcashpoint, "User".idglobalvirtualcashpoint , VirtualCashPoint.idVirtualCashPoint, VirtualCashPoint.name AS virtualCashPointName FROM "User" ' +
+      'SELECT "User".idglobaluser, "User".isBlocked, "User".iduser, "User".username, "User".role, "User".idcashpoint, "User".idglobalvirtualcashpoint, "User".name, VirtualCashPoint.idVirtualCashPoint, VirtualCashPoint.name AS virtualCashPointName FROM "User" ' +
         'INNER JOIN VirtualCashPoint ON "User".idGlobalVirtualCashPoint = VirtualCashPoint.idGlobalVirtualCashPoint ' +
         'WHERE "User".idCashPoint = $1 ORDER BY "User".role DESC, "User".username ASC',
       [idcashPoint]
@@ -54,6 +54,7 @@ router.post("/", verifyToken, async (req, res) => {
 
   const {
     username,
+    name,
     role,
     idCashPoint,
     idGlobalVirtualCashPoint,
@@ -195,8 +196,8 @@ router.post("/", verifyToken, async (req, res) => {
 
       // Insertar el nuevo usuario
       const newUser = await transaction.one(
-        'INSERT INTO "User" (idUser, username, password, role, idCashPoint, idGlobalVirtualCashPoint, societydivision) ' +
-          "VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING idUser, username, role, idCashPoint, idGlobalVirtualCashPoint, societydivision",
+        'INSERT INTO "User" (idUser, username, password, role, idCashPoint, idGlobalVirtualCashPoint, societydivision, name) ' +
+          "VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING idUser, username, role, idCashPoint, idGlobalVirtualCashPoint, societydivision, name",
 
         [
           nextIdUser,
@@ -206,6 +207,7 @@ router.post("/", verifyToken, async (req, res) => {
           idCashPoint,
           idGlobalVirtualCashPoint,
           societydivision,
+          name,
         ]
       );
 
@@ -243,6 +245,7 @@ router.put("/:id", verifyToken, async (req, res) => {
   const id = req.params.id;
   const {
     username,
+    name,
     role,
     idCashPoint,
     idGlobalVirtualCashPoint,
@@ -369,8 +372,8 @@ router.put("/:id", verifyToken, async (req, res) => {
       if (!password) {
         // Actualiza el usuario sin contraseña
         const updatedUser = await transaction.one(
-          `UPDATE "User" SET username=$1, role=$2, idCashPoint=$3, idGlobalVirtualCashPoint=$4, societydivision=$5
-        WHERE idGlobalUser=$6 RETURNING idGlobalUser, idUser, username, role, idCashPoint, idGlobalVirtualCashPoint, societydivision`,
+          `UPDATE "User" SET username=$1, role=$2, idCashPoint=$3, idGlobalVirtualCashPoint=$4, societydivision=$5, name=$7
+        WHERE idGlobalUser=$6 RETURNING idGlobalUser, idUser, username, role, idCashPoint, idGlobalVirtualCashPoint, societydivision, name`,
           [
             username,
             role,
@@ -378,6 +381,7 @@ router.put("/:id", verifyToken, async (req, res) => {
             idGlobalVirtualCashPoint,
             societydivision,
             id,
+            name,
           ]
         );
         res.json(updatedUser);
@@ -394,8 +398,8 @@ router.put("/:id", verifyToken, async (req, res) => {
 
         // Actualiza el usuario con contraseña
         const updatedUser = await transaction.one(
-          `UPDATE "User" SET username=$1, password=$2, role=$3, idCashPoint=$4, idGlobalVirtualCashPoint=$5, societydivision=$6
-        WHERE idGlobalUser=$7 RETURNING idGlobalUser, idUser, username, role, idCashPoint, idGlobalVirtualCashPoint, societydivision`,
+          `UPDATE "User" SET username=$1, password=$2, role=$3, idCashPoint=$4, idGlobalVirtualCashPoint=$5, societydivision=$6, name=$8
+        WHERE idGlobalUser=$7 RETURNING idGlobalUser, idUser, username, role, idCashPoint, idGlobalVirtualCashPoint, societydivision, name`,
           [
             username,
             password,
@@ -404,6 +408,7 @@ router.put("/:id", verifyToken, async (req, res) => {
             idGlobalVirtualCashPoint,
             societydivision,
             id,
+            name,
           ]
         );
 

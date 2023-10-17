@@ -221,7 +221,7 @@ function Payment({ user }) {
   };
 
   return (
-    <Container className="py-4 border" style={{ maxWidth: "800px" }}>
+    <Container className="py-4 border" style={{ maxWidth: "900px" }}>
       <h1>Realizar Pago</h1>
 
       <Form>
@@ -231,6 +231,14 @@ function Payment({ user }) {
             placeholder="Ingresa la cuenta contrato o CUEN del cliente"
             value={cuentaContrato}
             onChange={handleCuentaContratoChange}
+            // Verifica si se presionó "Enter" y llama a la función buscarCliente
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                // Evita que se envíe el formulario
+                e.preventDefault();
+                buscarCliente(cuentaContrato);
+              }
+            }}
           />
           <Container className="d-grid col-4 mx-auto">
             <Button
@@ -272,7 +280,7 @@ function Payment({ user }) {
 
             <Container className="d-flex justify-content-center">
               <InputGroup className="pt-4" style={{ maxWidth: "400px" }}>
-                <InputGroup.Text id="formPago">Pago</InputGroup.Text>
+                <InputGroup.Text id="formPago">Pago: </InputGroup.Text>
                 <Form.Control
                   type="text"
                   placeholder="Dólares"
