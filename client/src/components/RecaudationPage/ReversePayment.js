@@ -11,6 +11,7 @@ import {
 import { CaretUpFill, CaretDownFill } from "react-bootstrap-icons";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import { Pagination } from "react-bootstrap";
 
 function ReversePayment({ user }) {
   const [payments, setPayments] = useState([]);
@@ -22,6 +23,8 @@ function ReversePayment({ user }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [filteredPayments, setFilteredPayments] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 8;
 
   // Verificar el token
   useEffect(() => {
@@ -119,8 +122,14 @@ function ReversePayment({ user }) {
     if (sortDirection === "desc") {
       sortedPaymentsCopy.reverse();
     }
+
+    // Aplicar la paginación
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    sortedPaymentsCopy = sortedPaymentsCopy.slice(startIndex, endIndex);
+
     setSortedPayments(sortedPaymentsCopy);
-  }, [payments, sortBy, sortDirection]);
+  }, [payments, sortBy, sortDirection, currentPage]);
 
   useEffect(() => {
     if (token) {
@@ -178,6 +187,79 @@ function ReversePayment({ user }) {
     setSortBy(sortType);
     toggleSortDirection();
   };
+
+  // Función para cambiar de página
+  const handlePageChange = (pageNumber) => {
+    setCurrentPage(pageNumber);
+  };
+
+  // Calcular el número de páginas
+  const totalPages = Math.ceil(filteredPayments.length / itemsPerPage);
+
+  // Calcular el rango de páginas a mostrar (por ejemplo, mostrar 6 páginas alrededor de la página actual)
+  const pageRange = 6;
+  let startPage = currentPage - Math.floor(pageRange / 2);
+  if (startPage < 1) {
+    startPage = 1;
+  }
+  let endPage = startPage + pageRange - 1;
+  if (endPage > totalPages) {
+    endPage = totalPages;
+    startPage = endPage - pageRange + 1;
+    if (startPage < 1) {
+      startPage = 1;
+    }
+  }
+
+  // Mostrar los elementos de paginación
+  const paginationItems = [];
+
+  if (currentPage > 1) {
+    paginationItems.push(
+      <Pagination.First key="first" onClick={() => handlePageChange(1)} />
+    );
+    paginationItems.push(
+      <Pagination.Prev
+        key="prev"
+        onClick={() => handlePageChange(currentPage - 1)}
+      />
+    );
+  }
+
+  if (startPage > 1) {
+    paginationItems.push(<Pagination.Ellipsis key="ellipsis-start" disabled />);
+  }
+
+  for (let number = startPage; number <= endPage; number++) {
+    paginationItems.push(
+      <Pagination.Item
+        key={number}
+        active={number === currentPage}
+        onClick={() => handlePageChange(number)}
+      >
+        {number}
+      </Pagination.Item>
+    );
+  }
+
+  if (endPage < totalPages) {
+    paginationItems.push(<Pagination.Ellipsis key="ellipsis-end" disabled />);
+  }
+
+  if (currentPage < totalPages) {
+    paginationItems.push(
+      <Pagination.Next
+        key="next"
+        onClick={() => handlePageChange(currentPage + 1)}
+      />
+    );
+    paginationItems.push(
+      <Pagination.Last
+        key="last"
+        onClick={() => handlePageChange(totalPages)}
+      />
+    );
+  }
 
   return (
     <Container className="py-4 ">
@@ -328,6 +410,12 @@ function ReversePayment({ user }) {
               ))}
             </tbody>
           </Table>
+        )}
+        {!isSearching && (
+          // Condición para mostrar la paginación
+          <Pagination className="justify-content-center">
+            {paginationItems}
+          </Pagination>
         )}
       </div>
     </Container>

@@ -14,6 +14,7 @@ import {
 import { CaretUpFill, CaretDownFill } from "react-bootstrap-icons";
 import { useNavigate } from "react-router-dom";
 import GenerateComprobant from "./GenerateComprobant";
+import { Pagination } from "react-bootstrap";
 
 function PaymentHistory({ user }) {
   const navigate = useNavigate();
@@ -29,6 +30,8 @@ function PaymentHistory({ user }) {
   const [filteredPayments, setFilteredPayments] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
   const [message, setMessage] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 7;
 
   // Obtener el token del local storage
   useEffect(() => {
@@ -177,8 +180,13 @@ function PaymentHistory({ user }) {
     if (sortDirection === "desc") {
       sortedPaymentsCopy.reverse();
     }
+    // Aplicar paginación
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    sortedPaymentsCopy = sortedPaymentsCopy.slice(startIndex, endIndex);
+
     setSortedPayments(sortedPaymentsCopy);
-  }, [payments, sortBy, sortDirection]);
+  }, [payments, sortBy, sortDirection, currentPage]);
 
   // Función para ordenar los pagos anulados
   const sortReversePayments = useCallback(() => {
@@ -314,6 +322,78 @@ function PaymentHistory({ user }) {
     (acc, payment) => acc + parseFloat(payment.paymentamountcurrencycode),
     0
   );
+
+  // Función para cambiar de página
+  const handlePageChange = (pageNumber) => {
+    setCurrentPage(pageNumber);
+  };
+
+  // Calcular el número total de páginas de acuerdo a si son pagos o anulados
+  const totalPages = Math.ceil(payments.length / itemsPerPage);
+
+  // Calcular el rango de paginas a mostrar
+  const pageRange = 6;
+  let startPage = currentPage - Math.floor(pageRange / 2);
+  if (startPage < 1) {
+    startPage = 1;
+  }
+  let endPage = startPage + pageRange - 1;
+  if (endPage > totalPages) {
+    endPage = totalPages;
+    startPage = endPage - pageRange + 1;
+    if (startPage < 1) {
+      startPage = 1;
+    }
+  }
+
+  const paginationItems = [];
+
+  if (currentPage > 1) {
+    paginationItems.push(
+      <Pagination.First key="first" onClick={() => handlePageChange(1)} />
+    );
+    paginationItems.push(
+      <Pagination.Prev
+        key="prev"
+        onClick={() => handlePageChange(currentPage - 1)}
+      />
+    );
+  }
+
+  if (startPage > 1) {
+    paginationItems.push(<Pagination.Ellipsis key="ellipsis-start" disabled />);
+  }
+
+  for (let number = startPage; number <= endPage; number++) {
+    paginationItems.push(
+      <Pagination.Item
+        key={number}
+        active={number === currentPage}
+        onClick={() => handlePageChange(number)}
+      >
+        {number}
+      </Pagination.Item>
+    );
+  }
+
+  if (endPage < totalPages) {
+    paginationItems.push(<Pagination.Ellipsis key="ellipsis-end" disabled />);
+  }
+
+  if (currentPage < totalPages) {
+    paginationItems.push(
+      <Pagination.Next
+        key="next"
+        onClick={() => handlePageChange(currentPage + 1)}
+      />
+    );
+    paginationItems.push(
+      <Pagination.Last
+        key="last"
+        onClick={() => handlePageChange(totalPages)}
+      />
+    );
+  }
 
   return (
     <Container className="py-4">
@@ -463,6 +543,11 @@ function PaymentHistory({ user }) {
                           </h5>
                         </div>
                         <div className="col-sm-4 text-end ">
+                          Total de Pagos:{" "}
+                          <strong className="text-primary">
+                            {payments.length}
+                          </strong>
+                          <span className="mx-2">|</span>
                           Monto Total del Grupo:{" "}
                           <strong className="text-primary">
                             {"$" + totalAmount.toFixed(2)}
@@ -527,6 +612,12 @@ function PaymentHistory({ user }) {
                     </div>
                   )
                 )
+              )}
+              {/* Solo si no se esta buscando */}
+              {!isSearching && (
+                <div className="d-flex justify-content-center">
+                  <Pagination>{paginationItems}</Pagination>
+                </div>
               )}
             </div>
           </Tab.Pane>

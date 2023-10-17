@@ -9,6 +9,7 @@ import Sidebar from "./Sidebar";
 import SentHistory from "./SentHistory";
 import { PersonGear } from "react-bootstrap-icons";
 import PrintMessage from "./PrintMessage";
+import ExportClients from "./ExportClients";
 
 function SupervisorView() {
   // Para el token y la navegación
@@ -99,6 +100,9 @@ function SupervisorView() {
         )}
         {activeComponent === "impresion" && (
           <PrintMessage idcashpoint={user?.idcashpoint} />
+        )}
+        {activeComponent === "exportarclientes" && (
+          <ExportClients idcashpoint={user?.societydivision} />
         )}
       </Container>
     </div>

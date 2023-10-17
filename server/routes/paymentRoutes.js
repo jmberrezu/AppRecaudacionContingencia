@@ -276,13 +276,13 @@ router.post("/realizar-pago", verifyToken, async (req, res) => {
     `,
         [cantidadTotal, cuentaContrato]
       );
-    });
 
-    res.status(200).json({
-      message: "Pago realizado con éxito.",
-      valuedate: fecha,
-      amount: cantidadTotal,
-      pid: PID,
+      res.status(200).json({
+        message: "Pago realizado con éxito.",
+        valuedate: fecha,
+        amount: cantidadTotal,
+        pid: PID,
+      });
     });
   } catch (error) {
     console.error(error);

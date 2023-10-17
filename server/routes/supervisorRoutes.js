@@ -5,6 +5,7 @@ const verifyToken = require("../services/verifyToken");
 const axios = require("axios");
 const https = require("https");
 const xml2js = require("xml2js");
+const fs = require("fs");
 
 // Obtengo las cajas cerradas
 router.get("/closedcash/:idcashpoint", verifyToken, async (req, res) => {
@@ -605,6 +606,95 @@ router.post("/printmessage/:idcashpoint", verifyToken, async (req, res) => {
     }
 
     res.json({ message: "Printer message updated" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Error retrieving data" });
+  }
+});
+
+// Exportar la lista de clientes en csv
+router.get("/exportclients/:societydivision", verifyToken, async (req, res) => {
+  // Si el rol no es supervisor
+  if (req.user.role !== "supervisor") {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+
+  const { societydivision } = req.params;
+
+  // Si no se ha recibido el societydivision
+  if (!societydivision) {
+    return res.status(400).json({ message: "societydivision is required" });
+  }
+
+  try {
+    const results = await db.query(
+      `SELECT * FROM Client WHERE societydivision = $1`,
+      [societydivision]
+    );
+
+    const csvData = [
+      // Titulos
+      [
+        "PayerContractAccountID",
+        "CUEN",
+        "Name",
+        "Address",
+        "Debt",
+        "Parroquia",
+        "IsDisconnected",
+      ],
+      // Datos
+      ...results.map((client) => [
+        client.payercontractaccountid,
+        client.cuen,
+        client.name,
+        client.address,
+        client.debt,
+        client.parroquia,
+        client.isdisconnected,
+      ]),
+    ];
+
+    // Convertir los datos CSV en una cadena CSV
+    const csvString = csvData.map((row) => row.join(";")).join("\n");
+
+    const fileName = `Clientes-${new Date()
+      .toLocaleString()
+      .replace(/[\/:]/g, "-")
+      .replace(/,/g, "")
+      .replace(/ /g, "-")}.csv`;
+
+    // Escribir la cadena CSV en un archivo temporal
+    fs.writeFileSync(fileName, csvString);
+
+    // Configurar las cabeceras de la respuesta para indicar que se enviará un archivo CSV
+    res.setHeader("Content-Disposition", `attachment; filename="${fileName}"`);
+    res.setHeader("Content-Type", "text/csv");
+
+    // Agregar una entrada en la tabla de bitácora ("log")
+    await db.none(
+      `INSERT INTO log (username, action, description, timestamp)
+      VALUES ($1, $2, $3, $4)`,
+      [
+        req.user.username,
+        "Exportar Clientes",
+        `El supervsor ${req.user.username}, ha exportado la lista de clientes.`,
+        new Date(),
+      ]
+    );
+
+    // Enviar el archivo CSV como respuesta
+    fs.createReadStream(fileName).pipe(res);
+
+    // Escuchar el evento 'finish' en la respuesta
+    res.on("finish", () => {
+      // Eliminar el archivo después de que se ha enviado
+      fs.unlink(fileName, (err) => {
+        if (err) {
+          console.error("Error al eliminar el archivo:", err);
+        }
+      });
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Error retrieving data" });

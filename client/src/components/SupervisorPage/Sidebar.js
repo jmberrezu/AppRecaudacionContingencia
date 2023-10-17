@@ -8,6 +8,7 @@ import {
   BoxSeam,
   HourglassBottom,
   Printer,
+  BoxArrowUp,
 } from "react-bootstrap-icons";
 import sparkPayLogo from "../../images/logoM.svg";
 
@@ -90,6 +91,18 @@ function Sidebar({ user, handleLogout, setActiveComponent, activeComponent }) {
       <div className="mt-auto">
         <hr />
         <Nav className="nav nav-pills flex-column mb-auto">
+          <Nav.Item>
+            <Link
+              to="#"
+              className={`nav-link ${
+                activeComponent === "exportarclientes" ? "active" : "text-black"
+              } `}
+              onClick={() => setActiveComponent("exportarclientes")}
+            >
+              <BoxArrowUp size={16} className="align-middle mb-1 me-2" />{" "}
+              Exportar Clientes
+            </Link>
+          </Nav.Item>
           <Nav.Item>
             <Link
               to="#"
